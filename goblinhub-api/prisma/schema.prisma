@@ -104,6 +104,7 @@ model Usuario {
   id_usuario_creador   String?              @db.Uuid
   created_at           DateTime             @default(now())
   updated_at           DateTime             @updatedAt
+  deleted_at           DateTime?            @db.Timestamp(6)
 
   // Relaciones
   usuarioCreador       Usuario?             @relation("UsuarioCreador", fields: [id_usuario_creador], references: [id_usuario])
@@ -125,6 +126,9 @@ model Interes {
   id_interes       Int                  @id @default(autoincrement())
   nombre_interes   TipoInteres          @unique
   descripcion      String?
+  created_at       DateTime             @default(now())
+  updated_at       DateTime             @updatedAt
+  deleted_at       DateTime?            @db.Timestamp(6)
 
   // Relaciones
   usuarios         Usuario_Interes[]
@@ -182,6 +186,8 @@ model Evento {
   puntos_participacion Int                  @default(50)
   id_creador           String               @db.Uuid
   created_at           DateTime             @default(now())
+  updated_at           DateTime             @updatedAt
+  deleted_at           DateTime?            @db.Timestamp(6)
 
   // Relaciones
   creador              Usuario              @relation("EventoCreador", fields: [id_creador], references: [id_usuario])
@@ -203,6 +209,7 @@ model Inscripcion {
   es_ganador           Boolean              @default(false)
   puntos_obtenidos     Int                  @default(0)
   fecha_inscripcion    DateTime             @default(now())
+  deleted_at           DateTime?            @db.Timestamp(6)
 
   // Relaciones
   evento               Evento               @relation(fields: [id_evento], references: [id_evento], onDelete: Cascade)
@@ -230,6 +237,7 @@ model Producto {
   activo               Boolean              @default(true)
   created_at           DateTime             @default(now())
   updated_at           DateTime             @updatedAt
+  deleted_at           DateTime?            @db.Timestamp(6)
 
   @@map("productos")
 }
@@ -249,6 +257,8 @@ model Captacion_Novato {
   rating_experiencia   Int?                 @db.SmallInt // CHECK (1-5) would be validated at application level
   comentarios          String?
   created_at           DateTime             @default(now())
+  updated_at           DateTime             @updatedAt
+  deleted_at           DateTime?            @db.Timestamp(6)
 
   // Relaciones
   usuario              Usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
@@ -284,6 +294,9 @@ model Recompensa {
   tipo                 TipoRecompensa
   valor_descuento      Decimal?             @db.Decimal(5, 2)
   activa               Boolean              @default(true)
+  created_at           DateTime             @default(now())
+  updated_at           DateTime             @updatedAt
+  deleted_at           DateTime?            @db.Timestamp(6)
 
   // Relaciones
   canjes               Canje[]
