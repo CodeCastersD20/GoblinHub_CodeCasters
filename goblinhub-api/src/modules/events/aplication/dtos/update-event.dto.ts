@@ -7,7 +7,6 @@ import {
   IsEnum,
   IsString,
   IsDateString,
-  IsDecimal,
   Min,
   IsNumber,
 } from 'class-validator';
@@ -26,7 +25,7 @@ export class UpdateEventDto {
   tipo_evento: EventValidationStatus;
 
   @IsOptional()
-  @IsDateString()
+  @IsDateString({ strict: true })
   fecha: string;
 
   @IsOptional()
@@ -42,7 +41,8 @@ export class UpdateEventDto {
   lugar: string;
 
   @IsOptional()
-  @IsDecimal()
+  @IsNumber()
+  @Min(0)
   costo?: number;
 
   @IsOptional()
@@ -60,17 +60,21 @@ export class UpdateEventDto {
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   puntos_premio_1?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   puntos_premio_2?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   puntos_premio_3?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   puntos_participacion?: number;
 }

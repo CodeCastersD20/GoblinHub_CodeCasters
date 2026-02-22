@@ -105,7 +105,10 @@ export class EventRepositoryPrisma extends EventRepository {
 
   async findByName(name: string): Promise<Event | null> {
     const evento = await this.prisma.evento.findFirst({
-      where: { titulo: name, deleted_at: null },
+      where: {
+        titulo: { equals: name, mode: 'insensitive' },
+        deleted_at: null,
+      },
     });
 
     if (!evento) return null;
@@ -126,6 +129,36 @@ export class EventRepositoryPrisma extends EventRepository {
       evento.puntos_premio_2 || undefined,
       evento.puntos_premio_3 || undefined,
       evento.puntos_participacion || undefined,
+    );
+  }
+
+  async searchByName(name: string): Promise<Event[]> {
+    const eventos = await this.prisma.evento.findMany({
+      where: {
+        titulo: { contains: name, mode: 'insensitive' },
+        deleted_at: null,
+      },
+    });
+
+    return eventos.map(
+      (e) =>
+        new Event(
+          e.id_evento,
+          e.titulo,
+          e.descripcion || undefined,
+          EventMapper.tipoToDomain(e.tipo_evento),
+          e.fecha.toISOString(),
+          e.hora_inicio.toISOString(),
+          e.hora_fin?.toISOString() || undefined,
+          e.lugar,
+          Number(e.costo) || undefined,
+          e.cupo_maximo,
+          e.sistema_juego || undefined,
+          e.puntos_premio_1 || undefined,
+          e.puntos_premio_2 || undefined,
+          e.puntos_premio_3 || undefined,
+          e.puntos_participacion || undefined,
+        ),
     );
   }
 

@@ -23,7 +23,7 @@ export class UpdateEventUseCase {
       if (data.titulo) {
         const existEvent = await this.Event.findByName(data.titulo);
 
-        if (existEvent) {
+        if (existEvent && existEvent.id !== id) {
           throw new HttpException(
             {
               Error: `Event already exists ${data.titulo}`,

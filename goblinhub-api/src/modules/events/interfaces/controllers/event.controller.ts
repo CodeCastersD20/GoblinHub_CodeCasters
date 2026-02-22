@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { CreateEventUseCase } from '../../aplication/use-case/create-event.use-case';
 import { UpdateEventUseCase } from '../../aplication/use-case/update-event.use-case';
@@ -25,7 +26,8 @@ export class EventController {
   ) {}
 
   @Get()
-  async getAll(): Promise<Event[]> {
+  async getAll(@Query('name') name?: string): Promise<Event[]> {
+    if (name) return await this.get.searchEventsByName(name);
     return await this.get.getAllEvents();
   }
 

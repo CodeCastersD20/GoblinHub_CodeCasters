@@ -85,4 +85,31 @@ export class getEventUseCase {
       );
     }
   }
+
+  async searchEventsByName(name: string): Promise<Event[]> {
+    try {
+      const events = await this.Event.searchByName(name);
+
+      if (!events || events.length === 0) {
+        throw new HttpException(
+          {
+            Error: `No events found matching '${name}'`,
+          },
+          404,
+        );
+      }
+
+      return events;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        {
+          Error: 'An error occurred while searching events',
+        },
+        500,
+      );
+    }
+  }
 }
