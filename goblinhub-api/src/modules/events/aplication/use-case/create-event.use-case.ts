@@ -58,6 +58,7 @@ export class CreateEventUseCase {
       throw new HttpException(
         {
           Error: 'An error occurred while creating the event',
+          detail: error instanceof Error ? error.message : String(error),
         },
         500,
       );

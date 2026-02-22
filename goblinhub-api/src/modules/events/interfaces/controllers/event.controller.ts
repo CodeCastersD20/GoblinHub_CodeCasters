@@ -37,7 +37,7 @@ export class EventController {
   @Post()
   async createEvent(@Body() createEventDto: CreateEventDto): Promise<Event> {
     // TODO: Extraer id_creador del JWT cuando implementes autenticación
-    const id_creador = 'temp-user-id'; // Temporal
+    const id_creador = '6bd55604-98c9-4940-b901-5d3a255d7535'; // UUID temporal
     return await this.created.createEvent(createEventDto, id_creador);
   }
 

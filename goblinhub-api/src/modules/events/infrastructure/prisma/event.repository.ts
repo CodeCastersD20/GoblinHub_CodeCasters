@@ -77,12 +77,12 @@ export class EventRepositoryPrisma extends EventRepository {
     );
   }
 
-  async findById(id: string): Promise<Event> {
+  async findById(id: string): Promise<Event | null> {
     const evento = await this.prisma.evento.findUnique({
       where: { id_evento: id, deleted_at: null },
     });
 
-    if (!evento) throw new Error('Event not found');
+    if (!evento) return null;
 
     return new Event(
       evento.id_evento,
@@ -103,12 +103,12 @@ export class EventRepositoryPrisma extends EventRepository {
     );
   }
 
-  async findByName(name: string): Promise<Event> {
+  async findByName(name: string): Promise<Event | null> {
     const evento = await this.prisma.evento.findFirst({
       where: { titulo: name, deleted_at: null },
     });
 
-    if (!evento) throw new Error('Event not found');
+    if (!evento) return null;
 
     return new Event(
       evento.id_evento,
