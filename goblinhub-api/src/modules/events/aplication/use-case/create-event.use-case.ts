@@ -7,7 +7,7 @@ import { EventValidationStatus } from '../../domain/enums/event.enum';
 @Injectable()
 export class CreateEventUseCase {
   constructor(private Event: EventRepository) {}
-  async execute(data: CreateEventDto): Promise<Event> {
+  async createEvent(data: CreateEventDto, id_creador: string): Promise<Event> {
     try {
       const existEvent = await this.Event.findByName(data.titulo);
 
@@ -34,7 +34,7 @@ export class CreateEventUseCase {
       }
 
       const event = new Event(
-        0,
+        '',
         data.titulo,
         data.descripcion,
         data.tipo_evento,
@@ -50,7 +50,7 @@ export class CreateEventUseCase {
         data.puntos_premio_3,
         data.puntos_participacion,
       );
-      return this.Event.create(event);
+      return this.Event.create(event, id_creador);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

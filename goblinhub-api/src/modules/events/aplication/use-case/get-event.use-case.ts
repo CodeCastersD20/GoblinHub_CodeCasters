@@ -32,9 +32,9 @@ export class getEventUseCase {
     }
   }
 
-  async getEventById(id: number): Promise<Event> {
+  async getEventById(id: string): Promise<Event> {
     try {
-      const event = await this.Event.findById(id.toString());
+      const event = await this.Event.findById(id);
 
       if (!event) {
         throw new HttpException(

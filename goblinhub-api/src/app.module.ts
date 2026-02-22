@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
+import { EventModule } from './modules/events/event.module';
 
 @Module({
-  imports: [],
+  imports: [EventModule],
   controllers: [],
   providers: [],
 })

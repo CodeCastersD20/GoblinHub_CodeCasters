@@ -2,7 +2,7 @@ import { EventValidationStatus } from '../enums/event.enum';
 
 export class Event {
   constructor(
-    public id: number,
+    public id: string,
     public titulo: string,
     public descripcion: string | undefined,
     public tipo_evento: EventValidationStatus,
