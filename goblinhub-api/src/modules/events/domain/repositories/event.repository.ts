@@ -8,4 +8,5 @@ export abstract class EventRepository {
   abstract searchByName(name: string): Promise<Event[]>;
   abstract update(id: string, event: Event): Promise<Event>;
   abstract delete(id: string): Promise<Event>;
+  abstract expireEvents(): Promise<number>;
 }

@@ -226,4 +226,23 @@ export class EventRepositoryPrisma extends EventRepository {
       deleted.puntos_participacion || undefined,
     );
   }
+
+  async expireEvents(): Promise<number> {
+    const now = new Date();
+
+    // Soft-delete events where hora_fin has passed,
+    // or where hora_inicio has passed when hora_fin is not set.
+    const result = await this.prisma.evento.updateMany({
+      where: {
+        deleted_at: null,
+        OR: [
+          { hora_fin: { lte: now } },
+          { hora_fin: null, hora_inicio: { lte: now } },
+        ],
+      },
+      data: { deleted_at: now },
+    });
+
+    return result.count;
+  }
 }
