@@ -1,4 +1,12 @@
-import { IsString, IsEmail } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsDateString,
+  IsEnum,
+  MinLength,
+} from 'class-validator';
+import { NivelExperiencia } from '../../domain/enums/user.enum';
 
 export class validateTokenDto {
   @IsString()
@@ -24,4 +32,34 @@ export class SignInTestuserDto {
 
   @IsString()
   password: string;
+}
+
+export class RegisterUserDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
+
+  @IsString()
+  nombre: string;
+
+  @IsString()
+  apellidos: string;
+
+  @IsOptional()
+  @IsString()
+  telefono?: string;
+
+  @IsDateString()
+  fecha_nacimiento: string;
+
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @IsOptional()
+  @IsEnum(NivelExperiencia)
+  nivel_experiencia?: NivelExperiencia;
 }

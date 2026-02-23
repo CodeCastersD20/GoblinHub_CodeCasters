@@ -12,10 +12,12 @@ import {
 import { SupabaseValidationTokenService } from '../../application/use-case/validationT.use-case';
 import { SupabaseRefreshTokenService } from '../../application/use-case/refreshT.use-case';
 import { SupabaseGetUserProfileService } from '../../application/use-case/getUserProfile.use-case';
-import { SupabaseCreateTestUserService } from '../../application/use-case/create-test-user.use-case';
+import { SupabaseCreateTestUserService } from '../../application/use-case/login-user.use-case';
+import { SupabaseRegisterUserService } from '../../application/use-case/register-user.use-case';
 import {
-  CreateTesruserDto,
+  //   CreateTesruserDto,
   RefreshTokenDto,
+  RegisterUserDto,
   SignInTestuserDto,
   validateTokenDto,
 } from '../../application/dto/auth.dto';
@@ -29,7 +31,14 @@ export class SupabaseAuthController {
     private readonly refreshService: SupabaseRefreshTokenService,
     private readonly getUserProfileService: SupabaseGetUserProfileService,
     private readonly createTestUserService: SupabaseCreateTestUserService,
+    private readonly registerUserService: SupabaseRegisterUserService,
   ) {}
+
+  @Post('signup')
+  @HttpCode(HttpStatus.CREATED)
+  async signUp(@Body() registerUserDto: RegisterUserDto) {
+    return await this.registerUserService.register(registerUserDto);
+  }
 
   @Post('validate-token')
   @HttpCode(HttpStatus.OK)
@@ -75,18 +84,6 @@ export class SupabaseAuthController {
       user: req.user,
       message: 'Token valido y usuario autenticado',
     };
-  }
-
-  @Post('test/signup')
-  @HttpCode(HttpStatus.CREATED)
-  async signUpTestUser(@Body() createTestUserDto: CreateTesruserDto) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new UnauthorizedException('Not available in production');
-    }
-    return await this.createTestUserService.createTestUser(
-      createTestUserDto.email,
-      createTestUserDto.password,
-    );
   }
 
   @Post('test/signin')
