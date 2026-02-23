@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { EventModule } from './modules/events/event.module';
 import { ConfigModule } from '@nestjs/config';
+import { SupabaseAuthModule } from './modules/supabase/supabase-auth.module';
 
 @Module({
   imports: [
@@ -8,6 +9,7 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true, // ← importante, lo hace disponible en toda la app
     }),
     EventModule,
+    SupabaseAuthModule,
   ],
   controllers: [],
   providers: [],
