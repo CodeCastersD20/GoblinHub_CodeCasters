@@ -7,6 +7,9 @@ import {
   Post,
   Put,
   Query,
+  Request,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateEventUseCase } from '../../aplication/use-case/create-event.use-case';
 import { UpdateEventUseCase } from '../../aplication/use-case/update-event.use-case';
@@ -15,6 +18,8 @@ import { getEventUseCase } from '../../aplication/use-case/get-event.use-case';
 import { Event } from '../../domain/entities/event.entity';
 import { CreateEventDto } from '../../aplication/dtos/create-event.dto';
 import { UpdateEventDto } from '../../aplication/dtos/update-event.dto';
+import { SupabaseAuthGuard } from '../../../supabase/guard/supabse-auth.guard';
+import type { AuthenticatedRequest } from '../../../supabase/interfaces/types/authenticated-request.interface';
 
 @Controller('events')
 export class EventController {
@@ -37,13 +42,18 @@ export class EventController {
   }
 
   @Post()
-  async createEvent(@Body() createEventDto: CreateEventDto): Promise<Event> {
-    // TODO: Extraer id_creador del JWT cuando implementes autenticación
-    const id_creador = '6bd55604-98c9-4940-b901-5d3a255d7535'; // UUID temporal
+  @UseGuards(SupabaseAuthGuard)
+  async createEvent(
+    @Body() createEventDto: CreateEventDto,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<Event> {
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+    const id_creador = req.user.id;
     return await this.created.createEvent(createEventDto, id_creador);
   }
 
   @Put(':id')
+  @UseGuards(SupabaseAuthGuard)
   async updateEvent(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
@@ -52,6 +62,7 @@ export class EventController {
   }
 
   @Delete(':id')
+  @UseGuards(SupabaseAuthGuard)
   async deleteEvent(@Param('id') id: string): Promise<Event> {
     return await this.deleted.softDeleteEvent(id);
   }

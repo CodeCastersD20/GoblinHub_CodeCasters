@@ -7,6 +7,7 @@ import { getEventUseCase } from './aplication/use-case/get-event.use-case';
 import { EventRepository } from './domain/repositories/event.repository';
 import { EventRepositoryPrisma } from './infrastructure/prisma/event.repository';
 import { PrismaModule } from 'src/connect/prisma.module';
+import { SupabaseAuthModule } from '../supabase/supabase-auth.module';
 
 @Module({
   controllers: [EventController],
@@ -20,6 +21,6 @@ import { PrismaModule } from 'src/connect/prisma.module';
       useClass: EventRepositoryPrisma,
     },
   ],
-  imports: [PrismaModule],
+  imports: [PrismaModule, SupabaseAuthModule],
 })
 export class EventModule {}
