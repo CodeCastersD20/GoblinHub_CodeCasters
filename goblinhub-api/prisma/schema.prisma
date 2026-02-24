@@ -89,221 +89,225 @@ enum TipoRecompensa {
 }
 
 // ==================== TABLA 1: Usuarios ====================
-
 model Usuario {
-  id_usuario           String               @id @db.Uuid
-  nombre               String               @db.VarChar(100)
-  apellidos            String               @db.VarChar(100)
-  telefono             String?              @db.VarChar(20)
-  fecha_nacimiento     DateTime             @db.Date
-  rol                  RolUsuario           @default(jugador)
-  nivel_experiencia    NivelExperiencia     @default(novato)
-  puntos_fidelidad     Int                  @default(0)
-  bio                  String?
-  activo               Boolean              @default(true)
-  id_usuario_creador   String?              @db.Uuid
-  created_at           DateTime             @default(now())
-  updated_at           DateTime             @updatedAt
+  id_usuario         String           @id @db.Uuid
+  nombre             String           @db.VarChar(100)
+  apellidos          String           @db.VarChar(100)
+  telefono           String?          @db.VarChar(20)
+  fecha_nacimiento   DateTime         @db.Date
+  rol                RolUsuario       @default(jugador)
+  nivel_experiencia  NivelExperiencia @default(novato)
+  puntos_fidelidad   Int              @default(0)
+  bio                String?
+  activo             Boolean          @default(true)
+  id_usuario_creador String?          @db.Uuid
+  
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+  deleted_at         DateTime?
 
-  // Relaciones
-  usuarioCreador       Usuario?             @relation("UsuarioCreador", fields: [id_usuario_creador], references: [id_usuario])
-  usuariosCreados      Usuario[]            @relation("UsuarioCreador")
-  intereses            Usuario_Interes[]
-  disponibilidades     Disponibilidad[]
-  eventos_creados      Evento[]             @relation("EventoCreador")
-  inscripciones        Inscripcion[]
-  captacion_novato     Captacion_Novato?
-  logs_actividad       Logs_Actividad[]
-  canjes               Canje[]
+  usuarioCreador     Usuario?         @relation("UsuarioCreador", fields: [id_usuario_creador], references: [id_usuario])
+  usuariosCreados    Usuario[]        @relation("UsuarioCreador")
+  intereses          Usuario_Interes[]
+  disponibilidades   Disponibilidad[]
+  eventos_creados    Evento[]         @relation("EventoCreador")
+  inscripciones      Inscripcion[]
+  captacion_novato   Captacion_Novato?
+  logs_actividad     Logs_Actividad[]
+  canjes             Canje[]
 
   @@map("usuarios")
 }
 
-// ==================== TABLA 2: Intereses ====================
-
 model Interes {
-  id_interes       Int                  @id @default(autoincrement())
-  nombre_interes   TipoInteres          @unique
-  descripcion      String?
+  id_interes     Int             @id @default(autoincrement())
+  nombre_interes TipoInteres     @unique
+  descripcion    String?
+  
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  deleted_at     DateTime?
 
-  // Relaciones
-  usuarios         Usuario_Interes[]
+  usuarios       Usuario_Interes[]
 
   @@map("intereses")
 }
 
-// ==================== TABLA 3: Usuario_Intereses (N:M) ====================
-
 model Usuario_Interes {
-  id_usuario        String               @db.Uuid
-  id_interes        Int
+  id_usuario         String    @db.Uuid
+  id_interes         Int
   juegos_especificos String?
+  
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  deleted_at         DateTime?
 
-  // Relaciones
-  usuario            Usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
-  interes            Interes              @relation(fields: [id_interes], references: [id_interes], onDelete: Cascade)
+  usuario            Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  interes            Interes   @relation(fields: [id_interes], references: [id_interes], onDelete: Cascade)
 
   @@id([id_usuario, id_interes])
   @@map("usuario_intereses")
 }
 
-// ==================== TABLA 4: Disponibilidad ====================
-
 model Disponibilidad {
-  id_disponibilidad    Int                  @id @default(autoincrement())
-  id_usuario           String               @db.Uuid
-  dia_semana           DiaDisponibilidad
-  horario              HorarioDisponibilidad
+  id_disponibilidad Int                  @id @default(autoincrement())
+  id_usuario        String               @db.Uuid
+  dia_semana        DiaDisponibilidad
+  horario           HorarioDisponibilidad
+  
+  created_at        DateTime             @default(now())
+  updated_at        DateTime             @updatedAt
+  deleted_at        DateTime?
 
-  // Relaciones
-  usuario              Usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  usuario           Usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
 
   @@map("disponibilidades")
 }
 
-// ==================== TABLA 5: Eventos ====================
-
 model Evento {
-  id_evento            String               @id @default(uuid()) @db.Uuid
-  titulo               String               @db.VarChar(200)
+  id_evento            String       @id @default(uuid()) @db.Uuid
+  titulo               String       @db.VarChar(200)
   descripcion          String?
   tipo_evento          TipoEvento
-  fecha                DateTime             @db.Date
-  hora_inicio          DateTime             @db.Time
-  hora_fin             DateTime?            @db.Time
-  lugar                String               @db.VarChar(150)
-  costo                Decimal              @default(0.00) @db.Decimal(10, 2)
+  fecha                DateTime     @db.Date
+  hora_inicio          DateTime     @db.Time
+  hora_fin             DateTime?    @db.Time
+  lugar                String       @db.VarChar(150)
+  costo                Decimal      @default(0.00) @db.Decimal(10, 2)
   cupo_maximo          Int
-  estado               EstadoEvento         @default(programado)
-  sistema_juego        String?              @db.VarChar(100)
-  puntos_premio_1      Int                  @default(500)
-  puntos_premio_2      Int                  @default(300)
-  puntos_premio_3      Int                  @default(200)
-  puntos_participacion Int                  @default(50)
-  id_creador           String               @db.Uuid
-  created_at           DateTime             @default(now())
+  estado               EstadoEvento @default(programado)
+  sistema_juego        String?      @db.VarChar(100)
+  puntos_premio_1      Int          @default(500)
+  puntos_premio_2      Int          @default(300)
+  puntos_premio_3      Int          @default(200)
+  puntos_participacion Int          @default(50)
+  id_creador           String       @db.Uuid
+  
+  created_at           DateTime     @default(now())
+  updated_at           DateTime     @updatedAt
+  deleted_at           DateTime?
 
-  // Relaciones
-  creador              Usuario              @relation("EventoCreador", fields: [id_creador], references: [id_usuario])
+  creador              Usuario      @relation("EventoCreador", fields: [id_creador], references: [id_usuario])
   inscripciones        Inscripcion[]
 
   @@map("eventos")
 }
 
-// ==================== TABLA 6: Inscripciones ====================
-
 model Inscripcion {
-  id_inscripcion       String               @id @default(uuid()) @db.Uuid
-  id_evento            String               @db.Uuid
-  id_usuario           String               @db.Uuid
-  faccion              String?              @db.VarChar(100)
-  nombre_ejercito      String?              @db.VarChar(150)
-  asistio              Boolean              @default(false)
-  posicion_final       Int?
-  es_ganador           Boolean              @default(false)
-  puntos_obtenidos     Int                  @default(0)
-  fecha_inscripcion    DateTime             @default(now())
+  id_inscripcion    String    @id @default(uuid()) @db.Uuid
+  id_evento         String    @db.Uuid
+  id_usuario        String    @db.Uuid
+  faccion           String?   @db.VarChar(100)
+  nombre_ejercito   String?   @db.VarChar(150)
+  asistio           Boolean   @default(false)
+  posicion_final    Int?
+  es_ganador        Boolean   @default(false)
+  puntos_obtenidos  Int       @default(0)
+  
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  deleted_at        DateTime?
 
-  // Relaciones
-  evento               Evento               @relation(fields: [id_evento], references: [id_evento], onDelete: Cascade)
-  usuario              Usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  evento            Evento    @relation(fields: [id_evento], references: [id_evento], onDelete: Cascade)
+  usuario           Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
 
   @@unique([id_evento, id_usuario])
   @@map("inscripciones")
 }
 
-// ==================== TABLA 7: Productos ====================
-
 model Producto {
-  id_producto          String               @id @default(uuid()) @db.Uuid
-  nombre               String               @db.VarChar(200)
-  marca                String?              @db.VarChar(100)
-  categoria            CategoriaProducto
-  descripcion          String?
-  precio               Decimal              @db.Decimal(10, 2)
-  precio_original      Decimal?             @db.Decimal(10, 2)
-  stock                Int                  @default(0)
-  stock_minimo         Int                  @default(3)
-  popular              Boolean              @default(false)
-  es_nuevo             Boolean              @default(false)
-  imagen_url           String?              @db.VarChar(500)
-  activo               Boolean              @default(true)
-  created_at           DateTime             @default(now())
-  updated_at           DateTime             @updatedAt
+  id_producto     String            @id @default(uuid()) @db.Uuid
+  nombre          String            @db.VarChar(200)
+  marca           String?           @db.VarChar(100)
+  categoria       CategoriaProducto
+  descripcion     String?
+  precio          Decimal           @db.Decimal(10, 2)
+  precio_original Decimal?          @db.Decimal(10, 2)
+  stock           Int               @default(0)
+  stock_minimo    Int               @default(3)
+  popular         Boolean           @default(false)
+  es_nuevo        Boolean           @default(false)
+  imagen_url      String?           @db.VarChar(500)
+  activo          Boolean           @default(true)
+  
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  deleted_at      DateTime?
 
   @@map("productos")
 }
 
-// ==================== TABLA 8: Captacion_Novatos ====================
-
 model Captacion_Novato {
-  id_captacion         String               @id @default(uuid()) @db.Uuid
-  id_usuario           String               @unique @db.Uuid
+  id_captacion         String         @id @default(uuid()) @db.Uuid
+  id_usuario           String         @unique @db.Uuid
   canal_captacion      CanalCaptacion
-  fecha_primera_visita DateTime             @db.Date
-  asistio_sesion_demo  Boolean              @default(false)
-  fecha_demo           DateTime?            @db.Date
-  regreso              Boolean              @default(false)
-  realizo_compra       Boolean              @default(false)
-  es_recurrente        Boolean              @default(false)
-  rating_experiencia   Int?                 @db.SmallInt // CHECK (1-5) would be validated at application level
+  fecha_primera_visita DateTime       @db.Date
+  asistio_sesion_demo  Boolean        @default(false)
+  fecha_demo           DateTime?      @db.Date
+  regreso              Boolean        @default(false)
+  realizo_compra       Boolean        @default(false)
+  es_recurrente        Boolean        @default(false)
+  rating_experiencia   Int?           @db.SmallInt
   comentarios          String?
-  created_at           DateTime             @default(now())
+  
+  created_at           DateTime       @default(now())
+  updated_at           DateTime       @updatedAt
+  deleted_at           DateTime?
 
-  // Relaciones
-  usuario              Usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  usuario              Usuario        @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
 
   @@map("captacion_novatos")
 }
 
-// ==================== TABLA 9: Logs_Actividad ====================
-
 model Logs_Actividad {
-  id_log               BigInt               @id @default(autoincrement())
-  tipo                 TipoLog
-  accion               String               @db.VarChar(100)
-  mensaje              String
-  id_usuario           String?              @db.Uuid
-  ip_address           String?              @db.VarChar(45)
-  datos_extra          Json?
-  fecha_hora           DateTime             @default(now())
+  id_log      BigInt    @id @default(autoincrement())
+  tipo        TipoLog
+  accion      String    @db.VarChar(100)
+  mensaje     String
+  id_usuario  String?   @db.Uuid
+  ip_address  String?   @db.VarChar(45)
+  datos_extra Json?
+  
+  fecha_hora  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
 
-  // Relaciones
-  usuario              Usuario?             @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
+  usuario     Usuario?  @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
 
   @@map("logs_actividad")
 }
 
-// ==================== TABLA 10: Recompensas ====================
-
 model Recompensa {
-  id_recompensa        Int                  @id @default(autoincrement())
-  nombre               String               @db.VarChar(150)
-  descripcion          String?
-  costo_puntos         Int
-  tipo                 TipoRecompensa
-  valor_descuento      Decimal?             @db.Decimal(5, 2)
-  activa               Boolean              @default(true)
+  id_recompensa   Int            @id @default(autoincrement())
+  nombre          String         @db.VarChar(150)
+  descripcion     String?
+  costo_puntos    Int
+  tipo            TipoRecompensa
+  valor_descuento Decimal?       @db.Decimal(5, 2)
+  activa          Boolean        @default(true)
+  
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+  deleted_at      DateTime?
 
-  // Relaciones
-  canjes               Canje[]
+  canjes          Canje[]
 
   @@map("recompensas")
 }
 
-// ==================== TABLA 11: Canjes ====================
-
 model Canje {
-  id_canje             String               @id @default(uuid()) @db.Uuid
-  id_usuario           String               @db.Uuid
-  id_recompensa        Int
-  puntos_usados        Int
-  fecha_canje          DateTime             @default(now())
-  utilizado            Boolean              @default(false)
+  id_canje      String     @id @default(uuid()) @db.Uuid
+  id_usuario    String     @db.Uuid
+  id_recompensa Int
+  puntos_usados Int
+  utilizado     Boolean    @default(false)
+  
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  deleted_at    DateTime?
 
-  // Relaciones
-  usuario              Usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
-  recompensa           Recompensa           @relation(fields: [id_recompensa], references: [id_recompensa], onDelete: Cascade)
+  usuario       Usuario    @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  recompensa    Recompensa @relation(fields: [id_recompensa], references: [id_recompensa], onDelete: Cascade)
 
   @@map("canjes")
 }

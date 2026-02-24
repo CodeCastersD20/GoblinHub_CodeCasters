@@ -1,0 +1,291 @@
+/* =============================================
+   CALENDARIO DE AVENTURAS — Estilos
+   Archivo: CalendarioAventuras.css
+   ============================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Nunito:wght@400;600;700&display=swap");
+
+/* ---------- Variables ---------- */
+:root {
+  --ca-bg: #f5f0e8;
+  --ca-section-bg: #ede7db;
+  --ca-section-border: #c084fc;
+  --ca-card-bg: #ffffff;
+
+  --ca-purple: #6b21a8;
+  --ca-purple-mid: #7c3aed;
+  --ca-purple-light: #a855f7;
+
+  --ca-badge-bg: #bbf7d0;
+  --ca-badge-text: #14532d;
+  --ca-badge-border: #4ade80;
+
+  --ca-date-torneo-bg: #ede9fe;
+  --ca-date-torneo-text: #4c1d95;
+  --ca-date-workshop-bg: #fce7f3;
+  --ca-date-workshop-text: #831843;
+
+  --ca-type-torneo: #d97706;
+  --ca-type-workshop: #7c3aed;
+
+  --ca-text-main: #1c1917;
+  --ca-text-muted: #57534e;
+
+  --ca-btn-nav-bg: #5b21b6;
+  --ca-btn-nav-hover: #4c1d95;
+  --ca-btn-inscribirse-bg: #84cc16;
+  --ca-btn-inscribirse-hover: #65a30d;
+  --ca-btn-inscribirse-text: #1a2e05;
+
+  --ca-font-display: "Cinzel", serif;
+  --ca-font-body: "Nunito", sans-serif;
+
+  --ca-radius-card: 14px;
+  --ca-radius-section: 20px;
+  --ca-radius-badge: 999px;
+  --ca-shadow-card: 0 2px 16px rgba(0, 0, 0, 0.07);
+  --ca-shadow-section: 0 4px 32px rgba(0, 0, 0, 0.09);
+}
+
+/* ---------- Contenedor de página ---------- */
+.ca-page {
+  background-color: var(--ca-bg);
+  min-height: 100vh;
+  font-family: var(--ca-font-body);
+  color: var(--ca-text-main);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 52px 24px 72px;
+}
+
+/* ---------- Badge "Sistema de Eventos" ---------- */
+.ca-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--ca-badge-bg);
+  color: var(--ca-badge-text);
+  border: 1.5px solid var(--ca-badge-border);
+  font-family: var(--ca-font-body);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 6px 18px;
+  border-radius: var(--ca-radius-badge);
+  margin-bottom: 20px;
+  letter-spacing: 0.01em;
+}
+
+.ca-badge__icon {
+  font-size: 14px;
+}
+
+/* ---------- Título principal ---------- */
+.ca-title {
+  font-family: var(--ca-font-display);
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 700;
+  color: var(--ca-purple);
+  text-align: center;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  letter-spacing: 0.01em;
+}
+
+/* ---------- Subtítulo ---------- */
+.ca-subtitle {
+  font-family: var(--ca-font-body);
+  font-size: 15px;
+  color: var(--ca-text-muted);
+  text-align: center;
+  line-height: 1.7;
+  max-width: 520px;
+  margin-bottom: 48px;
+}
+
+/* ---------- Sección del calendario ---------- */
+.ca-section {
+  background-color: var(--ca-section-bg);
+  border: 2px solid var(--ca-section-border);
+  border-radius: var(--ca-radius-section);
+  box-shadow: var(--ca-shadow-section);
+  padding: 32px 28px 36px;
+  width: 100%;
+  max-width: 860px;
+}
+
+/* ---------- Cabecera: mes + navegación ---------- */
+.ca-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.ca-section__month {
+  font-family: var(--ca-font-display);
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 700;
+  color: var(--ca-purple);
+  letter-spacing: 0.02em;
+}
+
+.ca-section__nav {
+  display: flex;
+  gap: 10px;
+}
+
+/* ---------- Sobrescritura para botones de navegación ---------- */
+/* Estos estilos se aplican via className="ca-btn--nav" en el componente Button */
+.custom-button.ca-btn--nav {
+  background-color: var(--ca-btn-nav-bg);
+  color: #ffffff;
+  font-family: var(--ca-font-body);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.custom-button.ca-btn--nav:hover {
+  background-color: var(--ca-btn-nav-hover);
+  transform: translateY(-1px);
+}
+
+.custom-button.ca-btn--nav:active {
+  transform: translateY(0);
+}
+
+/* ---------- Grid de tarjetas de evento ---------- */
+.ca-events {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* ---------- Tarjeta de evento ---------- */
+.ca-card {
+  background-color: var(--ca-card-bg);
+  border-radius: var(--ca-radius-card);
+  box-shadow: var(--ca-shadow-card);
+  padding: 20px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.ca-card:hover {
+  box-shadow: 0 6px 24px rgba(107, 33, 168, 0.13);
+  transform: translateY(-2px);
+}
+
+/* ---------- Badge de fecha ---------- */
+.ca-card__date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ca-font-body);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: var(--ca-radius-badge);
+  width: fit-content;
+}
+
+.ca-card__date--torneo {
+  background-color: var(--ca-date-torneo-bg);
+  color: var(--ca-date-torneo-text);
+}
+
+.ca-card__date--workshop {
+  background-color: var(--ca-date-workshop-bg);
+  color: var(--ca-date-workshop-text);
+}
+
+.ca-card__date-icon {
+  font-size: 13px;
+}
+
+/* ---------- Título de la tarjeta ---------- */
+.ca-card__title {
+  font-family: var(--ca-font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ca-text-main);
+  line-height: 1.25;
+  margin-top: 2px;
+}
+
+/* ---------- Tipo de evento (label) ---------- */
+.ca-card__type {
+  font-family: var(--ca-font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ca-card__type--torneo {
+  color: var(--ca-type-torneo);
+}
+
+.ca-card__type--workshop {
+  color: var(--ca-type-workshop);
+}
+
+/* ---------- Descripción ---------- */
+.ca-card__desc {
+  font-family: var(--ca-font-body);
+  font-size: 14px;
+  color: var(--ca-text-muted);
+  line-height: 1.6;
+  flex-grow: 1;
+}
+
+/* ---------- Botón Inscribirse ---------- */
+/* Se aplica via className="ca-btn--inscribirse" en el componente Button */
+.custom-button.ca-btn--inscribirse {
+  background-color: var(--ca-btn-inscribirse-bg);
+  color: var(--ca-btn-inscribirse-text);
+  font-family: var(--ca-font-body);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  width: fit-content;
+  margin-top: 4px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.custom-button.ca-btn--inscribirse:hover {
+  background-color: var(--ca-btn-inscribirse-hover);
+  transform: translateY(-1px);
+}
+
+.custom-button.ca-btn--inscribirse:active {
+  transform: translateY(0);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 600px) {
+  .ca-section {
+    padding: 24px 16px 28px;
+  }
+
+  .ca-section__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ca-events {
+    grid-template-columns: 1fr;
+  }
+}
