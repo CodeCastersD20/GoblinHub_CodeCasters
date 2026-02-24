@@ -1,16 +1,10 @@
 
 
 import './App.css'
-import Register from './pages/Register'
+import RegisterFlow from './pages/register/RegisterFlow'
 
 function App() {
-
-
-  return (
-    <>
-    <Register />
-    </>
-  )
+  return <RegisterFlow />
 }
 
 export default App
