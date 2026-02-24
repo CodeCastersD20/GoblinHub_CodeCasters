@@ -7,44 +7,6 @@ export class SupabaseCreateTestUserService {
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
   ) {}
 
-  async createTestUser(email: string, password: string) {
-    try {
-      // crea el usuario en la tabla auth
-      const { data, error } = await this.supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          // En modo testing, puedes confirmar automáticamente el email
-          emailRedirectTo: undefined,
-        },
-      });
-
-      if (error) {
-        throw new BadRequestException(`Error Creating User: ${error.message}`);
-      }
-
-      if (!data.user) {
-        throw new BadRequestException('User not created');
-      }
-
-      return {
-        success: true,
-        user: {
-          id: data.user.id,
-          email: data.user.email,
-          create_at: data.user.created_at,
-        },
-        session: data.session,
-        message: 'Usuario creado exitosamente',
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      throw new BadRequestException('Error al crear usuario de prueba');
-    }
-  }
-
   async signInTestuser(email: string, password: string) {
     try {
       const { data, error } = await this.supabase.auth.signInWithPassword({
@@ -90,4 +52,42 @@ export class SupabaseCreateTestUserService {
       throw new BadRequestException('Error al obtener lista de usuarios');
     }
   }
+
+  // async createTestUser(email: string, password: string) {
+  //   try {
+  //     // crea el usuario en la tabla auth
+  //     const { data, error } = await this.supabase.auth.signUp({
+  //       email,
+  //       password,
+  //       options: {
+  //         // En modo testing, puedes confirmar automáticamente el email
+  //         emailRedirectTo: undefined,
+  //       },
+  //     });
+
+  //     if (error) {
+  //       throw new BadRequestException(`Error Creating User: ${error.message}`);
+  //     }
+
+  //     if (!data.user) {
+  //       throw new BadRequestException('User not created');
+  //     }
+
+  //     return {
+  //       success: true,
+  //       user: {
+  //         id: data.user.id,
+  //         email: data.user.email,
+  //         create_at: data.user.created_at,
+  //       },
+  //       session: data.session,
+  //       message: 'Usuario creado exitosamente',
+  //     };
+  //   } catch (error) {
+  //     if (error instanceof BadRequestException) {
+  //       throw error;
+  //     }
+  //     throw new BadRequestException('Error al crear usuario de prueba');
+  //   }
+  // }
 }
