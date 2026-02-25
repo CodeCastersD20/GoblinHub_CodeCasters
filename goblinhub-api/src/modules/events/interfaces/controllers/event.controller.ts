@@ -48,8 +48,7 @@ export class EventController {
     @Request() req: AuthenticatedRequest,
   ): Promise<Event> {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
-    const id_creador = req.user.id;
-    return await this.created.createEvent(createEventDto, id_creador);
+    return await this.created.createEvent(createEventDto, req.user.id);
   }
 
   @Put(':id')
@@ -57,13 +56,19 @@ export class EventController {
   async updateEvent(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
+    @Request() req: AuthenticatedRequest,
   ): Promise<Event> {
-    return await this.updated.updateEvent(id, updateEventDto);
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+    return await this.updated.updateEvent(id, updateEventDto, req.user.id);
   }
 
   @Delete(':id')
   @UseGuards(SupabaseAuthGuard)
-  async deleteEvent(@Param('id') id: string): Promise<Event> {
-    return await this.deleted.softDeleteEvent(id);
+  async deleteEvent(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<Event> {
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+    return await this.deleted.softDeleteEvent(id, req.user.id);
   }
 }

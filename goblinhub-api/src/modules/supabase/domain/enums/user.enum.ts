@@ -3,3 +3,9 @@ export enum NivelExperiencia {
   intermedio = 'intermedio',
   veterano = 'veterano',
 }
+
+export enum RolUsuario {
+  admin = 'admin',
+  empleado = 'empleado',
+  jugador = 'jugador',
+}

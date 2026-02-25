@@ -20,7 +20,7 @@ export class SupabaseRegisterUserService {
   ) {}
 
   async register(dto: RegisterUserDto) {
-    // 1. Crear usuario en Supabase Auth
+    // 1. Create user in Supabase Auth
     const { data, error } = await this.supabase.auth.signUp({
       email: dto.email,
       password: dto.password,
@@ -28,13 +28,13 @@ export class SupabaseRegisterUserService {
 
     if (error || !data.user) {
       throw new BadRequestException(
-        error?.message ?? 'Error al crear el usuario en Supabase',
+        error?.message ?? 'Failed to create user in Supabase',
       );
     }
 
     const supabaseUserId = data.user.id;
 
-    // 2. Crear perfil en la tabla `usuarios` usando el mismo UUID
+    // 2. Create profile in `usuarios` table using the same UUID
     try {
       const usuario = await this.prisma.usuario.create({
         data: {
@@ -50,7 +50,7 @@ export class SupabaseRegisterUserService {
 
       return {
         success: true,
-        message: 'Usuario registrado exitosamente',
+        message: 'User registered successfully',
         user: {
           id: usuario.id_usuario,
           email: data.user.email,
@@ -63,15 +63,15 @@ export class SupabaseRegisterUserService {
         session: data.session,
       };
     } catch (prismaError) {
-      // Rollback: eliminar usuario de Supabase para evitar estado inconsistente
-      // NOTA: requiere SUPABASE_SERVICE_ROLE_KEY para usar auth.admin.deleteUser
+      // Rollback: delete user from Supabase to avoid inconsistent state
+      // NOTE: requires SUPABASE_SERVICE_ROLE_KEY to use auth.admin.deleteUser
       this.logger.error(
-        `Fallo al crear perfil en BD para el usuario ${supabaseUserId}. ` +
-          `El usuario fue creado en Supabase Auth. Rollback manual requerido.`,
+        `Failed to create profile in DB for user ${supabaseUserId}. ` +
+          `User was created in Supabase Auth. Manual rollback required.`,
         prismaError,
       );
       throw new InternalServerErrorException(
-        'Error al guardar el perfil del usuario. Por favor contacta soporte.',
+        'Failed to save user profile. Please contact support.',
       );
     }
   }

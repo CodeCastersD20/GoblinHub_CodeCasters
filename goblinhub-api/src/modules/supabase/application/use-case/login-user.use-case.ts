@@ -27,29 +27,28 @@ export class SupabaseCreateTestUserService {
         session: data.session,
         access_token: data.session.access_token,
         refreshToken: data.session.refresh_token,
-        message: 'Login exitoso',
+        message: 'Login successful',
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Error al hacer login');
+      throw new BadRequestException('Login failed');
     }
   }
 
   listAuthUsers() {
     try {
-      // Nota: Para listar usuarios necesitarías usar el Admin API
-      // Por ahora, este método es un placeholder
+      // Note: listing users requires the Admin API
+      // This method is a placeholder for now
       return {
         success: true,
-        message:
-          'Para ver todos los usuarios necesitas acceso admin a Supabase',
+        message: 'To see all users you need admin access to Supabase',
         instructions:
-          'Ve a tu panel de Supabase > Authentication > Users para ver los usuarios creados',
+          'Go to your Supabase dashboard > Authentication > Users to see created users',
       };
     } catch {
-      throw new BadRequestException('Error al obtener lista de usuarios');
+      throw new BadRequestException('Failed to retrieve user list');
     }
   }
 
@@ -60,7 +59,7 @@ export class SupabaseCreateTestUserService {
   //       email,
   //       password,
   //       options: {
-  //         // En modo testing, puedes confirmar automáticamente el email
+  //         // In testing mode, you can auto-confirm the email
   //         emailRedirectTo: undefined,
   //       },
   //     });
@@ -81,13 +80,13 @@ export class SupabaseCreateTestUserService {
   //         create_at: data.user.created_at,
   //       },
   //       session: data.session,
-  //       message: 'Usuario creado exitosamente',
+  //       message: 'User created successfully',
   //     };
   //   } catch (error) {
   //     if (error instanceof BadRequestException) {
   //       throw error;
   //     }
-  //     throw new BadRequestException('Error al crear usuario de prueba');
+  //     throw new BadRequestException('Error creating test user');
   //   }
   // }
 }

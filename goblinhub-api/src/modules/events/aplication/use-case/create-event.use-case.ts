@@ -1,14 +1,27 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { ForbiddenException, HttpException, Injectable } from '@nestjs/common';
 import { EventRepository } from '../../domain/repositories/event.repository';
 import { CreateEventDto } from '../dtos/create-event.dto';
 import { Event } from '../../domain/entities/event.entity';
 import { EventValidationStatus } from '../../domain/enums/event.enum';
+import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
+import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario.repository';
 
 @Injectable()
 export class CreateEventUseCase {
-  constructor(private Event: EventRepository) {}
+  constructor(
+    private Event: EventRepository,
+    private usuarios: UsuarioRepository,
+  ) {}
+
   async createEvent(data: CreateEventDto, id_creador: string): Promise<Event> {
     try {
+      const rol = await this.usuarios.findRolById(id_creador);
+
+      if (rol !== RolUsuario.admin && rol !== RolUsuario.empleado) {
+        throw new ForbiddenException(
+          'You do not have permission to create events',
+        );
+      }
       const existEvent = await this.Event.findByName(data.titulo);
 
       if (existEvent) {
@@ -52,7 +65,10 @@ export class CreateEventUseCase {
       );
       return this.Event.create(event, id_creador);
     } catch (error) {
-      if (error instanceof HttpException) {
+      if (
+        error instanceof HttpException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new HttpException(

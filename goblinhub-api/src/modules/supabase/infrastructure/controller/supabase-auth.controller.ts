@@ -19,7 +19,7 @@ import {
   RefreshTokenDto,
   RegisterUserDto,
   SignInTestuserDto,
-  validateTokenDto,
+  // validateTokenDto,
 } from '../../application/dto/auth.dto';
 import { SupabaseAuthGuard } from '../../guard/supabse-auth.guard';
 import type { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
@@ -40,12 +40,6 @@ export class SupabaseAuthController {
     return await this.registerUserService.register(registerUserDto);
   }
 
-  @Post('validate-token')
-  @HttpCode(HttpStatus.OK)
-  async validateToken(@Body() validateTokenDto: validateTokenDto) {
-    return await this.validationService.validtoken(validateTokenDto.token);
-  }
-
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
@@ -56,17 +50,17 @@ export class SupabaseAuthController {
   @UseGuards(SupabaseAuthGuard)
   async getProfile(@Request() req: AuthenticatedRequest) {
     if (!req.user) {
-      throw new UnauthorizedException('Usuario no autenticado');
+      throw new UnauthorizedException('User not authenticated');
     }
 
     const authHeader = req.headers.authorization;
     if (!authHeader || typeof authHeader !== 'string') {
-      throw new UnauthorizedException('Token no encontrado en el header');
+      throw new UnauthorizedException('Token not found in header');
     }
 
     const token = authHeader.split(' ')[1];
     if (!token) {
-      throw new UnauthorizedException('Token no encontrado');
+      throw new UnauthorizedException('Token not found');
     }
 
     return await this.getUserProfileService.getUserProfile(token);
@@ -76,13 +70,13 @@ export class SupabaseAuthController {
   @UseGuards(SupabaseAuthGuard)
   verifyToken(@Request() req: AuthenticatedRequest) {
     if (!req.user) {
-      throw new UnauthorizedException('Usuario no autenticado');
+      throw new UnauthorizedException('User not authenticated');
     }
 
     return {
       success: true,
       user: req.user,
-      message: 'Token valido y usuario autenticado',
+      message: 'Token valid and user authenticated',
     };
   }
 
@@ -103,4 +97,10 @@ export class SupabaseAuthController {
   //   listTestUsers() {
   //     return this.createTestUserService.listAuthUsers();
   //   }
+
+  // @Post('validate-token')
+  // @HttpCode(HttpStatus.OK)
+  // async validateToken(@Body() validateTokenDto: validateTokenDto) {
+  //   return await this.validationService.validtoken(validateTokenDto.token);
+  // }
 }
