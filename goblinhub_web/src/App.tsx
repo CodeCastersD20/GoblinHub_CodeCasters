@@ -7,7 +7,6 @@ function App() {
     <>
       <nav>
         <Link to="/eventos">Ir a Eventos</Link>
-        <Link to="/login">Iniciar Sesión</Link>
       </nav>
 
       <Routes>
