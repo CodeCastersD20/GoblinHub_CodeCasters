@@ -73,6 +73,7 @@ export class EventRepositoryPrisma extends EventRepository {
           e.puntos_premio_2 || undefined,
           e.puntos_premio_3 || undefined,
           e.puntos_participacion || undefined,
+          e.id_creador || undefined,
         ),
     );
   }
@@ -100,6 +101,7 @@ export class EventRepositoryPrisma extends EventRepository {
       evento.puntos_premio_2 || undefined,
       evento.puntos_premio_3 || undefined,
       evento.puntos_participacion || undefined,
+      evento.id_creador || undefined,
     );
   }
 
@@ -129,6 +131,7 @@ export class EventRepositoryPrisma extends EventRepository {
       evento.puntos_premio_2 || undefined,
       evento.puntos_premio_3 || undefined,
       evento.puntos_participacion || undefined,
+      evento.id_creador || undefined,
     );
   }
 
@@ -158,13 +161,17 @@ export class EventRepositoryPrisma extends EventRepository {
           e.puntos_premio_2 || undefined,
           e.puntos_premio_3 || undefined,
           e.puntos_participacion || undefined,
+          e.id_creador || undefined,
         ),
     );
   }
 
   async update(id: string, event: Event): Promise<Event> {
     const updated = await this.prisma.evento.update({
-      where: { id_evento: id },
+      where: {
+        id_evento: id,
+        deleted_at: null,
+      },
       data: {
         titulo: event.titulo,
         descripcion: event.descripcion,
@@ -199,12 +206,15 @@ export class EventRepositoryPrisma extends EventRepository {
       updated.puntos_premio_2 || undefined,
       updated.puntos_premio_3 || undefined,
       updated.puntos_participacion || undefined,
+      updated.id_creador || undefined,
     );
   }
 
   async delete(id: string): Promise<Event> {
     const deleted = await this.prisma.evento.update({
-      where: { id_evento: id },
+      where: {
+        id_evento: id,
+      },
       data: { deleted_at: new Date() },
     });
 
@@ -224,6 +234,7 @@ export class EventRepositoryPrisma extends EventRepository {
       deleted.puntos_premio_2 || undefined,
       deleted.puntos_premio_3 || undefined,
       deleted.puntos_participacion || undefined,
+      deleted.id_creador || undefined,
     );
   }
 

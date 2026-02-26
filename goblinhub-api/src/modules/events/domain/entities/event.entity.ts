@@ -17,5 +17,6 @@ export class Event {
     public puntos_premio_2?: number,
     public puntos_premio_3?: number,
     public puntos_participacion?: number,
+    public id_creador?: string,
   ) {}
 }
