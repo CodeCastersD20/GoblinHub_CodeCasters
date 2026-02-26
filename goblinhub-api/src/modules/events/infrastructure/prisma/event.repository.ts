@@ -240,16 +240,16 @@ export class EventRepositoryPrisma extends EventRepository {
 
   async expireEvents(): Promise<number> {
     const now = new Date();
+    // Start of today (midnight) to compare only against the event date
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Soft-delete events where hora_fin has passed,
-    // or where hora_inicio has passed when hora_fin is not set.
+    // Soft-delete events whose fecha (event day) is strictly in the past.
+    // hora_inicio/hora_fin are stored as time-only values with a 1970 epoch
+    // date, so they cannot be used directly for expiration comparison.
     const result = await this.prisma.evento.updateMany({
       where: {
         deleted_at: null,
-        OR: [
-          { hora_fin: { lte: now } },
-          { hora_fin: null, hora_inicio: { lte: now } },
-        ],
+        fecha: { lt: today },
       },
       data: { deleted_at: now },
     });

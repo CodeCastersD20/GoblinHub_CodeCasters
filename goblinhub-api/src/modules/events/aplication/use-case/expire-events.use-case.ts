@@ -8,7 +8,7 @@ export class ExpireEventsUseCase {
   constructor(private readonly eventRepository: EventRepository) {}
 
   async execute(): Promise<void> {
-    const count = await this.eventRepository.expireEvents();
+    const count: number = await this.eventRepository.expireEvents();
 
     if (count > 0) {
       this.logger.log(`Soft-deleted ${count} expired event(s).`);
