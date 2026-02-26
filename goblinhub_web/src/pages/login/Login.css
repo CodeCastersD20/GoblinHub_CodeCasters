@@ -1,0 +1,72 @@
+.base{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+}
+
+.goblin{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 190px;
+}
+
+.logo{
+    display: flex;
+    justify-content: center; 
+    align-items: center;
+    background-color:  rgb(235, 200, 219);
+    height: 100%;
+    max-width: 70vw;
+    flex: 1;
+}
+
+.form{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(76, 9, 137);
+    max-width: 30vw;
+    height: 100%;
+    flex: 1;
+}
+
+.inicio{
+    font-size: 40px;
+    color: white;
+    margin-bottom: 20px;
+}
+
+input{
+    margin: 15px;
+    height: 30px;
+    width: 80%;
+}
+
+a{
+    color: rgb(235, 200, 219);
+    text-decoration: none;
+    margin: 10px;
+}
+
+p{
+    color: white;
+    font-size: 20px;
+    margin: 10px;
+}
+
+.entrar{
+    color: white;
+    background-color: rgba(184, 188, 16);
+    margin: 10px;
+    font-size: 20px;
+    height: 40px;
+    width: 40%;
+    border: none;
+    border-radius: 5px;
+}
