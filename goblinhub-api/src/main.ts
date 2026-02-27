@@ -9,6 +9,33 @@ async function bootstrap() {
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
+
+      // CSP básica para APIs
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          connectSrc: ["'self'", 'https:'],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+        },
+      },
+
+      // Referrer policy (Observatory lo pide)
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+
+      // HSTS (solo en producción)
+      strictTransportSecurity: {
+        maxAge: 15552000,
+        includeSubDomains: true,
+        preload: false,
+      },
+
+      // Frame protection
+      frameguard: { action: 'deny' },
+
+      // MIME sniff protection
+      noSniff: true,
     }),
   );
 
