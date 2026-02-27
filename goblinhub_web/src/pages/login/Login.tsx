@@ -7,8 +7,8 @@ const Login: React.FC = () => {
     const [forgotPassword, setForgotPassword] = useState(false)
 
     return (
-        <div className="base">
-            <div className='logo'>
+        <div className="base-login">
+            <div className='logo-login'>
                 {forgotPassword && (
                     <span
                         className="volver"
@@ -17,13 +17,13 @@ const Login: React.FC = () => {
                         ← Volver al login
                     </span>
                 )}
-                <img src={logo} alt="goblin" className="goblin" />
+                <img src={logo} alt="goblin" className="goblin-login" />
             </div>
 
             {!forgotPassword ? (
                 // ——— VISTA LOGIN ———
-                <div className='form'>
-                    <label className="inicio">Iniciar sesión</label>
+                <div className='form-login'>
+                    <label className="inicio-sesion">Iniciar sesión</label>
                     <input type="text" placeholder="Correo electrónico" />
                     <input type="password" placeholder="Contraseña" />
                     <span
@@ -38,8 +38,8 @@ const Login: React.FC = () => {
                 </div>
             ) : (
                 // ——— VISTA RECUPERAR CONTRASEÑA ———
-                <div className='form'>
-                    <label className="inicio">Recuperar Contraseña</label>
+                <div className='form-login'>
+                    <label className="inicio-sesion">Recuperar Contraseña</label>
                     <label className="instrucciones">Ingresa tu correo electrónico y te enviaremos un código para restablecer tu contraseña.</label>
                     <input type="text" placeholder="Correo electrónico" />
                     <div className="botones">

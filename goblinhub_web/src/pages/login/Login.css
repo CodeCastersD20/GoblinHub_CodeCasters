@@ -1,4 +1,4 @@
-.base{
+.base-login {
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -8,7 +8,7 @@
     margin: 0;
 }
 
-.goblin {
+.goblin-login {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -18,7 +18,7 @@
     box-shadow: 10px 10px rgb(76, 9, 137);
 }
 
-.logo {
+.logo-login {
     display: flex;
     justify-content: center; 
     align-items: center;
@@ -41,7 +41,7 @@
     margin: 15px;
 }
 
-.form{
+.form-login {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -52,7 +52,7 @@
     flex: 1;
 }
 
-.inicio{
+.inicio-sesion{
     font-size: 40px;
     color: white;
     margin: 20px;
