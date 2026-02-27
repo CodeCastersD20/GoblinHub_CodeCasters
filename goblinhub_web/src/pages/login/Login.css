@@ -16,7 +16,16 @@
     background-color: ghostwhite;
     border-radius: 10px;
     box-shadow: 10px 10px rgb(76, 9, 137);
+    animation: flotando 5s ease-in-out infinite;
 }
+
+
+@keyframes flotando {
+    0%   { transform: translateY(0px);    box-shadow: 10px 10px rgb(76, 9, 137); }
+    50%  { transform: translateY(-15px);  box-shadow: 15px 25px rgb(76, 9, 137); }
+    100% { transform: translateY(0px);    box-shadow: 10px 10px rgb(76, 9, 137); }
+}
+
 
 .logo-login {
     display: flex;
