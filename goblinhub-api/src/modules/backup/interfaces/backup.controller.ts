@@ -9,10 +9,14 @@ import {
 } from '@nestjs/common';
 import { BackupService } from '../backup.service';
 import { SupabaseAuthGuard } from '../../supabase/guard/supabse-auth.guard';
+import { RolesGuard } from '../../supabase/guard/roles.guard';
+import { Roles } from '../../supabase/guard/roles.decorator';
+import { RolUsuario } from '../../supabase/domain/enums/user.enum';
 import { RestoreBackupDto } from '../dto/restore-backup.dto';
 
 @Controller('backup')
-@UseGuards(SupabaseAuthGuard) // Todas las rutas requieren autenticación
+@UseGuards(SupabaseAuthGuard, RolesGuard) // Requiere JWT válido + rol admin
+@Roles(RolUsuario.admin)
 export class BackupController {
   constructor(private readonly backupService: BackupService) {}
 
