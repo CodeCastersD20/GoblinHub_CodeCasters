@@ -1,0 +1,220 @@
+/* =============================================
+   NAV — Estilos
+   Archivo: Nav.css
+   ============================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Nunito:wght@400;600;700&display=swap");
+
+/* ---------- Variables ---------- */
+:root {
+  --nav-bg: #f5f0e8;
+  --nav-border: #c084fc;
+  --nav-shadow: 0 2px 16px rgba(107, 33, 168, 0.10);
+  --nav-height: 68px;
+
+  --nav-purple: #6b21a8;
+  --nav-purple-hover: #4c1d95;
+
+  --nav-profile-bg: #ede9fe;
+  --nav-profile-color: #6b21a8;
+  --nav-profile-hover-bg: #d8b4fe;
+  --nav-profile-active-bg: #c084fc;
+
+  --nav-dropdown-bg: #ffffff;
+  --nav-dropdown-shadow: 0 8px 32px rgba(107, 33, 168, 0.15);
+  --nav-dropdown-border: #e9d5ff;
+  --nav-dropdown-hover: #f5f0e8;
+  --nav-dropdown-danger: #dc2626;
+  --nav-dropdown-danger-hover: #fef2f2;
+
+  --nav-font: "Nunito", sans-serif;
+}
+
+/* ---------- Contenedor principal ---------- */
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--nav-bg);
+  border-bottom: 2px solid var(--nav-border);
+  box-shadow: var(--nav-shadow);
+  height: var(--nav-height);
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  font-family: var(--nav-font);
+}
+
+/* ---------- Logo ---------- */
+.Logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.goblin {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+/* ---------- Botones de navegación ---------- */
+.botones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.botones .custom-button,
+.botones a .custom-button {
+  background-color: transparent;
+  color: var(--nav-purple);
+  font-family: var(--nav-font);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+
+.botones a {
+  text-decoration: none;
+}
+
+/* ---------- Wrapper del perfil (posición relativa para el dropdown) ---------- */
+.usuario-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ---------- Ícono de perfil ---------- */
+.usuario {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--nav-profile-bg);
+  color: var(--nav-profile-color);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  border: 2px solid var(--nav-border);
+}
+
+.usuario::before {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 18px;
+  background-color: var(--nav-profile-color);
+  border-radius: 50%;
+  clip-path: path(
+    "M9 0a4 4 0 1 1 0 8A4 4 0 0 1 9 0zm0 10c-5 0-9 2.2-9 5v1h18v-1c0-2.8-4-5-9-5z"
+  );
+  transform: scale(0.9);
+}
+
+
+
+/* ---------- Dropdown ---------- */
+.usuario-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background-color: var(--nav-dropdown-bg);
+  border: 1.5px solid var(--nav-dropdown-border);
+  border-radius: 12px;
+  box-shadow: var(--nav-dropdown-shadow);
+  min-width: 180px;
+  padding: 6px;
+  z-index: 200;
+
+
+/* ---------- Items del dropdown ---------- */
+.usuario-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-family: var(--nav-font);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nav-purple);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.usuario-dropdown__item:hover {
+  background-color: var(--nav-dropdown-hover);
+  color: var(--nav-purple-hover);
+}
+
+.usuario-dropdown__item--danger {
+  color: var(--nav-dropdown-danger);
+}
+
+.usuario-dropdown__item--danger:hover {
+  background-color: var(--nav-dropdown-danger-hover);
+  color: var(--nav-dropdown-danger);
+}
+
+.usuario-dropdown__icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ---------- Separador ---------- */
+.usuario-dropdown__divider {
+  height: 1px;
+  background-color: var(--nav-dropdown-border);
+  margin: 4px 6px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .logo-container {
+    padding: 0 16px;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .botones {
+    position: static;
+    transform: none;
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .Logo {
+    order: 1;
+  }
+
+  .usuario-wrapper {
+    order: 2;
+  }
+
+  .usuario-dropdown {
+    right: 0;
+  }
+}
+}
