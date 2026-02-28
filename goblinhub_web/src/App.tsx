@@ -1,22 +1,21 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import Nav from "./layouts/navbar/navbar";
+
+import Home from "./pages/Home";
+import Products from "./pages/products/products";
+import AboutUs from "./pages/aboutUs/aboutUs";
 import CalendarioAventuras from "./pages/Events/main";
-import Login from "./pages/login/Login";
-import RegisterFlow from "./pages/register/RegisterFlow";
-import MainLayout from "./layouts/mainLayout";
 
 function App() {
   return (
     <>
-      <nav>
-        <Link to="/eventos">Ir a Eventos</Link>
-      </nav>
+      <Nav />
 
       <Routes>
-        <Route element={<MainLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/productos" element={<Products />} />
+        <Route path="/contacto" element={<AboutUs />} />
         <Route path="/eventos" element={<CalendarioAventuras />} />
-      </Route>
-      <Route path="/register" element={<RegisterFlow />} />
-        <Route path="/login" element={<Login />} />
       </Routes>
     </>
   );
