@@ -20,7 +20,7 @@ interface ApiEvent {
   hora_inicio: string;
   hora_fin?: string;
   lugar: string;
-  costo?: number;
+  costo?: number | null;
   cupo_maximo: number;
   sistema_juego?: string;
 }
@@ -52,7 +52,11 @@ const TIPO_MAP: Record<
 };
 
 function formatFecha(isoDate: string): string {
-  const date = new Date(isoDate + "T00:00:00");
+  // Extraer solo la parte de fecha (YYYY-MM-DD) sin importar si viene con timestamp
+  const datePart = isoDate.includes("T") ? isoDate.split("T")[0] : isoDate;
+  const [year, month, day] = datePart.split("-").map(Number);
+  // Construir con hora local para evitar desfase de zona horaria
+  const date = new Date(year, month - 1, day);
   return date
     .toLocaleDateString("es-ES", {
       weekday: "long",
@@ -62,14 +66,26 @@ function formatFecha(isoDate: string): string {
     .replace(/^\w/, (c) => c.toUpperCase());
 }
 
+// Prisma almacena los campos Time como DateTime con fecha epoch (1970-01-01T17:00:00.000Z)
+// Esta función extrae solo HH:MM sin importar el formato que llegue
+function formatHora(isoTime: string): string {
+  if (!isoTime) return "";
+  if (isoTime.includes("T")) {
+    // Timestamp completo → extraer HH:MM en UTC (la fecha epoch es solo artefacto de Prisma)
+    return isoTime.substring(11, 16);
+  }
+  // Ya es un string de tiempo como "17:00:00" o "17:00"
+  return isoTime.substring(0, 5);
+}
+
 function mapApiEvent(e: ApiEvent): EventCard {
   const { tipo, tipoLabel, icono } =
     TIPO_MAP[e.tipo_evento] ?? TIPO_MAP.especial;
   return {
     id: e.id,
     fecha: formatFecha(e.fecha),
-    horaInicio: e.hora_inicio,
-    horaFin: e.hora_fin,
+    horaInicio: formatHora(e.hora_inicio),
+    horaFin: e.hora_fin ? formatHora(e.hora_fin) : undefined,
     lugar: e.lugar,
     icono,
     titulo: e.titulo,
@@ -77,7 +93,8 @@ function mapApiEvent(e: ApiEvent): EventCard {
     tipoLabel,
     descripcion: e.descripcion ?? "Sin descripción.",
     cupoMaximo: e.cupo_maximo,
-    costo: e.costo,
+    // null de Prisma = sin costo asignado, lo tratamos como 0 (GRATIS)
+    costo: e.costo ?? 0,
   };
 }
 
@@ -139,9 +156,14 @@ const CalendarioAventuras: React.FC = () => {
                 </span>
                 <span>📍 {evento.lugar}</span>
                 <span>👥 Cupo: {evento.cupoMaximo}</span>
-                {evento.costo !== undefined && evento.costo > 0 && (
-                  <span>💰 ${evento.costo}</span>
-                )}
+                {evento.costo !== undefined &&
+                  (evento.costo === 0 ? (
+                    <span style={{ color: "#dc2626", fontWeight: 700 }}>
+                      🎉 ¡GRATIS!
+                    </span>
+                  ) : (
+                    <span>💰 ${evento.costo}</span>
+                  ))}
               </div>
               <Button
                 variant="secondary"
