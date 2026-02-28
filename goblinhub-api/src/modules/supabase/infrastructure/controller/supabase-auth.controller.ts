@@ -14,6 +14,7 @@ import { SupabaseRefreshTokenService } from '../../application/use-case/refreshT
 import { SupabaseGetUserProfileService } from '../../application/use-case/getUserProfile.use-case';
 import { SupabaseCreateTestUserService } from '../../application/use-case/login-user.use-case';
 import { SupabaseRegisterUserService } from '../../application/use-case/register-user.use-case';
+import { GetMeUseCase } from '../../application/use-case/getMe.use-case';
 import {
   //   CreateTesruserDto,
   RefreshTokenDto,
@@ -32,6 +33,7 @@ export class SupabaseAuthController {
     private readonly getUserProfileService: SupabaseGetUserProfileService,
     private readonly createTestUserService: SupabaseCreateTestUserService,
     private readonly registerUserService: SupabaseRegisterUserService,
+    private readonly getMeUseCase: GetMeUseCase,
   ) {}
 
   @Post('signup')
@@ -64,6 +66,15 @@ export class SupabaseAuthController {
     }
 
     return await this.getUserProfileService.getUserProfile(token);
+  }
+
+  @Get('me')
+  @UseGuards(SupabaseAuthGuard)
+  async getMe(@Request() req: AuthenticatedRequest) {
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+    const id: string = req.user.id;
+    const email: string | undefined = req.user.email;
+    return this.getMeUseCase.execute(id, email);
   }
 
   @Get('verify')
