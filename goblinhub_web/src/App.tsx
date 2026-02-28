@@ -7,7 +7,6 @@ import AboutUs from "./pages/aboutUs/aboutUs";
 import CalendarioAventuras from "./pages/Events/main";
 import Login from "./pages/login/Login";
 import RegisterFlow from "./pages/register/RegisterFlow";
-import MainLayout from "./layouts/mainLayout";
 import AuthHome from "./pages/Home/Home";
 
 function App() {
@@ -20,9 +19,7 @@ function App() {
         <Route path="/auth-home" element={<AuthHome />} />
         <Route path="/productos" element={<Products />} />
         <Route path="/contacto" element={<AboutUs />} />
-        <Route element={<MainLayout />}>
-          <Route path="/eventos" element={<CalendarioAventuras />} />
-        </Route>
+        <Route path="/eventos" element={<CalendarioAventuras />} />
         <Route path="/register" element={<RegisterFlow />} />
         <Route path="/login" element={<Login />} />
       </Routes>

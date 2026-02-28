@@ -24,9 +24,18 @@
   --ca-date-torneo-text: #4c1d95;
   --ca-date-workshop-bg: #fce7f3;
   --ca-date-workshop-text: #831843;
+  --ca-date-iniciacion-bg: #dcfce7;
+  --ca-date-iniciacion-text: #14532d;
+  --ca-date-rol-bg: #fef3c7;
+  --ca-date-rol-text: #78350f;
+  --ca-date-especial-bg: #fefce8;
+  --ca-date-especial-text: #713f12;
 
   --ca-type-torneo: #d97706;
   --ca-type-workshop: #7c3aed;
+  --ca-type-iniciacion: #16a34a;
+  --ca-type-rol: #b45309;
+  --ca-type-especial: #ca8a04;
 
   --ca-text-main: #1c1917;
   --ca-text-muted: #57534e;
@@ -149,7 +158,9 @@
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
 }
 
 .custom-button.ca-btn--nav:hover {
@@ -177,7 +188,9 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .ca-card:hover {
@@ -206,6 +219,21 @@
 .ca-card__date--workshop {
   background-color: var(--ca-date-workshop-bg);
   color: var(--ca-date-workshop-text);
+}
+
+.ca-card__date--iniciacion {
+  background-color: var(--ca-date-iniciacion-bg);
+  color: var(--ca-date-iniciacion-text);
+}
+
+.ca-card__date--rol {
+  background-color: var(--ca-date-rol-bg);
+  color: var(--ca-date-rol-text);
+}
+
+.ca-card__date--especial {
+  background-color: var(--ca-date-especial-bg);
+  color: var(--ca-date-especial-text);
 }
 
 .ca-card__date-icon {
@@ -239,6 +267,18 @@
   color: var(--ca-type-workshop);
 }
 
+.ca-card__type--iniciacion {
+  color: var(--ca-type-iniciacion);
+}
+
+.ca-card__type--rol {
+  color: var(--ca-type-rol);
+}
+
+.ca-card__type--especial {
+  color: var(--ca-type-especial);
+}
+
 /* ---------- Descripción ---------- */
 .ca-card__desc {
   font-family: var(--ca-font-body);
@@ -246,6 +286,30 @@
   color: var(--ca-text-muted);
   line-height: 1.6;
   flex-grow: 1;
+}
+
+/* ---------- Meta info (hora, lugar, cupo) ---------- */
+.ca-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--ca-font-body);
+  font-size: 13px;
+  color: var(--ca-text-muted);
+}
+
+/* ---------- Estado de carga / error ---------- */
+.ca-state-msg {
+  font-family: var(--ca-font-body);
+  font-size: 15px;
+  color: var(--ca-text-muted);
+  text-align: center;
+  padding: 24px 0;
+  width: 100%;
+}
+
+.ca-state-msg--error {
+  color: #dc2626;
 }
 
 /* ---------- Botón Inscribirse ---------- */
@@ -262,7 +326,9 @@
   cursor: pointer;
   width: fit-content;
   margin-top: 4px;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
 }
 
 .custom-button.ca-btn--inscribirse:hover {
