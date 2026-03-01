@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/connect/prisma.service';
+import { PrismaService } from '../../../../connect/prisma.service';
 import { Event } from '../../domain/entities/event.entity';
 import { EventMapper } from '../mappers/event-status.mapper';
 import { EventRepository } from '../../domain/repositories/event.repository';
@@ -240,12 +240,8 @@ export class EventRepositoryPrisma extends EventRepository {
 
   async expireEvents(): Promise<number> {
     const now = new Date();
-    // Start of today (midnight) to compare only against the event date
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Soft-delete events whose fecha (event day) is strictly in the past.
-    // hora_inicio/hora_fin are stored as time-only values with a 1970 epoch
-    // date, so they cannot be used directly for expiration comparison.
     const result = await this.prisma.evento.updateMany({
       where: {
         deleted_at: null,

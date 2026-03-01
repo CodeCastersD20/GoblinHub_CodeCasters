@@ -65,10 +65,7 @@ export class CreateEventUseCase {
       );
       return this.Event.create(event, id_creador);
     } catch (error) {
-      if (
-        error instanceof HttpException ||
-        error instanceof ForbiddenException
-      ) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new HttpException(
