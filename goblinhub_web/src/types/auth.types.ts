@@ -19,4 +19,6 @@ export interface MeResponseDto {
   email: string;
   nombre: string;
   rol: "admin" | "empleado" | "jugador";
+  nivel_experiencia?: "novato" | "intermedio" | "veterano";
+  puntos_fidelidad?: number;
 }
