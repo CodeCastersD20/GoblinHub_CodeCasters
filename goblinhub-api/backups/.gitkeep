@@ -1,0 +1,3 @@
+# Los archivos de backup generados son ignorados por git.
+# Solo se versiona este archivo .gitkeep para mantener la carpeta en el repositorio.
+# Los backups pueden contener datos sensibles y no deben subirse al repositorio.
