@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/button/button";
-import "./Navbar.css";
+import "./navbar.css";
 
 function Nav() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -10,7 +10,10 @@ function Nav() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -30,12 +33,11 @@ function Nav() {
 
   return (
     <div className="logo-container">
-
       <div className="Logo">
-        <img src={"/logo.png"} alt="goblin" className="goblin" />
+        <img src={"/logo.png"} alt="goblin" className="nav-goblin" />
       </div>
 
-      <div className="botones">
+      <div className="nav-botones">
         <Link to="/">
           <Button className="secondary">Inicio</Button>
         </Link>
@@ -74,7 +76,6 @@ function Nav() {
           </div>
         )}
       </div>
-
     </div>
   );
 }

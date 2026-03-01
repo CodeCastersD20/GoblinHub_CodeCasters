@@ -9,7 +9,7 @@
 :root {
   --nav-bg: #f5f0e8;
   --nav-border: #c084fc;
-  --nav-shadow: 0 2px 16px rgba(107, 33, 168, 0.10);
+  --nav-shadow: 0 2px 16px rgba(107, 33, 168, 0.1);
   --nav-height: 68px;
 
   --nav-purple: #6b21a8;
@@ -53,7 +53,7 @@
   flex-shrink: 0;
 }
 
-.goblin {
+.nav-goblin {
   height: 44px;
   width: auto;
   object-fit: contain;
@@ -61,17 +61,16 @@
 }
 
 /* ---------- Botones de navegación ---------- */
-.botones {
+.nav-botones {
   display: flex;
   align-items: center;
   gap: 6px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  flex: 1;
+  justify-content: center;
 }
 
-.botones .custom-button,
-.botones a .custom-button {
+.nav-botones .custom-button,
+.nav-botones a .custom-button {
   background-color: transparent;
   color: var(--nav-purple);
   font-family: var(--nav-font);
@@ -81,11 +80,12 @@
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
-
-.botones a {
+.nav-botones a {
   text-decoration: none;
 }
 
@@ -106,7 +106,9 @@
   background-color: var(--nav-profile-bg);
   color: var(--nav-profile-color);
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
   border: 2px solid var(--nav-border);
 }
 
@@ -123,8 +125,6 @@
   transform: scale(0.9);
 }
 
-
-
 /* ---------- Dropdown ---------- */
 .usuario-dropdown {
   position: absolute;
@@ -138,50 +138,52 @@
   padding: 6px;
   z-index: 200;
 
+  /* ---------- Items del dropdown ---------- */
+  .usuario-dropdown__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-family: var(--nav-font);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nav-purple);
+    cursor: pointer;
+    text-align: left;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
 
-/* ---------- Items del dropdown ---------- */
-.usuario-dropdown__item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 14px;
-  border: none;
-  background: transparent;
-  border-radius: 8px;
-  font-family: var(--nav-font);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--nav-purple);
-  cursor: pointer;
-  text-align: left;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
+  .usuario-dropdown__item:hover {
+    background-color: var(--nav-dropdown-hover);
+    color: var(--nav-purple-hover);
+  }
 
-.usuario-dropdown__item:hover {
-  background-color: var(--nav-dropdown-hover);
-  color: var(--nav-purple-hover);
-}
+  .usuario-dropdown__item--danger {
+    color: var(--nav-dropdown-danger);
+  }
 
-.usuario-dropdown__item--danger {
-  color: var(--nav-dropdown-danger);
-}
+  .usuario-dropdown__item--danger:hover {
+    background-color: var(--nav-dropdown-danger-hover);
+    color: var(--nav-dropdown-danger);
+  }
 
-.usuario-dropdown__item--danger:hover {
-  background-color: var(--nav-dropdown-danger-hover);
-  color: var(--nav-dropdown-danger);
-}
+  .usuario-dropdown__icon {
+    font-size: 15px;
+    line-height: 1;
+  }
 
-.usuario-dropdown__icon {
-  font-size: 15px;
-  line-height: 1;
-}
-
-/* ---------- Separador ---------- */
-.usuario-dropdown__divider {
-  height: 1px;
-  background-color: var(--nav-dropdown-border);
-  margin: 4px 6px;
+  /* ---------- Separador ---------- */
+  .usuario-dropdown__divider {
+    height: 1px;
+    background-color: var(--nav-dropdown-border);
+    margin: 4px 6px;
+  }
 }
 
 /* ---------- Responsive ---------- */
@@ -195,9 +197,7 @@
     padding-bottom: 12px;
   }
 
-  .botones {
-    position: static;
-    transform: none;
+  .nav-botones {
     order: 3;
     width: 100%;
     justify-content: center;
@@ -216,5 +216,4 @@
   .usuario-dropdown {
     right: 0;
   }
-}
 }
