@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
 // --- Controllers ---
-import { RewardController } from './interfaces/controllers/event.controller';
+import { RewardController } from './interfaces/controllers/reward.controller';
 
 // --- Use Cases ---
 import { CreateRewardUseCase } from './aplication/use-case/create-reward.use-case';
