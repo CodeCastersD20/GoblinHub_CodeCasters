@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "../../components/button/button";
 import api from "../../lib/api";
 import "./Event.css";
@@ -93,7 +94,6 @@ function mapApiEvent(e: ApiEvent): EventCard {
     tipoLabel,
     descripcion: e.descripcion ?? "Sin descripción.",
     cupoMaximo: e.cupo_maximo,
-    // null de Prisma = sin costo asignado, lo tratamos como 0 (GRATIS)
     costo: e.costo ?? 0,
   };
 }
@@ -103,6 +103,7 @@ const CalendarioAventuras: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mesActual] = useState("Febrero 2026");
+  const navigate = useNavigate();
 
   useEffect(() => {
     api
@@ -113,7 +114,11 @@ const CalendarioAventuras: React.FC = () => {
   }, []);
 
   const handleInscribirse = (eventoId: string) => {
-    console.log("Inscribirse en evento:", eventoId);
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return;
+    }
+    navigate(`/eventos/${eventoId}`);
   };
 
   return (
@@ -158,9 +163,7 @@ const CalendarioAventuras: React.FC = () => {
                 <span>👥 Cupo: {evento.cupoMaximo}</span>
                 {evento.costo !== undefined &&
                   (evento.costo === 0 ? (
-                    <span style={{ color: "#dc2626", fontWeight: 700 }}>
-                      🎉 ¡GRATIS!
-                    </span>
+                    <span className="ca-card__costo--gratis">🎉 ¡GRATIS!</span>
                   ) : (
                     <span>💰 ${evento.costo}</span>
                   ))}
