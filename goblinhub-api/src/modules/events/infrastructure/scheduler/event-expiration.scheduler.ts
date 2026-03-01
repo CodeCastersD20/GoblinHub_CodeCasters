@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { ExpireEventsUseCase } from '../../aplication/use-case/expire-events.use-case';
+import { ExpireEventsUseCase } from '../../application/use-case/expire-events.use-case';
 
 @Injectable()
 export class EventExpirationScheduler {

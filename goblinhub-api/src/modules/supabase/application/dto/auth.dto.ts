@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { NivelExperiencia } from '../../domain/enums/user.enum';
 
-export class validateTokenDto {
+export class ValidateTokenDto {
   @IsString()
   token: string;
 }
@@ -31,6 +31,15 @@ export class SignInTestuserDto {
   email: string;
 
   @IsString()
+  password: string;
+}
+
+export class SignInDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(6)
   password: string;
 }
 
