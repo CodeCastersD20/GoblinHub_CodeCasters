@@ -12,6 +12,7 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 // --- Use Cases ---
 import { CreateRewardUseCase } from '../../aplication/use-case/create-reward.use-case';
@@ -28,6 +29,7 @@ import { UpdateRecompensaDto } from '../../aplication/dtos/update-reward.dto';
 import { SupabaseAuthGuard } from '../../../supabase/guard/supabse-auth.guard';
 import type { AuthenticatedRequest } from '../../../supabase/interfaces/types/authenticated-request.interface';
 
+@ApiTags('rewards') // Agrupa en Swagger
 @Controller('rewards')
 export class RewardController {
   constructor(
@@ -38,6 +40,8 @@ export class RewardController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'Listar todas las recompensas o buscar por nombre' })
+  @ApiQuery({ name: 'name', required: false, description: 'Nombre de la recompensa para filtrar' })
   async getAll(@Query('name') name?: string): Promise<Recompensa | Recompensa[]> {
     if (name) {
       return await this.getUseCase.getByNameReward(name);
@@ -46,12 +50,18 @@ export class RewardController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Obtener una recompensa por ID' })
+  @ApiParam({ name: 'id', description: 'ID numérico de la recompensa', example: 1 })
   async getById(@Param('id', ParseIntPipe) id: number): Promise<Recompensa> {
     return await this.getUseCase.getByIdReward(id);
   }
 
   @Post()
   @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth() // Muestra el candado en Swagger
+  @ApiOperation({ summary: 'Crear una nueva recompensa (Requiere Auth)' })
+  @ApiResponse({ status: 201, description: 'Recompensa creada exitosamente.' })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
   async createReward(
     @Body() createRewardDto: CreateRecompensaDto,
     @Request() req: AuthenticatedRequest,
@@ -63,6 +73,9 @@ export class RewardController {
 
   @Patch(':id')
   @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar una recompensa (Requiere Auth)' })
+  @ApiParam({ name: 'id', example: 1 })
   async updateReward(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateRewardDto: UpdateRecompensaDto,
@@ -75,6 +88,10 @@ export class RewardController {
 
   @Delete(':id')
   @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Eliminar (Soft Delete) una recompensa' })
+  @ApiParam({ name: 'id', example: 1 })
+  @ApiResponse({ status: 200, description: 'Recompensa eliminada correctamente.' })
   async deleteReward(
     @Param('id', ParseIntPipe) id: number,
     @Request() req: AuthenticatedRequest,
