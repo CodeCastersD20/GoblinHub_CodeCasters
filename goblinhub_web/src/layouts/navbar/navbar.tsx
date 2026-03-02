@@ -1,12 +1,23 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/button/button";
+import { getMe, logout } from "../../services/auth.service";
 import "./navbar.css";
 
 function Nav() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [nombreUsuario, setNombreUsuario] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Cargar nombre del usuario si hay sesión activa
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    getMe()
+      .then((res) => setNombreUsuario(res.data.nombre))
+      .catch(() => setNombreUsuario(null));
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -28,8 +39,12 @@ function Nav() {
 
   const handleCerrarSesion = () => {
     setDropdownOpen(false);
-    console.log("Cerrando sesión...");
+    logout();
+    setNombreUsuario(null);
+    navigate("/login");
   };
+
+  const isLoggedIn = !!localStorage.getItem("token");
 
   return (
     <div className="logo-container">
@@ -52,30 +67,44 @@ function Nav() {
         </Link>
       </div>
 
-      <div className="usuario-wrapper" ref={dropdownRef}>
-        <div
-          className={`usuario ${dropdownOpen ? "usuario--active" : ""}`}
-          title="Mi perfil"
-          onClick={() => setDropdownOpen((prev) => !prev)}
-        />
-
-        {dropdownOpen && (
-          <div className="usuario-dropdown">
-            <button className="usuario-dropdown__item" onClick={handlePerfil}>
-              <span className="usuario-dropdown__icon">👤</span>
-              Mi perfil
-            </button>
-            <div className="usuario-dropdown__divider" />
-            <button
-              className="usuario-dropdown__item usuario-dropdown__item--danger"
-              onClick={handleCerrarSesion}
-            >
-              <span className="usuario-dropdown__icon">🚪</span>
-              Cerrar sesión
-            </button>
+      {isLoggedIn ? (
+        <div className="usuario-wrapper" ref={dropdownRef}>
+          <div
+            className={`usuario ${dropdownOpen ? "usuario--active" : ""}`}
+            title={nombreUsuario ?? "Mi perfil"}
+            onClick={() => setDropdownOpen((prev) => !prev)}
+          >
+            {nombreUsuario && (
+              <span className="usuario__nombre">
+                {nombreUsuario.split(" ")[0]}
+              </span>
+            )}
           </div>
-        )}
-      </div>
+
+          {dropdownOpen && (
+            <div className="usuario-dropdown">
+              <button className="usuario-dropdown__item" onClick={handlePerfil}>
+                <span className="usuario-dropdown__icon">👤</span>
+                Mi perfil
+              </button>
+              <div className="usuario-dropdown__divider" />
+              <button
+                className="usuario-dropdown__item usuario-dropdown__item--danger"
+                onClick={handleCerrarSesion}
+              >
+                <span className="usuario-dropdown__icon">🚪</span>
+                Cerrar sesión
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <Link to="/login">
+          <Button variant="primary" className="nav-btn--login">
+            Iniciar sesión
+          </Button>
+        </Link>
+      )}
     </div>
   );
 }

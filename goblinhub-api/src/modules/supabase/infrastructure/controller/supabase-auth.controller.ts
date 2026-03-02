@@ -15,12 +15,12 @@ import { SupabaseGetUserProfileService } from '../../application/use-case/getUse
 import { SupabaseCreateTestUserService } from '../../application/use-case/login-user.use-case';
 import { SupabaseRegisterUserService } from '../../application/use-case/register-user.use-case';
 import { GetMeUseCase } from '../../application/use-case/getMe.use-case';
+import { SignInUseCase } from '../../application/use-case/signin.use-case';
 import {
-  //   CreateTesruserDto,
   RefreshTokenDto,
   RegisterUserDto,
+  SignInDto,
   SignInTestuserDto,
-  // validateTokenDto,
 } from '../../application/dto/auth.dto';
 import { SupabaseAuthGuard } from '../../guard/supabse-auth.guard';
 import type { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
@@ -34,7 +34,15 @@ export class SupabaseAuthController {
     private readonly createTestUserService: SupabaseCreateTestUserService,
     private readonly registerUserService: SupabaseRegisterUserService,
     private readonly getMeUseCase: GetMeUseCase,
+    private readonly signInUseCase: SignInUseCase,
   ) {}
+
+  /** Endpoint de login limpio — solo devuelve access_token y refresh_token */
+  @Post('signin')
+  @HttpCode(HttpStatus.OK)
+  async signIn(@Body() dto: SignInDto) {
+    return await this.signInUseCase.execute(dto.email, dto.password);
+  }
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
@@ -91,6 +99,7 @@ export class SupabaseAuthController {
     };
   }
 
+  /** Solo para desarrollo/testing interno — bloqueado en producción */
   @Post('test/signin')
   @HttpCode(HttpStatus.OK)
   async signInTestestuser(@Body() signInTestUserDto: SignInTestuserDto) {
@@ -102,16 +111,4 @@ export class SupabaseAuthController {
       signInTestUserDto.password,
     );
   }
-
-  //   @Get('test/users')
-  //   @HttpCode(HttpStatus.OK)
-  //   listTestUsers() {
-  //     return this.createTestUserService.listAuthUsers();
-  //   }
-
-  // @Post('validate-token')
-  // @HttpCode(HttpStatus.OK)
-  // async validateToken(@Body() validateTokenDto: validateTokenDto) {
-  //   return await this.validationService.validtoken(validateTokenDto.token);
-  // }
 }

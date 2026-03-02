@@ -3,7 +3,7 @@ import { EventRepository } from '../../domain/repositories/event.repository';
 import { Event } from '../../domain/entities/event.entity';
 
 @Injectable()
-export class getEventUseCase {
+export class GetEventUseCase {
   constructor(private Event: EventRepository) {}
 
   async getAllEvents(): Promise<Event[]> {

@@ -312,6 +312,27 @@
   color: #dc2626;
 }
 
+/* ---------- Costo gratis ---------- */
+.ca-card__costo--gratis {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* ---------- Mensaje inscripción ---------- */
+.ca-inscripcion-msg {
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.ca-inscripcion-msg--ok {
+  color: #16a34a;
+}
+
+.ca-inscripcion-msg--error {
+  color: #dc2626;
+}
+
 /* ---------- Botón Inscribirse ---------- */
 /* Se aplica via className="ca-btn--inscribirse" en el componente Button */
 .custom-button.ca-btn--inscribirse {

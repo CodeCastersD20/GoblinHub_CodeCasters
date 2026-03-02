@@ -5,7 +5,7 @@ import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
 import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario.repository';
 
 @Injectable()
-export class softDeletedEventUseCase {
+export class SoftDeleteEventUseCase {
   constructor(
     private Event: EventRepository,
     private usuarios: UsuarioRepository,
@@ -35,10 +35,7 @@ export class softDeletedEventUseCase {
 
       return this.Event.delete(id);
     } catch (error) {
-      if (
-        error instanceof HttpException ||
-        error instanceof ForbiddenException
-      ) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new HttpException(

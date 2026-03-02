@@ -19,13 +19,13 @@ import {
   ApiQuery, 
   ApiBearerAuth 
 } from '@nestjs/swagger'; // Swagger tools
-import { CreateEventUseCase } from '../../aplication/use-case/create-event.use-case';
-import { UpdateEventUseCase } from '../../aplication/use-case/update-event.use-case';
-import { softDeletedEventUseCase } from '../../aplication/use-case/sd-event.use-case';
-import { getEventUseCase } from '../../aplication/use-case/get-event.use-case';
+import { CreateEventUseCase } from '../../application/use-case/create-event.use-case';
+import { UpdateEventUseCase } from '../../application/use-case/update-event.use-case';
+import { SoftDeleteEventUseCase } from '../../application/use-case/sd-event.use-case';
+import { GetEventUseCase } from '../../application/use-case/get-event.use-case';
 import { Event } from '../../domain/entities/event.entity';
-import { CreateEventDto } from '../../aplication/dtos/create-event.dto';
-import { UpdateEventDto } from '../../aplication/dtos/update-event.dto';
+import { CreateEventDto } from '../../application/dtos/create-event.dto';
+import { UpdateEventDto } from '../../application/dtos/update-event.dto';
 import { SupabaseAuthGuard } from '../../../supabase/guard/supabse-auth.guard';
 import type { AuthenticatedRequest } from '../../../supabase/interfaces/types/authenticated-request.interface';
 
@@ -33,10 +33,10 @@ import type { AuthenticatedRequest } from '../../../supabase/interfaces/types/au
 @Controller('events')
 export class EventController {
   constructor(
-    private readonly get: getEventUseCase,
+    private readonly get: GetEventUseCase,
     private readonly created: CreateEventUseCase,
     private readonly updated: UpdateEventUseCase,
-    private readonly deleted: softDeletedEventUseCase,
+    private readonly deleted: SoftDeleteEventUseCase,
   ) {}
 
   @Get()
