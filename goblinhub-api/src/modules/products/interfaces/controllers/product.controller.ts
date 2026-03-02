@@ -7,6 +7,13 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
+import { 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse, 
+  ApiParam, 
+  ApiBearerAuth 
+} from '@nestjs/swagger'; // Importaciones de Swagger
 import { CreateProductoUseCase } from '../../aplication/use-case/create-product.use-case';
 import { UpdateProductoUseCase } from '../../aplication/use-case/update-product.use-case';
 import { SoftDeleteProductoUseCase } from '../../aplication/use-case/soft-deled-product.use-case';
@@ -16,7 +23,8 @@ import { CreateProductoDto } from '../../aplication/dtos/create-product.dtos';
 import { UpdateProductoDto } from '../../aplication/dtos/update-product.dto';
 import { CategoriaProducto } from '../../domain/enums/product.enum';
 
-@Controller('productos') // Usar plural ('productos') es el estándar en APIs REST
+@ApiTags('Productos') // Agrupa este controlador en la sección "Productos" de Swagger
+@Controller('productos')
 export class ProductoController {
   constructor(
     private readonly getUseCase: GetProductoUseCase,
@@ -26,18 +34,25 @@ export class ProductoController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'Obtener todos los productos activos' })
+  @ApiResponse({ status: 200, description: 'Lista de productos recuperada con éxito.' })
   async getAllProductos(): Promise<Producto[]> {
     return this.getUseCase.getAllProductos();
   }
 
-  // Nota: El ID ahora es string porque estamos usando UUIDs
   @Get(':id')
+  @ApiOperation({ summary: 'Obtener un producto por su UUID' })
+  @ApiParam({ name: 'id', description: 'UUID del producto', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiResponse({ status: 200, description: 'Producto encontrado.' })
+  @ApiResponse({ status: 404, description: 'Producto no encontrado.' })
   async getProductoById(@Param('id') id: string): Promise<Producto> {
     return this.getUseCase.getByIdProducto(id);
   }
 
-  // Endpoint extra que armamos para filtrar por las categorías de tu enum
   @Get('categoria/:categoria')
+  @ApiOperation({ summary: 'Filtrar productos por categoría' })
+  @ApiParam({ name: 'categoria', enum: CategoriaProducto, description: 'Categoría del producto' })
+  @ApiResponse({ status: 200, description: 'Productos de la categoría recuperados.' })
   async getProductosByCategoria(
     @Param('categoria') categoria: CategoriaProducto,
   ): Promise<Producto[]> {
@@ -45,6 +60,10 @@ export class ProductoController {
   }
 
   @Post()
+  @ApiBearerAuth('access-token') // Requiere token JWT
+  @ApiOperation({ summary: 'Crear un nuevo producto (Admin)' })
+  @ApiResponse({ status: 201, description: 'Producto creado exitosamente.' })
+  @ApiResponse({ status: 403, description: 'No tienes permisos para realizar esta acción.' })
   async createProducto(
     @Body() createProductoDto: CreateProductoDto,
   ): Promise<Producto> {
@@ -52,6 +71,11 @@ export class ProductoController {
   }
 
   @Put(':id')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Actualizar un producto existente' })
+  @ApiParam({ name: 'id', description: 'UUID del producto a actualizar' })
+  @ApiResponse({ status: 200, description: 'Producto actualizado.' })
+  @ApiResponse({ status: 404, description: 'No se encontró el producto para actualizar.' })
   async updateProducto(
     @Param('id') id: string,
     @Body() updateProductoDto: UpdateProductoDto,
@@ -59,9 +83,12 @@ export class ProductoController {
     return this.updateUseCase.updateProducto(id, updateProductoDto);
   }
 
-  // Corregido el typo: @Delete(':id') en lugar de @Delete('id')
   @Delete(':id')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Eliminación lógica de un producto' })
+  @ApiParam({ name: 'id', description: 'UUID del producto a eliminar' })
+  @ApiResponse({ status: 200, description: 'Producto marcado como eliminado.' })
   async deleteProducto(@Param('id') id: string): Promise<void> {
-    return this.deleteUseCase.softDeleteProducto(id); // Devolvemos void como acordamos
+    return this.deleteUseCase.softDeleteProducto(id);
   }
 }
