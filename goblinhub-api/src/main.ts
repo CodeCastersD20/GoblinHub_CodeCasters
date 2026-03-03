@@ -14,15 +14,24 @@ async function bootstrap() {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
 
       // CSP ajustada para permitir Swagger UI en desarrollo
-      contentSecurityPolicy: isProduction 
+      contentSecurityPolicy: isProduction
         ? undefined // En producción usa los defaults de Helmet
         : {
             directives: {
               defaultSrc: ["'self'"],
               connectSrc: ["'self'", 'https:'],
-              imgSrc: ["'self'", 'data:', 'https:', 'https://validator.swagger.io'],
+              imgSrc: [
+                "'self'",
+                'data:',
+                'https:',
+                'https://validator.swagger.io',
+              ],
               scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Necesario para Swagger
-              styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+              styleSrc: [
+                "'self'",
+                "'unsafe-inline'",
+                'https://fonts.googleapis.com',
+              ],
             },
           },
 
@@ -58,9 +67,12 @@ async function bootstrap() {
   if (!isProduction) {
     const config = new DocumentBuilder()
       .setTitle('GoblinHub API')
-      .setDescription('Documentación de la API para gestión de Eventos, Productos y Recompensas')
+      .setDescription(
+        'Documentación de la API para gestión de Eventos, Productos y Recompensas',
+      )
       .setVersion('1.0')
-      .addBearerAuth( // Habilita autenticación JWT en la UI
+      .addBearerAuth(
+        // Habilita autenticación JWT en la UI
         {
           type: 'http',
           scheme: 'bearer',

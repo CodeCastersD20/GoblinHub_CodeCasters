@@ -16,7 +16,6 @@ export class GetMeUseCase {
   constructor(private readonly usuarioRepository: UsuarioRepository) {}
 
   async execute(id: string, email: string | undefined): Promise<MeResult> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const perfil: UsuarioPerfil | null =
       await this.usuarioRepository.findProfileById(id);
 
