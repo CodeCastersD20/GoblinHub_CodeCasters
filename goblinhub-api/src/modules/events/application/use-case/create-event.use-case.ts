@@ -9,7 +9,7 @@ import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario
 @Injectable()
 export class CreateEventUseCase {
   constructor(
-    private Event: EventRepository,
+    private eventRepository: EventRepository,
     private usuarios: UsuarioRepository,
   ) {}
 
@@ -22,7 +22,7 @@ export class CreateEventUseCase {
           'You do not have permission to create events',
         );
       }
-      const existEvent = await this.Event.findByName(data.titulo);
+      const existEvent = await this.eventRepository.findByName(data.titulo);
 
       if (existEvent) {
         throw new HttpException(
@@ -63,7 +63,7 @@ export class CreateEventUseCase {
         data.puntos_premio_3,
         data.puntos_participacion,
       );
-      return this.Event.create(event, id_creador);
+      return this.eventRepository.create(event, id_creador);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

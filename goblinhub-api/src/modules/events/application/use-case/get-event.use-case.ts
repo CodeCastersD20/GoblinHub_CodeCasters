@@ -4,11 +4,11 @@ import { Event } from '../../domain/entities/event.entity';
 
 @Injectable()
 export class GetEventUseCase {
-  constructor(private Event: EventRepository) {}
+  constructor(private eventRepository: EventRepository) {}
 
   async getAllEvents(): Promise<Event[]> {
     try {
-      const events = await this.Event.findAll();
+      const events = await this.eventRepository.findAll();
 
       if (!events || events.length === 0) {
         throw new HttpException(
@@ -34,7 +34,7 @@ export class GetEventUseCase {
 
   async getEventById(id: string): Promise<Event> {
     try {
-      const event = await this.Event.findById(id);
+      const event = await this.eventRepository.findById(id);
 
       if (!event) {
         throw new HttpException(
@@ -61,7 +61,7 @@ export class GetEventUseCase {
 
   async getEventByName(name: string): Promise<Event> {
     try {
-      const event = await this.Event.findByName(name);
+      const event = await this.eventRepository.findByName(name);
 
       if (!event) {
         throw new HttpException(
@@ -88,7 +88,7 @@ export class GetEventUseCase {
 
   async searchEventsByName(name: string): Promise<Event[]> {
     try {
-      const events = await this.Event.searchByName(name);
+      const events = await this.eventRepository.searchByName(name);
 
       if (!events || events.length === 0) {
         throw new HttpException(

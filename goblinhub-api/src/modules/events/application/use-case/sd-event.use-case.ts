@@ -7,13 +7,13 @@ import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario
 @Injectable()
 export class SoftDeleteEventUseCase {
   constructor(
-    private Event: EventRepository,
+    private eventRepository: EventRepository,
     private usuarios: UsuarioRepository,
   ) {}
 
   async softDeleteEvent(id: string, id_usuario: string): Promise<Event> {
     try {
-      const event = await this.Event.findById(id);
+      const event = await this.eventRepository.findById(id);
 
       if (!event) {
         throw new HttpException(
@@ -33,7 +33,7 @@ export class SoftDeleteEventUseCase {
         );
       }
 
-      return this.Event.delete(id);
+      return this.eventRepository.delete(id);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

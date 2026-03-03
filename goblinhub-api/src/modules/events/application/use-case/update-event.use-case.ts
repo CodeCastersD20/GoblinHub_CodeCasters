@@ -8,7 +8,7 @@ import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario
 @Injectable()
 export class UpdateEventUseCase {
   constructor(
-    private Event: EventRepository,
+    private eventRepository: EventRepository,
     private usuarios: UsuarioRepository,
   ) {}
 
@@ -18,7 +18,7 @@ export class UpdateEventUseCase {
     id_usuario: string,
   ): Promise<Event> {
     try {
-      const existEvent = await this.Event.findById(id);
+      const existEvent = await this.eventRepository.findById(id);
 
       if (!existEvent) {
         throw new HttpException(
@@ -41,7 +41,7 @@ export class UpdateEventUseCase {
       }
 
       if (data.titulo) {
-        const existEvent = await this.Event.findByName(data.titulo);
+        const existEvent = await this.eventRepository.findByName(data.titulo);
 
         if (existEvent && existEvent.id !== id) {
           throw new HttpException(
@@ -55,13 +55,13 @@ export class UpdateEventUseCase {
 
       const updatedEvent = new Event(
         existEvent.id,
-        data.titulo || existEvent.titulo,
-        data.descripcion || existEvent.descripcion,
-        data.tipo_evento || existEvent.tipo_evento,
-        data.fecha || existEvent.fecha,
-        data.hora_inicio || existEvent.hora_inicio,
-        data.hora_fin || existEvent.hora_fin,
-        data.lugar || existEvent.lugar,
+        data.titulo ?? existEvent.titulo,
+        data.descripcion ?? existEvent.descripcion,
+        data.tipo_evento ?? existEvent.tipo_evento,
+        data.fecha ?? existEvent.fecha,
+        data.hora_inicio ?? existEvent.hora_inicio,
+        data.hora_fin ?? existEvent.hora_fin,
+        data.lugar ?? existEvent.lugar,
         data.costo ?? existEvent.costo,
         data.cupo_maximo ?? existEvent.cupo_maximo,
         data.sistema_juego ?? existEvent.sistema_juego,
@@ -70,7 +70,7 @@ export class UpdateEventUseCase {
         data.puntos_premio_3 ?? existEvent.puntos_premio_3,
         data.puntos_participacion ?? existEvent.puntos_participacion,
       );
-      return this.Event.update(id, updatedEvent);
+      return this.eventRepository.update(id, updatedEvent);
     } catch (error) {
       if (
         error instanceof HttpException ||
