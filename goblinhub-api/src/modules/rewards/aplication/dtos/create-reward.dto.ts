@@ -1,4 +1,11 @@
-import { IsNumber, IsInt, IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
+import {
+  IsNumber,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TipoRecompensa } from '../../domain/enums/reward.enum';
 
@@ -20,7 +27,10 @@ export class CreateRecompensaDto {
   @IsEnum(TipoRecompensa)
   tipo: TipoRecompensa;
 
-  @ApiPropertyOptional({ example: 15.0, description: 'Valor del descuento si aplica' })
+  @ApiPropertyOptional({
+    example: 15.0,
+    description: 'Valor del descuento si aplica',
+  })
   @IsNumber()
   @IsOptional()
   valor_descuento?: number;

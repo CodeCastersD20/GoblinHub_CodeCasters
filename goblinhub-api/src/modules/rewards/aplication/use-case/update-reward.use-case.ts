@@ -7,7 +7,10 @@ import { RewardRepository } from '../../domain/repositories/reward.repository';
 export class UpdateRewardUseCase {
   constructor(private rewardRepository: RewardRepository) {}
 
-  async updateReward(id: number, data: UpdateRecompensaDto): Promise<Recompensa> {
+  async updateReward(
+    id: number,
+    data: UpdateRecompensaDto,
+  ): Promise<Recompensa> {
     try {
       // 1. Verificamos que la recompensa exista por su ID
       const existReward = await this.rewardRepository.findById(id);
@@ -30,7 +33,6 @@ export class UpdateRewardUseCase {
 
       // 3. Guardamos los cambios
       return await this.rewardRepository.update(id, updatedReward);
-
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

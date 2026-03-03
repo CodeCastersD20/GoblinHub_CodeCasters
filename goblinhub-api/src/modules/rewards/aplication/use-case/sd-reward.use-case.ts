@@ -1,5 +1,5 @@
-import { HttpException, Injectable } from "@nestjs/common";
-import { RewardRepository } from "../../domain/repositories/reward.repository";
+import { HttpException, Injectable } from '@nestjs/common';
+import { RewardRepository } from '../../domain/repositories/reward.repository';
 
 @Injectable()
 export class SoftDeleteRewardUseCase {
@@ -10,11 +10,13 @@ export class SoftDeleteRewardUseCase {
       const rewardExistente = await this.rewardRepository.findById(id);
 
       if (!rewardExistente) {
-        throw new HttpException({ Error: 'No se encontró la recompensa a eliminar' }, 404);
+        throw new HttpException(
+          { Error: 'No se encontró la recompensa a eliminar' },
+          404,
+        );
       }
 
       await this.rewardRepository.delete(id);
-      
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

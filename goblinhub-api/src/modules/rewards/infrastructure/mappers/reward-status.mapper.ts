@@ -1,8 +1,7 @@
-import { TipoRecompensa } from "../../domain/enums/reward.enum";
-import { TipoRecompensa as PrismaTipoRecompensa } from "@prisma/client";
+import { TipoRecompensa } from '../../domain/enums/reward.enum';
+import { TipoRecompensa as PrismaTipoRecompensa } from '@prisma/client';
 
 export class TipoRecompensaMapper {
-  
   static toPrisma(tipo: TipoRecompensa): PrismaTipoRecompensa {
     return tipo.toLowerCase() as unknown as PrismaTipoRecompensa;
   }
