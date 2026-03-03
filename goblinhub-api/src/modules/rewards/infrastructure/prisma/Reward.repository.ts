@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/connect/prisma.service'; // Ajusta la ruta si es diferente
+import { PrismaService } from '../../../../connect/prisma.service';
 import { Recompensa } from '../../domain/entities/reward.entity';
 import { RewardRepository } from '../../domain/repositories/reward.repository';
 import { TipoRecompensaMapper } from '../mappers/reward-status.mapper';
+import { Recompensa as PrismaRecompensa } from '@prisma/client';
 
 @Injectable()
 export class RewardPrismaRepository extends RewardRepository {
@@ -11,15 +12,17 @@ export class RewardPrismaRepository extends RewardRepository {
   }
 
   // --- Método Auxiliar para evitar repetir código ---
-  private mapToDomain(prismaReward: any): Recompensa {
+  private mapToDomain(prismaReward: PrismaRecompensa): Recompensa {
     return new Recompensa(
       prismaReward.id_recompensa,
       prismaReward.nombre,
       prismaReward.descripcion ?? undefined,
       prismaReward.costo_puntos,
       TipoRecompensaMapper.toDomain(prismaReward.tipo),
-      prismaReward.valor_descuento ? prismaReward.valor_descuento.toNumber() : undefined,
-      prismaReward.activa
+      prismaReward.valor_descuento
+        ? prismaReward.valor_descuento.toNumber()
+        : undefined,
+      prismaReward.activa,
     );
   }
 
@@ -59,9 +62,9 @@ export class RewardPrismaRepository extends RewardRepository {
   // Equivalente a tu findByCategory, pero para el nombre
   async findByName(nombre: string): Promise<Recompensa | null> {
     const reward = await this.prisma.recompensa.findFirst({
-      where: { 
-        nombre: nombre, 
-        deleted_at: null 
+      where: {
+        nombre: nombre,
+        deleted_at: null,
       },
     });
 
@@ -89,10 +92,10 @@ export class RewardPrismaRepository extends RewardRepository {
   async delete(id: number): Promise<void> {
     await this.prisma.recompensa.update({
       where: { id_recompensa: id },
-      data: { 
+      data: {
         deleted_at: new Date(),
-        activa: false // Lo desactivamos inmediatamente como buena práctica
-      }, 
+        activa: false, // Lo desactivamos inmediatamente como buena práctica
+      },
     });
   }
 }
