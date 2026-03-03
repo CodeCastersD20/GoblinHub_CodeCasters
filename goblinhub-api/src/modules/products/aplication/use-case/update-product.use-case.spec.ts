@@ -1,29 +1,34 @@
 import { UpdateProductoUseCase } from './update-product.use-case';
 import { ProductRepository } from '../../domain/repositories/product.respository';
-import { HttpException } from '@nestjs/common';
+import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario.repository';
+import { ForbiddenException, HttpException } from '@nestjs/common';
+import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
 import { Producto } from '../../domain/entities/product.entity';
+import { CategoriaProducto } from '../../domain/enums/product.enum';
+import { UpdateProductoDto } from '../dtos/update-product.dto';
 
 describe('UpdateProductoUseCase', () => {
   let useCase: UpdateProductoUseCase;
   let productRepo: jest.Mocked<ProductRepository>;
+  let userRepo: jest.Mocked<UsuarioRepository>;
 
-  const mockExistingProduct = {
-    id_producto: 'uuid-123',
-    nombre: 'Producto Original',
-    categoria: 'General',
-    precio: 100,
-    stock: 5,
-    stock_minimo: 2,
-    popular: false,
-    es_nuevo: false,
-    activo: true,
-    created_at: new Date('2023-01-01'),
-    marca: 'Marca A',
-    descripcion: 'Desc A',
-    precio_original: 120,
-    imagen_url: 'url_A',
-    deleted_at: null
-  } as any;
+  const mockExistingProduct = new Producto(
+    'uuid-123',
+    'Producto Original',
+    CategoriaProducto.ACCESORIOS,
+    100,
+    5,
+    2,
+    false,
+    false,
+    true,
+    new Date('2023-01-01'),
+    new Date('2023-01-01'),
+    'Marca A',
+    'Desc A',
+    120,
+    'url_A',
+  );
 
   beforeEach(() => {
     productRepo = {
@@ -31,48 +36,87 @@ describe('UpdateProductoUseCase', () => {
       update: jest.fn(),
     } as unknown as jest.Mocked<ProductRepository>;
 
-    useCase = new UpdateProductoUseCase(productRepo);
+    userRepo = {
+      findRolById: jest.fn(),
+    } as unknown as jest.Mocked<UsuarioRepository>;
+
+    useCase = new UpdateProductoUseCase(productRepo, userRepo);
   });
 
   it('debe actualizar el producto combinando datos nuevos y existentes', async () => {
+    userRepo.findRolById.mockResolvedValue(RolUsuario.admin);
     productRepo.findById.mockResolvedValue(mockExistingProduct);
-    
-    const updateDto = {
+
+    const updateDto: UpdateProductoDto = {
       nombre: 'Nombre Actualizado',
-      precio: 150
-      // Los demás campos vendrán del producto existente
+      precio: 150,
     };
 
-    productRepo.update.mockImplementation((id, data) => Promise.resolve({ ...mockExistingProduct, ...data }));
+    const updatedProduct = new Producto(
+      'uuid-123',
+      'Nombre Actualizado',
+      CategoriaProducto.ACCESORIOS,
+      150,
+      5,
+      2,
+      false,
+      false,
+      true,
+      new Date('2023-01-01'),
+      new Date(),
+      'Marca A',
+      'Desc A',
+      120,
+      'url_A',
+    );
+    productRepo.update.mockResolvedValue(updatedProduct);
 
-    const result = await useCase.updateProducto('uuid-123', updateDto);
+    const result = await useCase.updateProducto(
+      'uuid-123',
+      updateDto,
+      'admin-uuid',
+    );
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(productRepo.update).toHaveBeenCalled();
     expect(result.nombre).toBe('Nombre Actualizado');
     expect(result.precio).toBe(150);
-    expect(result.categoria).toBe(mockExistingProduct.categoria); // Se mantuvo el original
-    expect(result.id_producto).toBe(mockExistingProduct.id_producto); // El ID no cambió
+    expect(result.categoria).toBe(mockExistingProduct.categoria);
+    expect(result.id_producto).toBe(mockExistingProduct.id_producto);
+  });
+
+  it('debe lanzar ForbiddenException si el usuario no tiene permisos', async () => {
+    userRepo.findRolById.mockResolvedValue(null);
+
+    await expect(
+      useCase.updateProducto('uuid-123', {}, 'client-uuid'),
+    ).rejects.toThrow(ForbiddenException);
   });
 
   it('debe lanzar HttpException 404 si el producto no existe', async () => {
+    userRepo.findRolById.mockResolvedValue(RolUsuario.admin);
     productRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.updateProducto('uuid-999', {}))
-      .rejects.toThrow(HttpException);
+    await expect(
+      useCase.updateProducto('uuid-999', {}, 'admin-uuid'),
+    ).rejects.toThrow(HttpException);
   });
 
   it('debe lanzar HttpException 500 si falla el repositorio al buscar', async () => {
+    userRepo.findRolById.mockResolvedValue(RolUsuario.admin);
     productRepo.findById.mockRejectedValue(new Error('Fallo DB'));
 
-    await expect(useCase.updateProducto('uuid-123', {}))
-      .rejects.toThrow(HttpException);
+    await expect(
+      useCase.updateProducto('uuid-123', {}, 'admin-uuid'),
+    ).rejects.toThrow(HttpException);
   });
 
   it('debe re-lanzar HttpException si ocurre dentro del catch', async () => {
     const errorHttp = new HttpException('Error custom', 401);
-    productRepo.findById.mockRejectedValue(errorHttp);
+    userRepo.findRolById.mockRejectedValue(errorHttp);
 
-    await expect(useCase.updateProducto('uuid-123', {}))
-      .rejects.toThrow(errorHttp);
+    await expect(
+      useCase.updateProducto('uuid-123', {}, 'admin-uuid'),
+    ).rejects.toThrow(errorHttp);
   });
 });

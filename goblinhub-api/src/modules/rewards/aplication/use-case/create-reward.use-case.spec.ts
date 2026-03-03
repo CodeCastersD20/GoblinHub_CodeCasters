@@ -4,20 +4,32 @@ import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario
 import { ForbiddenException, HttpException } from '@nestjs/common';
 import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
 import { TipoRecompensa } from '../../domain/enums/reward.enum';
+import { CreateRecompensaDto } from '../dtos/create-reward.dto';
+import { Recompensa } from '../../domain/entities/reward.entity';
 
 describe('CreateRewardUseCase', () => {
   let useCase: CreateRewardUseCase;
   let rewardRepo: jest.Mocked<RewardRepository>;
   let userRepo: jest.Mocked<UsuarioRepository>;
 
-  const mockDto = {
+  const mockDto: CreateRecompensaDto = {
     nombre: 'Poción de Vida Extra',
     descripcion: 'Recupera 50 HP',
     costo_puntos: 100,
-    tipo: Object.values(TipoRecompensa)[0], // Using a valid enum value
+    tipo: TipoRecompensa.DESCUENTO,
     valor_descuento: 0,
     activa: true,
-  } as any;
+  };
+
+  const mockCreatedReward = new Recompensa(
+    1,
+    'Poción de Vida Extra',
+    'Recupera 50 HP',
+    100,
+    TipoRecompensa.DESCUENTO,
+    0,
+    true,
+  );
 
   beforeEach(() => {
     rewardRepo = {
@@ -35,50 +47,67 @@ describe('CreateRewardUseCase', () => {
   it('debe crear una recompensa exitosamente si el usuario es admin', async () => {
     userRepo.findRolById.mockResolvedValue(RolUsuario.admin);
     rewardRepo.findByName.mockResolvedValue(null);
-    rewardRepo.create.mockResolvedValue({ id: '1', ...mockDto });
+    rewardRepo.create.mockResolvedValue(mockCreatedReward);
 
     const result = await useCase.execute(mockDto, 'admin-uuid');
 
-    expect(result.id).toBe('1');
+    expect(result.id).toBe(1);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(rewardRepo.create).toHaveBeenCalled();
   });
 
   it('debe lanzar ForbiddenException si el usuario no tiene permisos', async () => {
-    // Simulamos un rol de usuario normal (suponiendo que existe 'user' o similar)
-    userRepo.findRolById.mockResolvedValue('user' as any);
+    userRepo.findRolById.mockResolvedValue(null);
 
-    await expect(useCase.execute(mockDto, 'user-uuid'))
-      .rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute(mockDto, 'user-uuid')).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('debe lanzar HttpException 400 si el nombre ya existe', async () => {
     userRepo.findRolById.mockResolvedValue(RolUsuario.empleado);
-    rewardRepo.findByName.mockResolvedValue({ id: 'existente' } as any);
+    rewardRepo.findByName.mockResolvedValue(
+      new Recompensa(
+        2,
+        'Poción de Vida Extra',
+        undefined,
+        100,
+        TipoRecompensa.DESCUENTO,
+      ),
+    );
 
-    await expect(useCase.execute(mockDto, 'emp-uuid'))
-      .rejects.toThrow(HttpException);
+    await expect(useCase.execute(mockDto, 'emp-uuid')).rejects.toThrow(
+      HttpException,
+    );
   });
 
   it('debe lanzar HttpException 400 si el tipo de recompensa es inválido', async () => {
     userRepo.findRolById.mockResolvedValue(RolUsuario.admin);
     rewardRepo.findByName.mockResolvedValue(null);
 
-    const invalidDto = { ...mockDto, tipo: 'TIPO_INVENTADO' };
+    const invalidDto: CreateRecompensaDto = {
+      ...mockDto,
+      tipo: 'TIPO_INVENTADO' as TipoRecompensa,
+    };
 
-    await expect(useCase.execute(invalidDto, 'admin-uuid'))
-      .rejects.toThrow(HttpException);
+    await expect(useCase.execute(invalidDto, 'admin-uuid')).rejects.toThrow(
+      HttpException,
+    );
   });
 
   it('debe lanzar HttpException 500 ante un error inesperado del repositorio', async () => {
     userRepo.findRolById.mockResolvedValue(RolUsuario.admin);
     rewardRepo.findByName.mockRejectedValue(new Error('Fallo total de DB'));
 
-    await expect(useCase.execute(mockDto, 'admin-uuid'))
-      .rejects.toThrow(HttpException);
+    await expect(useCase.execute(mockDto, 'admin-uuid')).rejects.toThrow(
+      HttpException,
+    );
   });
 
   it('debe re-lanzar el error si ya es una HttpException controlada', async () => {
-    userRepo.findRolById.mockRejectedValue(new HttpException('Error manual', 418));
+    userRepo.findRolById.mockRejectedValue(
+      new HttpException('Error manual', 418),
+    );
 
     try {
       await useCase.execute(mockDto, 'admin-uuid');

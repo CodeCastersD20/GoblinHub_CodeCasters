@@ -1,18 +1,25 @@
-import { getEventUseCase } from './get-event.use-case';
+import { GetEventUseCase } from './get-event.use-case';
 import { EventRepository } from '../../domain/repositories/event.repository';
 import { HttpException } from '@nestjs/common';
+import { Event } from '../../domain/entities/event.entity';
+import { EventValidationStatus } from '../../domain/enums/event.enum';
 
 describe('getEventUseCase', () => {
-  let useCase: getEventUseCase;
+  let useCase: GetEventUseCase;
   let eventRepo: jest.Mocked<EventRepository>;
 
-  const mockEvent = {
-    id_evento: '1',
-    titulo: 'Torneo Warhammer 40K',
-    tipo_evento: 'torneo',
-    fecha: new Date(),
-    activa: true,
-  } as any;
+  const mockEvent = new Event(
+    '1',
+    'Torneo Warhammer 40K',
+    undefined,
+    EventValidationStatus.torneo,
+    '2026-04-15',
+    '10:00',
+    undefined,
+    'Tienda',
+    undefined,
+    20,
+  );
 
   beforeEach(() => {
     eventRepo = {
@@ -22,7 +29,7 @@ describe('getEventUseCase', () => {
       searchByName: jest.fn(),
     } as unknown as jest.Mocked<EventRepository>;
 
-    useCase = new getEventUseCase(eventRepo);
+    useCase = new GetEventUseCase(eventRepo);
   });
 
   describe('getAllEvents', () => {
@@ -67,12 +74,16 @@ describe('getEventUseCase', () => {
 
     it('debe lanzar 404 si no existe', async () => {
       eventRepo.findByName.mockResolvedValue(null);
-      await expect(useCase.getEventByName('Nadie')).rejects.toThrow(HttpException);
+      await expect(useCase.getEventByName('Nadie')).rejects.toThrow(
+        HttpException,
+      );
     });
 
     it('debe lanzar 500 si falla el repo', async () => {
       eventRepo.findByName.mockRejectedValue(new Error());
-      await expect(useCase.getEventByName('Error')).rejects.toThrow(HttpException);
+      await expect(useCase.getEventByName('Error')).rejects.toThrow(
+        HttpException,
+      );
     });
   });
 
@@ -84,12 +95,16 @@ describe('getEventUseCase', () => {
 
     it('debe lanzar 404 si no hay coincidencias', async () => {
       eventRepo.searchByName.mockResolvedValue([]);
-      await expect(useCase.searchEventsByName('Nadie')).rejects.toThrow(HttpException);
+      await expect(useCase.searchEventsByName('Nadie')).rejects.toThrow(
+        HttpException,
+      );
     });
 
     it('debe lanzar 500 si falla el repo', async () => {
       eventRepo.searchByName.mockRejectedValue(new Error());
-      await expect(useCase.searchEventsByName('Error')).rejects.toThrow(HttpException);
+      await expect(useCase.searchEventsByName('Error')).rejects.toThrow(
+        HttpException,
+      );
     });
   });
 });

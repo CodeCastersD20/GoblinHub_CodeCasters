@@ -1,6 +1,8 @@
 import { SoftDeleteRewardUseCase } from './sd-reward.use-case';
 import { RewardRepository } from '../../domain/repositories/reward.repository';
 import { HttpException } from '@nestjs/common';
+import { Recompensa } from '../../domain/entities/reward.entity';
+import { TipoRecompensa } from '../../domain/enums/reward.enum';
 
 describe('SoftDeleteRewardUseCase', () => {
   let useCase: SoftDeleteRewardUseCase;
@@ -19,13 +21,17 @@ describe('SoftDeleteRewardUseCase', () => {
 
   it('debe realizar el soft delete exitosamente si la recompensa existe', async () => {
     // 1. Simulamos que la recompensa existe
-    rewardRepo.findById.mockResolvedValue({ id: mockId } as any);
+    rewardRepo.findById.mockResolvedValue(
+      new Recompensa(1, 'Test', undefined, 100, TipoRecompensa.DESCUENTO),
+    );
     // 2. Simulamos que el delete funciona (retorna void)
     rewardRepo.delete.mockResolvedValue(undefined);
 
     await useCase.softDeleteReward(mockId);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(rewardRepo.findById).toHaveBeenCalledWith(mockId);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(rewardRepo.delete).toHaveBeenCalledWith(mockId);
   });
 
@@ -33,9 +39,12 @@ describe('SoftDeleteRewardUseCase', () => {
     // Simulamos que el repositorio devuelve null
     rewardRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.softDeleteReward(mockId)).rejects.toThrow(HttpException);
-    
+    await expect(useCase.softDeleteReward(mockId)).rejects.toThrow(
+      HttpException,
+    );
+
     // Verificamos que NO se intente borrar si no existe
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(rewardRepo.delete).not.toHaveBeenCalled();
   });
 
@@ -43,7 +52,9 @@ describe('SoftDeleteRewardUseCase', () => {
     // Simulamos un error genérico (ej. base de datos fuera de línea)
     rewardRepo.findById.mockRejectedValue(new Error('Fallo de conexión'));
 
-    await expect(useCase.softDeleteReward(mockId)).rejects.toThrow(HttpException);
+    await expect(useCase.softDeleteReward(mockId)).rejects.toThrow(
+      HttpException,
+    );
   });
 
   it('debe re-lanzar el error si ya es una instancia de HttpException', async () => {
