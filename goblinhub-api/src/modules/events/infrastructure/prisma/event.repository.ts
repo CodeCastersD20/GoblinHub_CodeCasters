@@ -3,11 +3,34 @@ import { PrismaService } from '../../../../connect/prisma.service';
 import { Event } from '../../domain/entities/event.entity';
 import { EventMapper } from '../mappers/event-status.mapper';
 import { EventRepository } from '../../domain/repositories/event.repository';
+import { Evento as PrismaEvento } from '@prisma/client';
 
 @Injectable()
 export class EventRepositoryPrisma extends EventRepository {
   constructor(private prisma: PrismaService) {
     super();
+  }
+
+  // --- Método auxiliar: evita repetir la construcción de la entidad ---
+  private mapToDomain(e: PrismaEvento): Event {
+    return new Event(
+      e.id_evento,
+      e.titulo,
+      e.descripcion ?? undefined,
+      EventMapper.tipoToDomain(e.tipo_evento),
+      e.fecha.toISOString(),
+      e.hora_inicio.toISOString(),
+      e.hora_fin?.toISOString() ?? undefined,
+      e.lugar,
+      Number(e.costo),
+      e.cupo_maximo,
+      e.sistema_juego ?? undefined,
+      e.puntos_premio_1,
+      e.puntos_premio_2,
+      e.puntos_premio_3,
+      e.puntos_participacion,
+      e.id_creador,
+    );
   }
 
   async create(event: Event, id_creador: string): Promise<Event> {
@@ -31,23 +54,7 @@ export class EventRepositoryPrisma extends EventRepository {
       },
     });
 
-    return new Event(
-      created.id_evento,
-      created.titulo,
-      created.descripcion || undefined,
-      EventMapper.tipoToDomain(created.tipo_evento),
-      created.fecha.toISOString(),
-      created.hora_inicio.toISOString(),
-      created.hora_fin?.toISOString() || undefined,
-      created.lugar,
-      Number(created.costo) || undefined,
-      created.cupo_maximo,
-      created.sistema_juego || undefined,
-      created.puntos_premio_1 || undefined,
-      created.puntos_premio_2 || undefined,
-      created.puntos_premio_3 || undefined,
-      created.puntos_participacion || undefined,
-    );
+    return this.mapToDomain(created);
   }
 
   async findAll(): Promise<Event[]> {
@@ -55,27 +62,7 @@ export class EventRepositoryPrisma extends EventRepository {
       where: { deleted_at: null },
     });
 
-    return eventos.map(
-      (e) =>
-        new Event(
-          e.id_evento,
-          e.titulo,
-          e.descripcion || undefined,
-          EventMapper.tipoToDomain(e.tipo_evento),
-          e.fecha.toISOString(),
-          e.hora_inicio.toISOString(),
-          e.hora_fin?.toISOString() || undefined,
-          e.lugar,
-          Number(e.costo) || undefined,
-          e.cupo_maximo,
-          e.sistema_juego || undefined,
-          e.puntos_premio_1 || undefined,
-          e.puntos_premio_2 || undefined,
-          e.puntos_premio_3 || undefined,
-          e.puntos_participacion || undefined,
-          e.id_creador || undefined,
-        ),
-    );
+    return eventos.map((e) => this.mapToDomain(e));
   }
 
   async findById(id: string): Promise<Event | null> {
@@ -85,24 +72,7 @@ export class EventRepositoryPrisma extends EventRepository {
 
     if (!evento) return null;
 
-    return new Event(
-      evento.id_evento,
-      evento.titulo,
-      evento.descripcion || undefined,
-      EventMapper.tipoToDomain(evento.tipo_evento),
-      evento.fecha.toISOString(),
-      evento.hora_inicio.toISOString(),
-      evento.hora_fin?.toISOString() || undefined,
-      evento.lugar,
-      Number(evento.costo) || undefined,
-      evento.cupo_maximo,
-      evento.sistema_juego || undefined,
-      evento.puntos_premio_1 || undefined,
-      evento.puntos_premio_2 || undefined,
-      evento.puntos_premio_3 || undefined,
-      evento.puntos_participacion || undefined,
-      evento.id_creador || undefined,
-    );
+    return this.mapToDomain(evento);
   }
 
   async findByName(name: string): Promise<Event | null> {
@@ -115,24 +85,7 @@ export class EventRepositoryPrisma extends EventRepository {
 
     if (!evento) return null;
 
-    return new Event(
-      evento.id_evento,
-      evento.titulo,
-      evento.descripcion || undefined,
-      EventMapper.tipoToDomain(evento.tipo_evento),
-      evento.fecha.toISOString(),
-      evento.hora_inicio.toISOString(),
-      evento.hora_fin?.toISOString() || undefined,
-      evento.lugar,
-      Number(evento.costo) || undefined,
-      evento.cupo_maximo,
-      evento.sistema_juego || undefined,
-      evento.puntos_premio_1 || undefined,
-      evento.puntos_premio_2 || undefined,
-      evento.puntos_premio_3 || undefined,
-      evento.puntos_participacion || undefined,
-      evento.id_creador || undefined,
-    );
+    return this.mapToDomain(evento);
   }
 
   async searchByName(name: string): Promise<Event[]> {
@@ -143,27 +96,7 @@ export class EventRepositoryPrisma extends EventRepository {
       },
     });
 
-    return eventos.map(
-      (e) =>
-        new Event(
-          e.id_evento,
-          e.titulo,
-          e.descripcion || undefined,
-          EventMapper.tipoToDomain(e.tipo_evento),
-          e.fecha.toISOString(),
-          e.hora_inicio.toISOString(),
-          e.hora_fin?.toISOString() || undefined,
-          e.lugar,
-          Number(e.costo) || undefined,
-          e.cupo_maximo,
-          e.sistema_juego || undefined,
-          e.puntos_premio_1 || undefined,
-          e.puntos_premio_2 || undefined,
-          e.puntos_premio_3 || undefined,
-          e.puntos_participacion || undefined,
-          e.id_creador || undefined,
-        ),
-    );
+    return eventos.map((e) => this.mapToDomain(e));
   }
 
   async update(id: string, event: Event): Promise<Event> {
@@ -190,52 +123,16 @@ export class EventRepositoryPrisma extends EventRepository {
       },
     });
 
-    return new Event(
-      updated.id_evento,
-      updated.titulo,
-      updated.descripcion || undefined,
-      EventMapper.tipoToDomain(updated.tipo_evento),
-      updated.fecha.toISOString(),
-      updated.hora_inicio.toISOString(),
-      updated.hora_fin?.toISOString() || undefined,
-      updated.lugar,
-      Number(updated.costo) || undefined,
-      updated.cupo_maximo,
-      updated.sistema_juego || undefined,
-      updated.puntos_premio_1 || undefined,
-      updated.puntos_premio_2 || undefined,
-      updated.puntos_premio_3 || undefined,
-      updated.puntos_participacion || undefined,
-      updated.id_creador || undefined,
-    );
+    return this.mapToDomain(updated);
   }
 
   async delete(id: string): Promise<Event> {
     const deleted = await this.prisma.evento.update({
-      where: {
-        id_evento: id,
-      },
+      where: { id_evento: id },
       data: { deleted_at: new Date() },
     });
 
-    return new Event(
-      deleted.id_evento,
-      deleted.titulo,
-      deleted.descripcion || undefined,
-      EventMapper.tipoToDomain(deleted.tipo_evento),
-      deleted.fecha.toISOString(),
-      deleted.hora_inicio.toISOString(),
-      deleted.hora_fin?.toISOString() || undefined,
-      deleted.lugar,
-      Number(deleted.costo) || undefined,
-      deleted.cupo_maximo,
-      deleted.sistema_juego || undefined,
-      deleted.puntos_premio_1 || undefined,
-      deleted.puntos_premio_2 || undefined,
-      deleted.puntos_premio_3 || undefined,
-      deleted.puntos_participacion || undefined,
-      deleted.id_creador || undefined,
-    );
+    return this.mapToDomain(deleted);
   }
 
   async expireEvents(): Promise<number> {
