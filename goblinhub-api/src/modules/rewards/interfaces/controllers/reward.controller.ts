@@ -12,7 +12,14 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 // --- Use Cases ---
 import { CreateRewardUseCase } from '../../aplication/use-case/create-reward.use-case';
@@ -41,8 +48,14 @@ export class RewardController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todas las recompensas o buscar por nombre' })
-  @ApiQuery({ name: 'name', required: false, description: 'Nombre de la recompensa para filtrar' })
-  async getAll(@Query('name') name?: string): Promise<Recompensa | Recompensa[]> {
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    description: 'Nombre de la recompensa para filtrar',
+  })
+  async getAll(
+    @Query('name') name?: string,
+  ): Promise<Recompensa | Recompensa[]> {
     if (name) {
       return await this.getUseCase.getByNameReward(name);
     }
@@ -51,7 +64,11 @@ export class RewardController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener una recompensa por ID' })
-  @ApiParam({ name: 'id', description: 'ID numérico de la recompensa', example: 1 })
+  @ApiParam({
+    name: 'id',
+    description: 'ID numérico de la recompensa',
+    example: 1,
+  })
   async getById(@Param('id', ParseIntPipe) id: number): Promise<Recompensa> {
     return await this.getUseCase.getByIdReward(id);
   }
@@ -67,7 +84,7 @@ export class RewardController {
     @Request() req: AuthenticatedRequest,
   ): Promise<Recompensa> {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
-    
+
     return await this.createUseCase.execute(createRewardDto, req.user.id);
   }
 
@@ -82,7 +99,7 @@ export class RewardController {
     @Request() req: AuthenticatedRequest,
   ): Promise<Recompensa> {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
-    
+
     return await this.updateUseCase.updateReward(id, updateRewardDto);
   }
 
@@ -91,13 +108,16 @@ export class RewardController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Eliminar (Soft Delete) una recompensa' })
   @ApiParam({ name: 'id', example: 1 })
-  @ApiResponse({ status: 200, description: 'Recompensa eliminada correctamente.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Recompensa eliminada correctamente.',
+  })
   async deleteReward(
     @Param('id', ParseIntPipe) id: number,
     @Request() req: AuthenticatedRequest,
   ): Promise<void> {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
-    
+
     await this.deleteUseCase.softDeleteReward(id);
   }
 }

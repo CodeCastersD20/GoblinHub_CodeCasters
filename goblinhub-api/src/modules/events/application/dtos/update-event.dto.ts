@@ -13,46 +13,61 @@ import {
 import { ApiPropertyOptional } from '@nestjs/swagger'; // Solo necesitamos el opcional aquí
 
 export class UpdateEventDto {
-  @ApiPropertyOptional({ example: 'Torneo Relámpago (Editado)', description: 'Nuevo título del evento' })
+  @ApiPropertyOptional({
+    example: 'Torneo Relámpago (Editado)',
+    description: 'Nuevo título del evento',
+  })
   @IsOptional()
   @IsString()
-  titulo: string;
+  titulo?: string;
 
-  @ApiPropertyOptional({ example: 'Descripción actualizada del torneo.', description: 'Nueva descripción' })
+  @ApiPropertyOptional({
+    example: 'Descripción actualizada del torneo.',
+    description: 'Nueva descripción',
+  })
   @IsOptional()
   @IsString()
   descripcion?: string;
 
-  @ApiPropertyOptional({ 
-    enum: EventValidationStatus, 
+  @ApiPropertyOptional({
+    enum: EventValidationStatus,
     example: 'COMPETITIVO',
-    description: 'Cambiar el nivel de validación'
+    description: 'Cambiar el nivel de validación',
   })
   @IsOptional()
   @IsEnum(EventValidationStatus)
-  tipo_evento: EventValidationStatus;
+  tipo_evento?: EventValidationStatus;
 
-  @ApiPropertyOptional({ example: '2026-05-20', description: 'Nueva fecha (YYYY-MM-DD)' })
+  @ApiPropertyOptional({
+    example: '2026-05-20',
+    description: 'Nueva fecha (YYYY-MM-DD)',
+  })
   @IsOptional()
   @IsDateString({ strict: true })
-  fecha: string;
+  fecha?: string;
 
-  @ApiPropertyOptional({ example: '11:00', description: 'Nueva hora de inicio' })
+  @ApiPropertyOptional({
+    example: '11:00',
+    description: 'Nueva hora de inicio',
+  })
   @IsOptional()
   @IsString()
-  hora_inicio: string;
+  hora_inicio?: string;
 
   @ApiPropertyOptional({ example: '19:00', description: 'Nueva hora de fin' })
   @IsOptional()
   @IsString()
   hora_fin?: string;
 
-  @ApiPropertyOptional({ example: 'Sede Norte GoblinHub', description: 'Nueva ubicación' })
+  @ApiPropertyOptional({
+    example: 'Sede Norte GoblinHub',
+    description: 'Nueva ubicación',
+  })
   @IsOptional()
   @IsString()
-  lugar: string;
+  lugar?: string;
 
-  @ApiPropertyOptional({ example: 20.00, description: 'Nuevo costo' })
+  @ApiPropertyOptional({ example: 20.0, description: 'Nuevo costo' })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -62,18 +77,21 @@ export class UpdateEventDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
-  cupo_maximo: number;
+  cupo_maximo?: number;
 
-  @ApiPropertyOptional({ 
-    enum: EventStatus, 
+  @ApiPropertyOptional({
+    enum: EventStatus,
     example: 'finalizado',
-    description: 'Cambiar el estado del evento'
+    description: 'Cambiar el estado del evento',
   })
   @IsOptional()
   @IsEnum(EventStatus)
-  estado: EventStatus;
+  estado?: EventStatus;
 
-  @ApiPropertyOptional({ example: 'Kill Team', description: 'Cambiar sistema de juego' })
+  @ApiPropertyOptional({
+    example: 'Kill Team',
+    description: 'Cambiar sistema de juego',
+  })
   @IsOptional()
   @IsString()
   sistema_juego?: string;

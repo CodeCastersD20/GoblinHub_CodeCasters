@@ -14,25 +14,34 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateEventDto {
-  @ApiProperty({ example: 'Torneo Relámpago de Warhammer', description: 'Título del evento' })
+  @ApiProperty({
+    example: 'Torneo Relámpago de Warhammer',
+    description: 'Título del evento',
+  })
   @IsString()
   @IsNotEmpty()
   titulo: string;
 
-  @ApiPropertyOptional({ example: 'Un evento para novatos y veteranos por igual.', description: 'Descripción detallada' })
+  @ApiPropertyOptional({
+    example: 'Un evento para novatos y veteranos por igual.',
+    description: 'Descripción detallada',
+  })
   @IsOptional()
   @IsString()
   descripcion?: string;
 
-  @ApiProperty({ 
-    enum: EventValidationStatus, 
+  @ApiProperty({
+    enum: EventValidationStatus,
     example: 'CASUAL', // Usamos string directo para evitar el error de "Property does not exist"
-    description: 'Nivel de validación o tipo de competencia'
+    description: 'Nivel de validación o tipo de competencia',
   })
   @IsEnum(EventValidationStatus)
   tipo_evento: EventValidationStatus;
 
-  @ApiProperty({ example: '2026-04-15', description: 'Fecha del evento (YYYY-MM-DD)' })
+  @ApiProperty({
+    example: '2026-04-15',
+    description: 'Fecha del evento (YYYY-MM-DD)',
+  })
   @IsDateString({ strict: true })
   @IsNotEmpty()
   fecha: string;
@@ -42,42 +51,62 @@ export class CreateEventDto {
   @IsNotEmpty()
   hora_inicio: string;
 
-  @ApiPropertyOptional({ example: '18:00', description: 'Hora estimada de finalización' })
+  @ApiPropertyOptional({
+    example: '18:00',
+    description: 'Hora estimada de finalización',
+  })
   @IsOptional()
   @IsString()
   hora_fin?: string;
 
-  @ApiProperty({ example: 'GoblinHub Local Central', description: 'Ubicación física del evento' })
+  @ApiProperty({
+    example: 'GoblinHub Local Central',
+    description: 'Ubicación física del evento',
+  })
   @IsString()
   @IsNotEmpty()
   lugar: string;
 
-  @ApiPropertyOptional({ example: 15.50, description: 'Costo de inscripción', minimum: 0 })
+  @ApiPropertyOptional({
+    example: 15.5,
+    description: 'Costo de inscripción',
+    minimum: 0,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
   costo?: number;
 
-  @ApiProperty({ example: 32, description: 'Capacidad máxima de asistentes', minimum: 1 })
+  @ApiProperty({
+    example: 32,
+    description: 'Capacidad máxima de asistentes',
+    minimum: 1,
+  })
   @IsNumber()
   @Min(1)
   cupo_maximo: number;
 
-  @ApiPropertyOptional({ 
-    enum: EventStatus, 
+  @ApiPropertyOptional({
+    enum: EventStatus,
     example: 'programado', // Cambiado a string directo
-    default: 'programado' 
+    default: 'programado',
   })
   @IsOptional()
   @IsEnum(EventStatus)
   estado: EventStatus;
 
-  @ApiPropertyOptional({ example: 'Warhammer 40k', description: 'El juego que se usará' })
+  @ApiPropertyOptional({
+    example: 'Warhammer 40k',
+    description: 'El juego que se usará',
+  })
   @IsOptional()
   @IsString()
   sistema_juego?: string;
 
-  @ApiPropertyOptional({ example: 100, description: 'Puntos para el 1er lugar' })
+  @ApiPropertyOptional({
+    example: 100,
+    description: 'Puntos para el 1er lugar',
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)

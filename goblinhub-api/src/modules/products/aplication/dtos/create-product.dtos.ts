@@ -1,35 +1,50 @@
-import { IsNumber, IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'; // Importamos Swagger
 import { CategoriaProducto } from '../../domain/enums/product.enum';
 
 export class CreateProductoDto {
-  @ApiProperty({ example: 'Pintura Citadel: Mephiston Red', description: 'Nombre del producto' })
+  @ApiProperty({
+    example: 'Pintura Citadel: Mephiston Red',
+    description: 'Nombre del producto',
+  })
   @IsString()
   nombre: string;
 
-  @ApiPropertyOptional({ example: 'Citadel', description: 'Marca o fabricante' })
+  @ApiPropertyOptional({
+    example: 'Citadel',
+    description: 'Marca o fabricante',
+  })
   @IsString()
   @IsOptional()
   marca?: string;
 
-  @ApiProperty({ 
-    enum: CategoriaProducto, 
+  @ApiProperty({
+    enum: CategoriaProducto,
     example: CategoriaProducto.PINTURA,
-    description: 'Categoría del producto según el Enum'
+    description: 'Categoría del producto según el Enum',
   })
   @IsEnum(CategoriaProducto)
   categoria: CategoriaProducto;
 
-  @ApiPropertyOptional({ example: 'Pintura base acrílica de alta calidad', description: 'Descripción detallada' })
+  @ApiPropertyOptional({
+    example: 'Pintura base acrílica de alta calidad',
+    description: 'Descripción detallada',
+  })
   @IsString()
   @IsOptional()
   descripcion?: string;
 
-  @ApiProperty({ example: 4.50, description: 'Precio de venta actual' })
+  @ApiProperty({ example: 4.5, description: 'Precio de venta actual' })
   @IsNumber()
   precio: number;
 
-  @ApiPropertyOptional({ example: 5.00, description: 'Precio sin descuento' })
+  @ApiPropertyOptional({ example: 5.0, description: 'Precio sin descuento' })
   @IsNumber()
   @IsOptional()
   precio_original?: number;
@@ -54,9 +69,9 @@ export class CreateProductoDto {
   @IsOptional()
   es_nuevo?: boolean;
 
-  @ApiPropertyOptional({ 
-    example: 'https://myminis.com/image.jpg', 
-    description: 'URL de la imagen del producto' 
+  @ApiPropertyOptional({
+    example: 'https://myminis.com/image.jpg',
+    description: 'URL de la imagen del producto',
   })
   @IsString()
   @IsOptional()

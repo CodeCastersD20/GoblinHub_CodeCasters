@@ -54,9 +54,9 @@ export class CreateRewardUseCase {
       }
 
       // 4. Instanciar la entidad
-      // Le pasamos '' como ID porque en la creación la BD lo asigna después
+      // Le pasamos 0 como ID porque en la creación la BD lo asigna después
       const reward = new Recompensa(
-        '', // id
+        0, // id
         data.nombre,
         data.descripcion ?? '',
         data.costo_puntos,

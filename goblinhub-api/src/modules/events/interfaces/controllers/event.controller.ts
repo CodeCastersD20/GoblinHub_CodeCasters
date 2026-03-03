@@ -11,13 +11,13 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
-  ApiQuery, 
-  ApiBearerAuth 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger'; // Swagger tools
 import { CreateEventUseCase } from '../../application/use-case/create-event.use-case';
 import { UpdateEventUseCase } from '../../application/use-case/update-event.use-case';
@@ -33,19 +33,28 @@ import type { AuthenticatedRequest } from '../../../supabase/interfaces/types/au
 @Controller('events')
 export class EventController {
   constructor(
-    private readonly get: GetEventUseCase,
-    private readonly created: CreateEventUseCase,
-    private readonly updated: UpdateEventUseCase,
-    private readonly deleted: SoftDeleteEventUseCase,
+    private readonly getUseCase: GetEventUseCase,
+    private readonly createUseCase: CreateEventUseCase,
+    private readonly updateUseCase: UpdateEventUseCase,
+    private readonly deleteUseCase: SoftDeleteEventUseCase,
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Obtener todos los eventos o buscar por nombre (Público)' })
-  @ApiQuery({ name: 'name', required: false, description: 'Filtrar eventos por nombre' })
-  @ApiResponse({ status: 200, description: 'Lista de eventos obtenida con éxito.' })
+  @ApiOperation({
+    summary: 'Obtener todos los eventos o buscar por nombre (Público)',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    description: 'Filtrar eventos por nombre',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de eventos obtenida con éxito.',
+  })
   async getAll(@Query('name') name?: string): Promise<Event[]> {
-    if (name) return await this.get.searchEventsByName(name);
-    return await this.get.getAllEvents();
+    if (name) return await this.getUseCase.searchEventsByName(name);
+    return await this.getUseCase.getAllEvents();
   }
 
   @Get(':id')
@@ -54,21 +63,27 @@ export class EventController {
   @ApiResponse({ status: 200, description: 'Evento encontrado.' })
   @ApiResponse({ status: 404, description: 'Evento no encontrado.' })
   async getById(@Param('id') id: string): Promise<Event> {
-    return await this.get.getEventById(id);
+    return await this.getUseCase.getEventById(id);
   }
 
   @Post()
   @UseGuards(SupabaseAuthGuard)
   @ApiBearerAuth('access-token') // Candado requerido por el issue
   @ApiOperation({ summary: 'Crear un nuevo evento (Privado)' })
-  @ApiResponse({ status: 201, description: 'El evento ha sido creado exitosamente.' })
-  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido o inexistente.' })
+  @ApiResponse({
+    status: 201,
+    description: 'El evento ha sido creado exitosamente.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'No autorizado - Token inválido o inexistente.',
+  })
   async createEvent(
     @Body() createEventDto: CreateEventDto,
     @Request() req: AuthenticatedRequest,
   ): Promise<Event> {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
-    return await this.created.createEvent(createEventDto, req.user.id);
+    return await this.createUseCase.createEvent(createEventDto, req.user.id);
   }
 
   @Put(':id')
@@ -76,7 +91,10 @@ export class EventController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Actualizar un evento existente' })
   @ApiParam({ name: 'id', description: 'UUID del evento a modificar' })
-  @ApiResponse({ status: 200, description: 'Evento actualizado correctamente.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Evento actualizado correctamente.',
+  })
   @ApiResponse({ status: 404, description: 'Evento no encontrado.' })
   async updateEvent(
     @Param('id') id: string,
@@ -84,7 +102,11 @@ export class EventController {
     @Request() req: AuthenticatedRequest,
   ): Promise<Event> {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
-    return await this.updated.updateEvent(id, updateEventDto, req.user.id);
+    return await this.updateUseCase.updateEvent(
+      id,
+      updateEventDto,
+      req.user.id,
+    );
   }
 
   @Delete(':id')
@@ -98,6 +120,6 @@ export class EventController {
     @Request() req: AuthenticatedRequest,
   ): Promise<Event> {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
-    return await this.deleted.softDeleteEvent(id, req.user.id);
+    return await this.deleteUseCase.softDeleteEvent(id, req.user.id);
   }
 }

@@ -1,25 +1,43 @@
-import { HttpException, Injectable } from "@nestjs/common";
-import { ProductRepository } from "../../domain/repositories/product.respository";
-import { Producto } from "../../domain/entities/product.entity";
+import { ForbiddenException, HttpException, Injectable } from '@nestjs/common';
+import { ProductRepository } from '../../domain/repositories/product.respository';
+import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario.repository';
+import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
 
 @Injectable()
 export class SoftDeleteProductoUseCase {
-  constructor(private productoRepository: ProductRepository) {}
+  constructor(
+    private productoRepository: ProductRepository,
+    private usuarioRepository: UsuarioRepository,
+  ) {}
 
-  async softDeleteProducto(id: string): Promise<void> {
+  async softDeleteProducto(id: string, id_usuario: string): Promise<void> {
     try {
-      // 1. Verificamos que el producto realmente exista
+      // 1. Validar permisos del usuario
+      const rol = await this.usuarioRepository.findRolById(id_usuario);
+
+      if (rol !== RolUsuario.admin && rol !== RolUsuario.empleado) {
+        throw new ForbiddenException(
+          'No tienes permisos para eliminar productos',
+        );
+      }
+
+      // 2. Verificamos que el producto realmente exista
       const productoExistente = await this.productoRepository.findById(id);
 
       if (!productoExistente) {
-        throw new HttpException({ Error: 'No se encontró el producto a eliminar' }, 404);
+        throw new HttpException(
+          { Error: 'No se encontró el producto a eliminar' },
+          404,
+        );
       }
 
       // 2. Si existe, procedemos a hacer el soft delete
       await this.productoRepository.delete(id);
-      
     } catch (error) {
-      if (error instanceof HttpException) {
+      if (
+        error instanceof HttpException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new HttpException(

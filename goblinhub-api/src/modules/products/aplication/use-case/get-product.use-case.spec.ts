@@ -2,18 +2,25 @@ import { GetProductoUseCase } from './get-product.use-case';
 import { ProductRepository } from '../../domain/repositories/product.respository';
 import { HttpException } from '@nestjs/common';
 import { CategoriaProducto } from '../../domain/enums/product.enum';
+import { Producto } from '../../domain/entities/product.entity';
 
 describe('GetProductoUseCase', () => {
   let useCase: GetProductoUseCase;
   let productRepo: jest.Mocked<ProductRepository>;
 
-  const mockProduct = {
-    id: 'uuid-123',
-    nombre: 'Playmat Pro',
-    categoria: 'Accesorios',
-    precio: 500,
-    stock: 5,
-  } as any;
+  const mockProduct = new Producto(
+    'uuid-123',
+    'Playmat Pro',
+    CategoriaProducto.ACCESORIOS,
+    500,
+    5,
+    2,
+    false,
+    false,
+    true,
+    new Date(),
+    new Date(),
+  );
 
   beforeEach(() => {
     productRepo = {
@@ -52,17 +59,21 @@ describe('GetProductoUseCase', () => {
 
     it('debe lanzar 404 si no se encuentra el producto', async () => {
       productRepo.findById.mockResolvedValue(null);
-      await expect(useCase.getByIdProducto('uuid-999')).rejects.toThrow(HttpException);
+      await expect(useCase.getByIdProducto('uuid-999')).rejects.toThrow(
+        HttpException,
+      );
     });
 
     it('debe lanzar 500 si falla el repositorio', async () => {
       productRepo.findById.mockRejectedValue(new Error('DB Error'));
-      await expect(useCase.getByIdProducto('uuid-123')).rejects.toThrow(HttpException);
+      await expect(useCase.getByIdProducto('uuid-123')).rejects.toThrow(
+        HttpException,
+      );
     });
   });
 
   describe('getByCategoriaProducto', () => {
-    const validCategory = Object.values(CategoriaProducto)[0] as CategoriaProducto;
+    const validCategory: CategoriaProducto = CategoriaProducto.WARGAMES;
 
     it('debe retornar productos de una categoría', async () => {
       productRepo.findByCategory.mockResolvedValue([mockProduct]);
@@ -72,12 +83,16 @@ describe('GetProductoUseCase', () => {
 
     it('debe lanzar 404 si no hay productos en esa categoría', async () => {
       productRepo.findByCategory.mockResolvedValue([]);
-      await expect(useCase.getByCategoriaProducto(validCategory)).rejects.toThrow(HttpException);
+      await expect(
+        useCase.getByCategoriaProducto(validCategory),
+      ).rejects.toThrow(HttpException);
     });
 
     it('debe lanzar 500 si falla el repositorio', async () => {
       productRepo.findByCategory.mockRejectedValue(new Error('DB Error'));
-      await expect(useCase.getByCategoriaProducto(validCategory)).rejects.toThrow(HttpException);
+      await expect(
+        useCase.getByCategoriaProducto(validCategory),
+      ).rejects.toThrow(HttpException);
     });
   });
 });

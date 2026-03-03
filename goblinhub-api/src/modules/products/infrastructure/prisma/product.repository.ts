@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/connect/prisma.service';
+import { PrismaService } from '../../../../connect/prisma.service';
 import { Producto } from '../../domain/entities/product.entity';
 import { CategoriaProductoMapper } from '../mappers/product-status.mapper';
 import { ProductRepository } from '../../domain/repositories/product.respository';
 import { CategoriaProducto } from '../../domain/enums/product.enum';
+import { Producto as PrismaProducto } from '@prisma/client';
 
 @Injectable()
 export class ProductoPrismaRepository extends ProductRepository {
@@ -12,7 +13,7 @@ export class ProductoPrismaRepository extends ProductRepository {
   }
 
   // --- Método Auxiliar para evitar repetir código ---
-  private mapToDomain(prismaProducto: any): Producto {
+  private mapToDomain(prismaProducto: PrismaProducto): Producto {
     return new Producto(
       // Requeridos
       prismaProducto.id_producto,
@@ -29,7 +30,9 @@ export class ProductoPrismaRepository extends ProductRepository {
       // Opcionales
       prismaProducto.marca ?? undefined,
       prismaProducto.descripcion ?? undefined,
-      prismaProducto.precio_original ? prismaProducto.precio_original.toNumber() : undefined,
+      prismaProducto.precio_original
+        ? prismaProducto.precio_original.toNumber()
+        : undefined,
       prismaProducto.imagen_url ?? undefined,
       prismaProducto.deleted_at ?? undefined,
     );
@@ -76,9 +79,9 @@ export class ProductoPrismaRepository extends ProductRepository {
 
   async findByCategory(categoria: CategoriaProducto): Promise<Producto[]> {
     const productos = await this.prisma.producto.findMany({
-      where: { 
-        categoria: CategoriaProductoMapper.toPrisma(categoria), 
-        deleted_at: null 
+      where: {
+        categoria: CategoriaProductoMapper.toPrisma(categoria),
+        deleted_at: null,
       },
     });
 
@@ -106,15 +109,15 @@ export class ProductoPrismaRepository extends ProductRepository {
 
     return this.mapToDomain(updated);
   }
-async delete(id: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     await this.prisma.producto.update({
       where: { id_producto: id },
-      data: { 
+      data: {
         deleted_at: new Date(),
-        activo: false // Opcional, pero recomendado para ocultarlo inmediatamente
-      }, 
+        activo: false, // Opcional, pero recomendado para ocultarlo inmediatamente
+      },
     });
-    
+
     // Ya no hacemos return de mapToDomain porque el método es void (vacío)
   }
 }

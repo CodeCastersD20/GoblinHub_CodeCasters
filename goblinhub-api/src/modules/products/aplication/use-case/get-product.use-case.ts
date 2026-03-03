@@ -54,7 +54,9 @@ export class GetProductoUseCase {
     }
   }
 
-async getByCategoriaProducto(categoria: CategoriaProducto): Promise<Producto[]> {
+  async getByCategoriaProducto(
+    categoria: CategoriaProducto,
+  ): Promise<Producto[]> {
     try {
       // Usamos el enum directamente como parámetro
       const productos = await this.productoRepository.findByCategory(categoria);
@@ -62,8 +64,10 @@ async getByCategoriaProducto(categoria: CategoriaProducto): Promise<Producto[]> 
       // Verificamos si el arreglo está vacío
       if (!productos || productos.length === 0) {
         throw new HttpException(
-          { Error: `No se encontraron productos para la categoría: ${categoria}` }, 
-          404
+          {
+            Error: `No se encontraron productos para la categoría: ${categoria}`,
+          },
+          404,
         );
       }
 

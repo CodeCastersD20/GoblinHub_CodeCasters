@@ -60,8 +60,8 @@ export class GetRewardUseCase {
 
       if (!reward) {
         throw new HttpException(
-          { Error: `No se encontró la recompensa con el nombre: ${nombre}` }, 
-          404
+          { Error: `No se encontró la recompensa con el nombre: ${nombre}` },
+          404,
         );
       }
 

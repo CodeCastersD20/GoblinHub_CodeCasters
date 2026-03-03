@@ -1,28 +1,43 @@
-import { IsNumber, IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger'; // Decorador para campos opcionales
 import { CategoriaProducto } from '../../domain/enums/product.enum';
 
 export class UpdateProductoDto {
-  @ApiPropertyOptional({ example: 'Pintura Citadel: Mephiston Red (Actualizado)', description: 'Nuevo nombre' })
+  @ApiPropertyOptional({
+    example: 'Pintura Citadel: Mephiston Red (Actualizado)',
+    description: 'Nuevo nombre',
+  })
   @IsString()
   @IsOptional()
   nombre?: string;
 
-  @ApiPropertyOptional({ example: 'Citadel Colors', description: 'Nueva marca' })
+  @ApiPropertyOptional({
+    example: 'Citadel Colors',
+    description: 'Nueva marca',
+  })
   @IsString()
   @IsOptional()
   marca?: string;
 
-  @ApiPropertyOptional({ 
-    enum: CategoriaProducto, 
+  @ApiPropertyOptional({
+    enum: CategoriaProducto,
     example: 'PINTURA',
-    description: 'Nueva categoría del producto' 
+    description: 'Nueva categoría del producto',
   })
   @IsEnum(CategoriaProducto)
   @IsOptional()
   categoria?: CategoriaProducto;
 
-  @ApiPropertyOptional({ example: 'Nueva descripción para este producto.', description: 'Nueva descripción' })
+  @ApiPropertyOptional({
+    example: 'Nueva descripción para este producto.',
+    description: 'Nueva descripción',
+  })
   @IsString()
   @IsOptional()
   descripcion?: string;
@@ -32,12 +47,15 @@ export class UpdateProductoDto {
   @IsOptional()
   precio?: number;
 
-  @ApiPropertyOptional({ example: 5.50, description: 'Nuevo precio original' })
+  @ApiPropertyOptional({ example: 5.5, description: 'Nuevo precio original' })
   @IsNumber()
   @IsOptional()
   precio_original?: number;
 
-  @ApiPropertyOptional({ example: 100, description: 'Actualizar stock disponible' })
+  @ApiPropertyOptional({
+    example: 100,
+    description: 'Actualizar stock disponible',
+  })
   @IsNumber()
   @IsOptional()
   stock?: number;
@@ -47,22 +65,34 @@ export class UpdateProductoDto {
   @IsOptional()
   stock_minimo?: number;
 
-  @ApiPropertyOptional({ example: false, description: 'Marcar como popular o no' })
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Marcar como popular o no',
+  })
   @IsBoolean()
   @IsOptional()
   popular?: boolean;
 
-  @ApiPropertyOptional({ example: false, description: 'Quitar etiqueta de nuevo' })
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Quitar etiqueta de nuevo',
+  })
   @IsBoolean()
   @IsOptional()
   es_nuevo?: boolean;
 
-  @ApiPropertyOptional({ example: 'https://cdn.myminis.com/new-image.jpg', description: 'Nueva URL de imagen' })
+  @ApiPropertyOptional({
+    example: 'https://cdn.myminis.com/new-image.jpg',
+    description: 'Nueva URL de imagen',
+  })
   @IsString()
   @IsOptional()
   imagen_url?: string;
 
-  @ApiPropertyOptional({ example: true, description: 'Habilitar o deshabilitar producto' })
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Habilitar o deshabilitar producto',
+  })
   @IsBoolean()
   @IsOptional()
   activo?: boolean;

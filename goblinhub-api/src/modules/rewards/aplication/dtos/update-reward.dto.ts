@@ -1,4 +1,11 @@
-import { IsNumber, IsInt, IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
+import {
+  IsNumber,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TipoRecompensa } from '../../domain/enums/reward.enum';
 

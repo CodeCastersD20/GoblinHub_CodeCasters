@@ -1,19 +1,22 @@
 import { GetRewardUseCase } from './get-reward.use-case';
 import { RewardRepository } from '../../domain/repositories/reward.repository';
 import { HttpException } from '@nestjs/common';
+import { Recompensa } from '../../domain/entities/reward.entity';
+import { TipoRecompensa } from '../../domain/enums/reward.enum';
 
 describe('GetRewardUseCase', () => {
   let useCase: GetRewardUseCase;
   let rewardRepo: jest.Mocked<RewardRepository>;
 
-  const mockReward = {
-    id: 1,
-    nombre: 'Descuento 10%',
-    descripcion: 'Aplica en dados',
-    costo_puntos: 50,
-    tipo: 'descuento',
-    activa: true,
-  } as any;
+  const mockReward = new Recompensa(
+    1,
+    'Descuento 10%',
+    'Aplica en dados',
+    50,
+    TipoRecompensa.DESCUENTO,
+    undefined,
+    true,
+  );
 
   beforeEach(() => {
     rewardRepo = {
@@ -70,12 +73,16 @@ describe('GetRewardUseCase', () => {
 
     it('debe lanzar 404 si el nombre no existe', async () => {
       rewardRepo.findByName.mockResolvedValue(null);
-      await expect(useCase.getByNameReward('Inexistente')).rejects.toThrow(HttpException);
+      await expect(useCase.getByNameReward('Inexistente')).rejects.toThrow(
+        HttpException,
+      );
     });
 
     it('debe lanzar 500 si el repositorio falla', async () => {
       rewardRepo.findByName.mockRejectedValue(new Error('Fallo red'));
-      await expect(useCase.getByNameReward('Error')).rejects.toThrow(HttpException);
+      await expect(useCase.getByNameReward('Error')).rejects.toThrow(
+        HttpException,
+      );
     });
   });
 });
