@@ -14,12 +14,12 @@ export class Producto {
     public activo: boolean,
     public created_at: Date,
     public updated_at: Date,
-    
+
     // --- Opcionales (siempre al final) ---
     public marca?: string,
     public descripcion?: string,
     public precio_original?: number,
     public imagen_url?: string,
     public deleted_at?: Date,
-    ) {}
+  ) {}
 }
