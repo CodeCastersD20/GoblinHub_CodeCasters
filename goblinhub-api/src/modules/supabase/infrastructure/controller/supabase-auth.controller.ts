@@ -14,12 +14,13 @@ import { SupabaseRefreshTokenService } from '../../application/use-case/refreshT
 import { SupabaseGetUserProfileService } from '../../application/use-case/getUserProfile.use-case';
 import { SupabaseCreateTestUserService } from '../../application/use-case/login-user.use-case';
 import { SupabaseRegisterUserService } from '../../application/use-case/register-user.use-case';
+import { GetMeUseCase } from '../../application/use-case/getMe.use-case';
+import { SignInUseCase } from '../../application/use-case/signin.use-case';
 import {
-  //   CreateTesruserDto,
   RefreshTokenDto,
   RegisterUserDto,
+  SignInDto,
   SignInTestuserDto,
-  // validateTokenDto,
 } from '../../application/dto/auth.dto';
 import { SupabaseAuthGuard } from '../../guard/supabse-auth.guard';
 import type { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
@@ -32,7 +33,16 @@ export class SupabaseAuthController {
     private readonly getUserProfileService: SupabaseGetUserProfileService,
     private readonly createTestUserService: SupabaseCreateTestUserService,
     private readonly registerUserService: SupabaseRegisterUserService,
+    private readonly getMeUseCase: GetMeUseCase,
+    private readonly signInUseCase: SignInUseCase,
   ) {}
+
+  /** Endpoint de login limpio — solo devuelve access_token y refresh_token */
+  @Post('signin')
+  @HttpCode(HttpStatus.OK)
+  async signIn(@Body() dto: SignInDto) {
+    return await this.signInUseCase.execute(dto.email, dto.password);
+  }
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
@@ -66,6 +76,15 @@ export class SupabaseAuthController {
     return await this.getUserProfileService.getUserProfile(token);
   }
 
+  @Get('me')
+  @UseGuards(SupabaseAuthGuard)
+  async getMe(@Request() req: AuthenticatedRequest) {
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+    const id: string = req.user.id;
+    const email: string | undefined = req.user.email;
+    return this.getMeUseCase.execute(id, email);
+  }
+
   @Get('verify')
   @UseGuards(SupabaseAuthGuard)
   verifyToken(@Request() req: AuthenticatedRequest) {
@@ -80,6 +99,7 @@ export class SupabaseAuthController {
     };
   }
 
+  /** Solo para desarrollo/testing interno — bloqueado en producción */
   @Post('test/signin')
   @HttpCode(HttpStatus.OK)
   async signInTestestuser(@Body() signInTestUserDto: SignInTestuserDto) {
@@ -91,16 +111,4 @@ export class SupabaseAuthController {
       signInTestUserDto.password,
     );
   }
-
-  //   @Get('test/users')
-  //   @HttpCode(HttpStatus.OK)
-  //   listTestUsers() {
-  //     return this.createTestUserService.listAuthUsers();
-  //   }
-
-  // @Post('validate-token')
-  // @HttpCode(HttpStatus.OK)
-  // async validateToken(@Body() validateTokenDto: validateTokenDto) {
-  //   return await this.validationService.validtoken(validateTokenDto.token);
-  // }
 }

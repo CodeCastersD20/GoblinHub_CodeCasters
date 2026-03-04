@@ -23,6 +23,8 @@ interface ConfirmacionProps {
   onCompletar: () => void;
   datos: DatosPersonales;
   intereses: DatosIntereses;
+  loading?: boolean;
+  error?: string;
 }
 
 function RegisterConfirmacion({
@@ -30,6 +32,8 @@ function RegisterConfirmacion({
   onCompletar,
   datos,
   intereses,
+  loading = false,
+  error = "",
 }: ConfirmacionProps) {
   const [terminos, setTerminos] = useState(false);
   const [notificaciones, setNotificaciones] = useState(false);
@@ -145,11 +149,20 @@ function RegisterConfirmacion({
             </div>
 
             <div className="botones">
-              <button className="regresar" onClick={onAnterior}>
+              <button
+                className="regresar"
+                onClick={onAnterior}
+                disabled={loading}
+              >
                 ← Anterior
               </button>
-              <button className="siguiente completar" onClick={handleCompletar}>
-                ✔ Completar Registro
+              {error && <span className="error">{error}</span>}
+              <button
+                className="siguiente completar"
+                onClick={handleCompletar}
+                disabled={loading}
+              >
+                {loading ? "Registrando..." : "✔ Completar Registro"}
               </button>
             </div>
           </div>

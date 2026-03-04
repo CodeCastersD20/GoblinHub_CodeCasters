@@ -7,7 +7,10 @@ import { SupabaseGetUserProfileService } from './application/use-case/getUserPro
 import { SupabaseRefreshTokenService } from './application/use-case/refreshT.use-case';
 import { SupabaseCreateTestUserService } from './application/use-case/login-user.use-case';
 import { SupabaseRegisterUserService } from './application/use-case/register-user.use-case';
+import { GetMeUseCase } from './application/use-case/getMe.use-case';
+import { SignInUseCase } from './application/use-case/signin.use-case';
 import { SupabaseAuthGuard } from './guard/supabse-auth.guard';
+import { RolesGuard } from './guard/roles.guard';
 import { UsuarioRepository } from './domain/repositories/usuario.repository';
 import { UsuarioRepositoryPrisma } from './infrastructure/prisma/usuario.repository';
 
@@ -20,8 +23,10 @@ import { UsuarioRepositoryPrisma } from './infrastructure/prisma/usuario.reposit
     SupabaseRefreshTokenService,
     SupabaseCreateTestUserService,
     SupabaseRegisterUserService,
-    SupabaseAuthController,
+    GetMeUseCase,
+    SignInUseCase,
     SupabaseAuthGuard,
+    RolesGuard,
     {
       provide: UsuarioRepository,
       useClass: UsuarioRepositoryPrisma,
@@ -32,6 +37,7 @@ import { UsuarioRepositoryPrisma } from './infrastructure/prisma/usuario.reposit
     SupabaseGetUserProfileService,
     SupabaseRefreshTokenService,
     SupabaseAuthGuard,
+    RolesGuard,
     UsuarioRepository,
   ],
 })
