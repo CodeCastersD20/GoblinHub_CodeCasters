@@ -12,6 +12,7 @@ import RegisterFlow from "./pages/register/RegisterFlow";
 import AuthHome from "./pages/Home/Home";
 import PerfilPage from "./pages/perfil/PerfilPage";
 
+
 function App() {
   return (
     <>

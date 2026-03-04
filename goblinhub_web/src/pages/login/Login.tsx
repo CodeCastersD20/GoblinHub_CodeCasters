@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
-import logo from "../../components/logo/logo.png";
 import { login } from "../../services/auth.service";
 
 const Login: React.FC = () => {
@@ -30,16 +29,19 @@ const Login: React.FC = () => {
     }
   };
 
-  return (
-    <div className="base-login">
-      <div className="logo-login">
-        {forgotPassword && (
-          <span className="volver" onClick={() => setForgotPassword(false)}>
-            ← Volver al login
-          </span>
-        )}
-        <img src={logo} alt="goblin" className="goblin-login" />
-      </div>
+    return (
+        <div className="base-login">
+            <div className='logo-login'>
+                {forgotPassword && (
+                    <span
+                        className="volver"
+                        onClick={() => setForgotPassword(false)}
+                    >
+                        ← Volver al login
+                    </span>
+                )}
+                <img src={"/logo.png"} alt="goblin" className="goblin-login" />
+            </div>
 
       {!forgotPassword ? (
         // ——— VISTA LOGIN ———

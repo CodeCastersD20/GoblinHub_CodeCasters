@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/button/button";
-import { getMe, logout } from "../../services/auth.service";
 import "./navbar.css";
 
 function Nav() {
