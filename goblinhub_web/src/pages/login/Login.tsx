@@ -1,7 +1,6 @@
 
 import { useState } from "react"
 import "./Login.css"
-import logo from '../../components/logo/logo.png'
 
 const Login: React.FC = () => {
     const [forgotPassword, setForgotPassword] = useState(false)
@@ -17,7 +16,7 @@ const Login: React.FC = () => {
                         ← Volver al login
                     </span>
                 )}
-                <img src={logo} alt="goblin" className="goblin-login" />
+                <img src={"/logo.png"} alt="goblin" className="goblin-login" />
             </div>
 
             {!forgotPassword ? (

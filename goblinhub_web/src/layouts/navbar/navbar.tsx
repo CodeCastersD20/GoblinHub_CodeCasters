@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/button/button";
-import "./Navbar.css";
+import "./navbar.css";
 
 function Nav() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
