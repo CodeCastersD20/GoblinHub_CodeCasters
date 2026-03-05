@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
@@ -12,7 +12,8 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  // ✅ useCallback garantiza que handleLogin siempre tenga email y password actualizados
+  const handleLogin = useCallback(async () => {
     setError("");
     setLoading(true);
     try {
@@ -27,24 +28,36 @@ const Login: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [email, password, navigate]); // 👈 se recrea solo cuando cambian estos valores
 
-    return (
-        <div className="base-login">
-            <div className='logo-login'>
-                {forgotPassword && (
-                    <span
-                        className="volver"
-                        onClick={() => setForgotPassword(false)}
-                    >
-                        ← Volver al login
-                    </span>
-                )}
-                <img src={"/logo.png"} alt="goblin" className="goblin-login" />
-            </div>
+  const handleRecoverPassword = useCallback(() => {
+    console.log("Enviando correo...");
+  }, []);
+
+  // ✅ useEffect limpio gracias a useCallback
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        forgotPassword ? handleRecoverPassword() : handleLogin();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [forgotPassword, handleLogin, handleRecoverPassword]); // 👈 dependencias limpias
+
+  return (
+    <div className="base-login">
+      <div className="logo-login">
+        {forgotPassword && (
+          <span className="volver" onClick={() => setForgotPassword(false)}>
+            ← Volver al login
+          </span>
+        )}
+        <img src={"/logo.png"} alt="goblin" className="goblin-login" />
+      </div>
 
       {!forgotPassword ? (
-        // ——— VISTA LOGIN ———
         <div className="form-login">
           <label className="inicio-sesion">Iniciar sesión</label>
           <input
@@ -66,11 +79,10 @@ const Login: React.FC = () => {
           <button className="entrar" onClick={handleLogin} disabled={loading}>
             {loading ? "Login..." : "Login"}
           </button>
-          <p>¿No tienes una cuenta?</p>
+          <label className="cuenta">¿No tienes una cuenta?</label>
           <a href="/register">Regístrate aquí</a>
         </div>
       ) : (
-        // ——— VISTA RECUPERAR CONTRASEÑA ———
         <div className="form-login">
           <label className="inicio-sesion">Recuperar Contraseña</label>
           <label className="instrucciones">
@@ -78,7 +90,9 @@ const Login: React.FC = () => {
             restablecer tu contraseña.
           </label>
           <input type="text" placeholder="Correo electrónico" />
-          <button className="entrar">Enviar Correo</button>
+          <button onClick={handleRecoverPassword} className="entrar">
+            Enviar Correo
+          </button>
         </div>
       )}
     </div>

@@ -13,12 +13,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 15rem;
-    background-color: ghostwhite;
+    width: 80%;
+    height: auto;
+    padding: 1rem;
+    box-sizing: border-box;
+    background-color: #ede7db;
     border-radius: 10px;
     box-shadow: 10px 10px rgb(76, 9, 137);
     animation: flotando 5s ease-in-out infinite;
-    flex-wrap: wrap;
+    border: 2px solid rgb(76, 9, 137);
 }
 
 
@@ -33,7 +36,7 @@
     display: flex;
     justify-content: center; 
     align-items: center;
-    background-color: rgb(235, 200, 219);
+    background-color: #f5f0e8;
     height: 100%;
     width: 70%;
     flex-wrap: wrap;
@@ -81,7 +84,7 @@ input{
     cursor: pointer;
 }
 
-p{
+.cuenta{
     color: white;
     font-size: 1rem;
     margin: 10px;
@@ -117,9 +120,15 @@ p{
 }
 
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
     .base-login {
         flex-direction: column;
+    }
+
+    .goblin-login{
+        max-height: 10rem;
+        padding: 1rem;
+        box-sizing: border-box;
     }
 
     .logo-login {
@@ -130,5 +139,8 @@ p{
     .form-login {
         height: 70%;
         width: 100%;
+        justify-content: start;
+        padding-top: 2rem;
     }
 }
+
