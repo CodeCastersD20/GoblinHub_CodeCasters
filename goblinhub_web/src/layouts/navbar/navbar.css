@@ -212,7 +212,7 @@
     background-color: var(--nav-dropdown-border);
     margin: 4px 6px;
   }
-}
+
 
 @keyframes dropdownFadeIn {
   from {

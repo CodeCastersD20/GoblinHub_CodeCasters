@@ -60,11 +60,11 @@ const Login: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && <span className="error-msg">{error}</span>}
-          <span className="contraseña" onClick={() => setForgotPassword(true)}>
+          <a className="contraseña" onClick={() => setForgotPassword(true)}>
             ¿Olvidaste tu contraseña?
-          </span>
+          </a>
           <button className="entrar" onClick={handleLogin} disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? "Login..." : "Login"}
           </button>
           <p>¿No tienes una cuenta?</p>
           <a href="/register">Regístrate aquí</a>
@@ -78,15 +78,7 @@ const Login: React.FC = () => {
             restablecer tu contraseña.
           </label>
           <input type="text" placeholder="Correo electrónico" />
-          <div className="botones">
-            <button className="entrar">Enviar Código</button>
-            <button
-              className="cancelar"
-              onClick={() => setForgotPassword(false)}
-            >
-              Cancelar
-            </button>
-          </div>
+          <button className="entrar">Enviar Correo</button>
         </div>
       )}
     </div>
