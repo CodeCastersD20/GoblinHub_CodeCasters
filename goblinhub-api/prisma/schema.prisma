@@ -229,6 +229,7 @@ model Producto {
   es_nuevo        Boolean           @default(false)
   imagen_url      String?           @db.VarChar(500)
   activo          Boolean           @default(true)
+  id_creador      String?           @db.Uuid
   
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
@@ -285,6 +286,7 @@ model Recompensa {
   tipo            TipoRecompensa
   valor_descuento Decimal?       @db.Decimal(5, 2)
   activa          Boolean        @default(true)
+  id_creador      String?        @db.Uuid
   
   created_at      DateTime       @default(now())
   updated_at      DateTime       @updatedAt
