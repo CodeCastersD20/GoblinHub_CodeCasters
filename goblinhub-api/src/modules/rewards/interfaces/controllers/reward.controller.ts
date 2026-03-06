@@ -85,7 +85,7 @@ export class RewardController {
   ): Promise<Recompensa> {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
 
-    return await this.createUseCase.execute(createRewardDto, req.user.id);
+    return await this.createUseCase.createReward(createRewardDto, req.user.id);
   }
 
   @Patch(':id')
