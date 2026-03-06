@@ -12,12 +12,12 @@ export class SoftDeleteProductoUseCase {
 
   async softDeleteProducto(id: string, id_usuario: string): Promise<void> {
     try {
-      // 1. Validar permisos del usuario
+      // 1. Validar que solo admin puede eliminar
       const rol = await this.usuarioRepository.findRolById(id_usuario);
 
-      if (rol !== RolUsuario.admin && rol !== RolUsuario.empleado) {
+      if (rol !== RolUsuario.admin) {
         throw new ForbiddenException(
-          'No tienes permisos para eliminar productos',
+          'Solo un administrador puede eliminar productos',
         );
       }
 

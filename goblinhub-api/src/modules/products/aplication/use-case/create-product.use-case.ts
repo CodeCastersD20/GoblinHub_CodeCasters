@@ -44,7 +44,7 @@ export class CreateProductoUseCase {
       );
 
       // 3. Guardamos en la base de datos
-      return await this.productoRepository.create(newProducto);
+      return await this.productoRepository.create(newProducto, id_creador);
     } catch (error) {
       if (
         error instanceof HttpException ||

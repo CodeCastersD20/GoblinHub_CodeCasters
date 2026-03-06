@@ -21,5 +21,6 @@ export class Producto {
     public precio_original?: number,
     public imagen_url?: string,
     public deleted_at?: Date,
+    public id_creador?: string,
   ) {}
 }
