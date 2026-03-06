@@ -27,6 +27,9 @@ import { Event } from '../../domain/entities/event.entity';
 import { CreateEventDto } from '../../application/dtos/create-event.dto';
 import { UpdateEventDto } from '../../application/dtos/update-event.dto';
 import { SupabaseAuthGuard } from '../../../supabase/guard/supabse-auth.guard';
+import { RolesGuard } from '../../../supabase/guard/roles.guard';
+import { Roles } from '../../../supabase/guard/roles.decorator';
+import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
 import type { AuthenticatedRequest } from '../../../supabase/interfaces/types/authenticated-request.interface';
 
 @ApiTags('events') // Requerido por el issue
@@ -67,7 +70,8 @@ export class EventController {
   }
 
   @Post()
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin, RolUsuario.empleado)
   @ApiBearerAuth('access-token') // Candado requerido por el issue
   @ApiOperation({ summary: 'Crear un nuevo evento (Privado)' })
   @ApiResponse({
@@ -87,7 +91,8 @@ export class EventController {
   }
 
   @Put(':id')
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin, RolUsuario.empleado)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Actualizar un evento existente' })
   @ApiParam({ name: 'id', description: 'UUID del evento a modificar' })
@@ -110,7 +115,8 @@ export class EventController {
   }
 
   @Delete(':id')
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Eliminar un evento (Soft Delete)' })
   @ApiParam({ name: 'id', description: 'UUID del evento a eliminar' })

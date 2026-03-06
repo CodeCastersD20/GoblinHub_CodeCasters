@@ -25,11 +25,10 @@ export class SoftDeleteEventUseCase {
       }
 
       const rol = await this.usuarios.findRolById(id_usuario);
-      const isAdmin = rol === RolUsuario.admin;
 
-      if (!isAdmin && event.id_creador && event.id_creador !== id_usuario) {
+      if (rol !== RolUsuario.admin) {
         throw new ForbiddenException(
-          'You do not have permission to delete this event',
+          'Solo un administrador puede eliminar eventos',
         );
       }
 

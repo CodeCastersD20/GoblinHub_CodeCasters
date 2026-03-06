@@ -30,6 +30,12 @@ export class UpdateEventUseCase {
       const rol = await this.usuarios.findRolById(id_usuario);
       const isAdmin = rol === RolUsuario.admin;
 
+      if (!isAdmin && rol !== RolUsuario.empleado) {
+        throw new ForbiddenException(
+          'You do not have permission to update events',
+        );
+      }
+
       if (
         !isAdmin &&
         existEvent.id_creador &&
