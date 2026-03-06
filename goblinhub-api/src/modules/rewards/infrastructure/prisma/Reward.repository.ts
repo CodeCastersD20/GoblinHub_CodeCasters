@@ -23,10 +23,11 @@ export class RewardPrismaRepository extends RewardRepository {
         ? prismaReward.valor_descuento.toNumber()
         : undefined,
       prismaReward.activa,
+      prismaReward.id_creador ?? undefined,
     );
   }
 
-  async create(reward: Recompensa): Promise<Recompensa> {
+  async create(reward: Recompensa, id_creador: string): Promise<Recompensa> {
     const created = await this.prisma.recompensa.create({
       data: {
         nombre: reward.nombre,
@@ -35,6 +36,7 @@ export class RewardPrismaRepository extends RewardRepository {
         tipo: TipoRecompensaMapper.toPrisma(reward.tipo),
         valor_descuento: reward.valor_descuento,
         activa: reward.activa,
+        id_creador: id_creador,
       },
     });
 

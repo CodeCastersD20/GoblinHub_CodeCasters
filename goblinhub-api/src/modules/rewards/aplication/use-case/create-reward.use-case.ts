@@ -66,7 +66,7 @@ export class CreateRewardUseCase {
       );
 
       // 5. Guardar en base de datos
-      return this.rewardRepository.create(reward);
+      return this.rewardRepository.create(reward, id_creador);
     } catch (error) {
       if (
         error instanceof HttpException ||
