@@ -23,7 +23,7 @@ export class RewardPrismaRepository extends RewardRepository {
         ? prismaReward.valor_descuento.toNumber()
         : undefined,
       prismaReward.activa,
-      prismaReward.id_creador ?? undefined,
+      (prismaReward.id_creador as string | null | undefined) ?? undefined,
     );
   }
 

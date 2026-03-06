@@ -35,7 +35,7 @@ export class ProductoPrismaRepository extends ProductRepository {
         : undefined,
       prismaProducto.imagen_url ?? undefined,
       prismaProducto.deleted_at ?? undefined,
-      prismaProducto.id_creador ?? undefined,
+      (prismaProducto.id_creador as string | null | undefined) ?? undefined,
     );
   }
 
