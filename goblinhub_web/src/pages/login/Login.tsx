@@ -52,17 +52,20 @@ const Login: React.FC = () => {
     }
   }, [forgotEmail]);
 
-  // ✅ useEffect limpio gracias a useCallback
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter") {
-        forgotPassword ? handleForgotPassword() : handleLogin();
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter") {
+      if (forgotPassword) {
+        handleForgotPassword();
+      } else {
+        handleLogin();
       }
-    };
+    }
+  };
+  window.addEventListener("keydown", handleKeyDown);
+  return () => window.removeEventListener("keydown", handleKeyDown);
+}, [forgotPassword, handleLogin, handleForgotPassword]);
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [forgotPassword, handleLogin, handleForgotPassword]); // 👈 dependencias limpias
 
   return (
     <div className="base-login">
