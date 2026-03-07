@@ -36,6 +36,7 @@ export class SupabaseGetUserProfileService {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
+      throw new UnauthorizedException('Failed to retrieve user profile');
     }
   }
 }

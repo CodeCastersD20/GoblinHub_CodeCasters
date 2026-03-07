@@ -17,13 +17,17 @@ import { SupabaseRegisterUserService } from '../../application/use-case/register
 import { GetMeUseCase } from '../../application/use-case/getMe.use-case';
 import { SignInUseCase } from '../../application/use-case/signin.use-case';
 import {
+  ForgotPasswordDto,
   RefreshTokenDto,
   RegisterUserDto,
+  ResetPasswordDto,
   SignInDto,
   SignInTestuserDto,
 } from '../../application/dto/auth.dto';
 import { SupabaseAuthGuard } from '../../guard/supabse-auth.guard';
 import type { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
+import { ForgotPasswordUseCase } from '../../application/use-case/forgot-password.use-case';
+import { ResetPasswordUseCase } from '../../application/use-case/reset-password.use-case';
 
 @Controller('auth')
 export class SupabaseAuthController {
@@ -35,13 +39,18 @@ export class SupabaseAuthController {
     private readonly registerUserService: SupabaseRegisterUserService,
     private readonly getMeUseCase: GetMeUseCase,
     private readonly signInUseCase: SignInUseCase,
+    private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
+    private readonly resetPasswordUseCase: ResetPasswordUseCase,
   ) {}
 
   /** Endpoint de login limpio — solo devuelve access_token y refresh_token */
   @Post('signin')
   @HttpCode(HttpStatus.OK)
   async signIn(@Body() dto: SignInDto) {
-    return await this.signInUseCase.execute(dto.email, dto.password);
+    return await this.signInUseCase.signInWithCredentials(
+      dto.email,
+      dto.password,
+    );
   }
 
   @Post('signup')
@@ -82,7 +91,7 @@ export class SupabaseAuthController {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
     const id: string = req.user.id;
     const email: string | undefined = req.user.email;
-    return this.getMeUseCase.execute(id, email);
+    return this.getMeUseCase.getMyProfile(id, email);
   }
 
   @Get('verify')
@@ -97,6 +106,22 @@ export class SupabaseAuthController {
       user: req.user,
       message: 'Token valid and user authenticated',
     };
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return await this.forgotPasswordUseCase.forgotPassword(dto.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return await this.resetPasswordUseCase.resetPassword(
+      dto.accessToken,
+      dto.newPassword,
+      dto.confirmPassword,
+    );
   }
 
   /** Solo para desarrollo/testing interno — bloqueado en producción */

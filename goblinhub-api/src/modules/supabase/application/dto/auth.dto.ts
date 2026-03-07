@@ -72,3 +72,21 @@ export class RegisterUserDto {
   @IsEnum(NivelExperiencia)
   nivel_experiencia?: NivelExperiencia;
 }
+
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  accessToken: string;
+
+  @IsString()
+  @MinLength(8)
+  newPassword: string;
+
+  @IsString()
+  @MinLength(8)
+  confirmPassword: string;
+}
