@@ -206,12 +206,12 @@
     line-height: 1;
   }
 
-  /* ---------- Separador ---------- */
-  .usuario-dropdown__divider {
-    height: 0.1rem;
-    background-color: var(--nav-dropdown-border);
-    margin: 0.4rem 0.6rem;
-  }
+/* ---------- Separador ---------- */
+.usuario-dropdown__divider {
+  height: 0.1rem;
+  background-color: var(--nav-dropdown-border);
+  margin: 0.4rem 0.6rem;
+}
 
 
 @keyframes dropdownFadeIn {
