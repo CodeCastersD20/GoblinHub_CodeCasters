@@ -11,6 +11,7 @@ import Login from "./pages/login/Login";
 import RegisterFlow from "./pages/register/RegisterFlow";
 import AuthHome from "./pages/Home/Home";
 import PerfilPage from "./pages/perfil/PerfilPage";
+import ProductosDetalle from "./pages/products/ProductosDetalle/productsDetails";
 import ResetPassword from "./pages/resetPassword/ResetPassword";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
 
       <Routes>
         {/* Rutas públicas */}
+        <Route path="/productos/:id" element={<ProductosDetalle />} />
         <Route path="/" element={<Home />} />
         <Route path="/productos" element={<Products />} />
         <Route path="/contacto" element={<AboutUs />} />
