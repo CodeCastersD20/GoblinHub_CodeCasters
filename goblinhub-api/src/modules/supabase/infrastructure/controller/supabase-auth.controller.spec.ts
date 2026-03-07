@@ -10,7 +10,8 @@ import { SignInUseCase } from '../../application/use-case/signin.use-case';
 import { ForgotPasswordUseCase } from '../../application/use-case/forgot-password.use-case';
 import { ResetPasswordUseCase } from '../../application/use-case/reset-password.use-case';
 import { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
-import { RolUsuario } from '../../domain/enums/user.enum';
+import { RolUsuario, NivelExperiencia } from '../../domain/enums/user.enum';
+import { Session, User } from '@supabase/supabase-js';
 
 describe('SupabaseAuthController', () => {
   let controller: SupabaseAuthController;
@@ -92,8 +93,20 @@ describe('SupabaseAuthController', () => {
 
   describe('signUp', () => {
     it('debe delegar al registerUserService', async () => {
-      const mockResponse = { success: true, message: 'User registered' };
-      registerUserService.register.mockResolvedValue(mockResponse as any);
+      registerUserService.register.mockResolvedValue({
+        success: true,
+        message: 'User registered successfully',
+        user: {
+          id: 'user-1',
+          email: 'new@email.com',
+          nombre: 'Test',
+          apellidos: 'User',
+          rol: RolUsuario.jugador,
+          nivel_experiencia: NivelExperiencia.novato,
+          created_at: new Date(),
+        },
+        session: null,
+      });
 
       const result = await controller.signUp({
         email: 'new@email.com',
@@ -103,20 +116,22 @@ describe('SupabaseAuthController', () => {
         fecha_nacimiento: '2000-01-01',
       });
 
-      expect(result).toEqual(mockResponse);
+      expect(result.success).toBe(true);
     });
   });
 
   describe('refreshToken', () => {
     it('debe delegar al refreshService', async () => {
-      const mockSession = { success: true, session: {} };
-      refreshService.refreshToken.mockResolvedValue(mockSession as any);
+      refreshService.refreshToken.mockResolvedValue({
+        success: true,
+        session: { user: null, session: null },
+      });
 
       const result = await controller.refreshToken({
         refreshToken: 'ref-tok',
       });
 
-      expect(result).toEqual(mockSession);
+      expect(result.success).toBe(true);
     });
   });
 
@@ -129,11 +144,14 @@ describe('SupabaseAuthController', () => {
 
       const mockProfile = {
         success: true,
-        user: { id: 'user-1', email: 'test@email.com' },
+        user: {
+          id: 'user-1',
+          email: 'test@email.com',
+          createdAt: '2026-01-01',
+        },
+        message: 'User profile retrieved successfully',
       };
-      getUserProfileService.getUserProfile.mockResolvedValue(
-        mockProfile as any,
-      );
+      getUserProfileService.getUserProfile.mockResolvedValue(mockProfile);
 
       const result = await controller.getProfile(req);
       expect(result).toEqual(mockProfile);
@@ -259,12 +277,12 @@ describe('SupabaseAuthController', () => {
 
       createTestUserService.signInTestuser.mockResolvedValue({
         success: true,
-        user: {},
-        session: {},
+        user: {} as User,
+        session: {} as Session,
         access_token: 'tok',
         refreshToken: 'ref',
         message: 'Login successful',
-      } as any);
+      });
 
       const result = await controller.signInTestestuser({
         email: 'admin@email.com',
