@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'; // Importa Swagger
 import helmet from 'helmet';
-import type { Express } from 'express';
+import type { Express, Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -94,7 +94,36 @@ async function bootstrap() {
   }
 
   const server = app.getHttpAdapter().getInstance() as Express;
-  server.get('/', (_req, res) => {
+
+  // Redirige al frontend si alguien accede directo desde el navegador
+  // Las peticiones AJAX/fetch del frontend traen headers como Origin, X-Requested-With o Authorization
+  server.use((req: Request, res: Response, next: NextFunction) => {
+    // Permitir Swagger en desarrollo
+    if (!isProduction && req.path.startsWith('/api/docs')) {
+      return next();
+    }
+
+    // Permitir la ruta raíz (ya tiene su propio redirect)
+    if (req.path === '/') {
+      return next();
+    }
+
+    // Si la petición trae Origin, Authorization o X-Requested-With, es del frontend/API client
+    const hasOrigin = !!req.headers['origin'];
+    const hasAuth = !!req.headers['authorization'];
+    const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
+    const acceptsJson =
+      req.headers['accept']?.includes('application/json') ?? false;
+
+    if (hasOrigin || hasAuth || isAjax || acceptsJson) {
+      return next();
+    }
+
+    // Si es una petición directa del navegador (sin los headers anteriores), redirige al frontend
+    return res.redirect(frontendUrl);
+  });
+
+  server.get('/', (_req: Request, res: Response) => {
     res.redirect(frontendUrl);
   });
 
