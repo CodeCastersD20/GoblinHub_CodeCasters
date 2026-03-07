@@ -15,7 +15,7 @@ export interface MeResult {
 export class GetMeUseCase {
   constructor(private readonly usuarioRepository: UsuarioRepository) {}
 
-  async execute(id: string, email: string | undefined): Promise<MeResult> {
+  async getMyProfile(id: string, email: string | undefined): Promise<MeResult> {
     const perfil: UsuarioPerfil | null =
       await this.usuarioRepository.findProfileById(id);
 

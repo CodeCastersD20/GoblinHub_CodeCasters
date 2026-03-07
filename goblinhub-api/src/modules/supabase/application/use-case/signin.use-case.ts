@@ -12,7 +12,10 @@ export class SignInUseCase {
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
   ) {}
 
-  async execute(email: string, password: string): Promise<SignInResult> {
+  async signInWithCredentials(
+    email: string,
+    password: string,
+  ): Promise<SignInResult> {
     const { data, error } = await this.supabase.auth.signInWithPassword({
       email,
       password,

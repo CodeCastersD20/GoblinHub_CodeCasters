@@ -49,7 +49,10 @@ describe('CreateRewardUseCase', () => {
     rewardRepo.findByName.mockResolvedValue(null);
     rewardRepo.create.mockResolvedValue(mockCreatedReward);
 
-    const result = await useCase.execute(mockDto, 'admin-uuid');
+    const result: Recompensa = await useCase.createReward(
+      mockDto,
+      'admin-uuid',
+    );
 
     expect(result.id).toBe(1);
     // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -59,7 +62,7 @@ describe('CreateRewardUseCase', () => {
   it('debe lanzar ForbiddenException si el usuario no tiene permisos', async () => {
     userRepo.findRolById.mockResolvedValue(null);
 
-    await expect(useCase.execute(mockDto, 'user-uuid')).rejects.toThrow(
+    await expect(useCase.createReward(mockDto, 'user-uuid')).rejects.toThrow(
       ForbiddenException,
     );
   });
@@ -76,7 +79,7 @@ describe('CreateRewardUseCase', () => {
       ),
     );
 
-    await expect(useCase.execute(mockDto, 'emp-uuid')).rejects.toThrow(
+    await expect(useCase.createReward(mockDto, 'emp-uuid')).rejects.toThrow(
       HttpException,
     );
   });
@@ -90,16 +93,16 @@ describe('CreateRewardUseCase', () => {
       tipo: 'TIPO_INVENTADO' as TipoRecompensa,
     };
 
-    await expect(useCase.execute(invalidDto, 'admin-uuid')).rejects.toThrow(
-      HttpException,
-    );
+    await expect(
+      useCase.createReward(invalidDto, 'admin-uuid'),
+    ).rejects.toThrow(HttpException);
   });
 
   it('debe lanzar HttpException 500 ante un error inesperado del repositorio', async () => {
     userRepo.findRolById.mockResolvedValue(RolUsuario.admin);
     rewardRepo.findByName.mockRejectedValue(new Error('Fallo total de DB'));
 
-    await expect(useCase.execute(mockDto, 'admin-uuid')).rejects.toThrow(
+    await expect(useCase.createReward(mockDto, 'admin-uuid')).rejects.toThrow(
       HttpException,
     );
   });
@@ -110,7 +113,8 @@ describe('CreateRewardUseCase', () => {
     );
 
     try {
-      await useCase.execute(mockDto, 'admin-uuid');
+      await useCase.createReward(mockDto, 'admin-uuid');
+      fail('should have thrown');
     } catch (e) {
       expect(e).toBeInstanceOf(HttpException);
       expect((e as HttpException).getStatus()).toBe(418);
