@@ -13,7 +13,7 @@ export class CreateRewardUseCase {
     private usuarioRepository: UsuarioRepository,
   ) {}
 
-  async execute(
+  async createReward(
     data: CreateRecompensaDto,
     id_creador: string,
   ): Promise<Recompensa> {

@@ -20,14 +20,14 @@ describe('ExpireEventsUseCase', () => {
 
   it('debe hacer log si hay eventos', async () => {
     eventRepo.expireEvents.mockResolvedValue(5);
-    await useCase.execute();
+    await useCase.expireAndSoftDeleteEvents();
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(eventRepo.expireEvents).toHaveBeenCalledTimes(1);
   });
 
   it('no debe hacer log si es 0', async () => {
     eventRepo.expireEvents.mockResolvedValue(0);
-    await useCase.execute();
+    await useCase.expireAndSoftDeleteEvents();
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(eventRepo.expireEvents).toHaveBeenCalledTimes(1);
   });

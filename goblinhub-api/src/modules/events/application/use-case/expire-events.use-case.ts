@@ -7,7 +7,7 @@ export class ExpireEventsUseCase {
 
   constructor(private readonly eventRepository: EventRepository) {}
 
-  async execute(): Promise<void> {
+  async expireAndSoftDeleteEvents(): Promise<void> {
     const count: number = await this.eventRepository.expireEvents();
 
     if (count > 0) {

@@ -12,6 +12,6 @@ export class EventExpirationScheduler {
   @Cron(CronExpression.EVERY_MINUTE)
   async handleExpiredEvents(): Promise<void> {
     this.logger.debug('Checking for expired events...');
-    await this.expireEventsUseCase.execute();
+    await this.expireEventsUseCase.expireAndSoftDeleteEvents();
   }
 }

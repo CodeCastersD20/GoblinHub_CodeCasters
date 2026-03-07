@@ -12,6 +12,7 @@ import RegisterFlow from "./pages/register/RegisterFlow";
 import AuthHome from "./pages/Home/Home";
 import PerfilPage from "./pages/perfil/PerfilPage";
 import ProductosDetalle from "./pages/products/ProductosDetalle/productsDetails";
+import ResetPassword from "./pages/resetPassword/ResetPassword";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/eventos/:id" element={<EventoDetalle />} />
         <Route path="/register" element={<RegisterFlow />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Rutas protegidas (requieren JWT) */}
         <Route element={<ProtectedRoute />}>
