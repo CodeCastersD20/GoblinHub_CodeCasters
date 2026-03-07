@@ -2,11 +2,16 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
-import { login } from "../../services/auth.service";
+import {
+  login,
+  forgotPassword as sendForgotPassword,
+} from "../../services/auth.service";
 
 const Login: React.FC = () => {
   const [forgotPassword, setForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,21 +35,34 @@ const Login: React.FC = () => {
     }
   }, [email, password, navigate]); // 👈 se recrea solo cuando cambian estos valores
 
-  const handleRecoverPassword = useCallback(() => {
-    console.log("Enviando correo...");
-  }, []);
+  // ✅ useCallback con lógica real de develop
+  const handleForgotPassword = useCallback(async () => {
+    setError("");
+    setLoading(true);
+    try {
+      await sendForgotPassword(forgotEmail);
+      setForgotSent(true);
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data?.message ?? "Error al enviar el correo")
+        : "Error al enviar el correo";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [forgotEmail]);
 
   // ✅ useEffect limpio gracias a useCallback
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
-        forgotPassword ? handleRecoverPassword() : handleLogin();
+        forgotPassword ? handleForgotPassword() : handleLogin();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [forgotPassword, handleLogin, handleRecoverPassword]); // 👈 dependencias limpias
+  }, [forgotPassword, handleLogin, handleForgotPassword]); // 👈 dependencias limpias
 
   return (
     <div className="base-login">
@@ -85,14 +103,41 @@ const Login: React.FC = () => {
       ) : (
         <div className="form-login">
           <label className="inicio-sesion">Recuperar Contraseña</label>
-          <label className="instrucciones">
-            Ingresa tu correo electrónico y te enviaremos un código para
-            restablecer tu contraseña.
-          </label>
-          <input type="text" placeholder="Correo electrónico" />
-          <button onClick={handleRecoverPassword} className="entrar">
-            Enviar Correo
-          </button>
+          {forgotSent ? (
+            <label className="instrucciones">
+              Revisa tu correo, te enviamos un enlace para restablecer tu
+              contraseña.
+            </label>
+          ) : (
+            <>
+              <label className="instrucciones">
+                Ingresa tu correo electrónico y te enviaremos un código para
+                restablecer tu contraseña.
+              </label>
+              <input
+                type="text"
+                placeholder="Correo electrónico"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+              />
+              {error && <span className="error-msg">{error}</span>}
+              <div className="botones">
+                <button
+                  className="entrar"
+                  onClick={handleForgotPassword}
+                  disabled={loading}
+                >
+                  {loading ? "Enviando..." : "Enviar Código"}
+                </button>
+                <button
+                  className="cancelar"
+                  onClick={() => setForgotPassword(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

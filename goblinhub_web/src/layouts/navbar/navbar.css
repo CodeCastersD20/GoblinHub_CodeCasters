@@ -208,9 +208,9 @@
 
   /* ---------- Separador ---------- */
   .usuario-dropdown__divider {
-    height: 1px;
+    height: 0.1rem;
     background-color: var(--nav-dropdown-border);
-    margin: 4px 6px;
+    margin: 0.4rem 0.6rem;
   }
 
 
