@@ -3,44 +3,43 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'; // Importa Swagger
 import helmet from 'helmet';
+import type { Express } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const isProduction = process.env.NODE_ENV === 'production';
 
+  const frontendUrl =
+    process.env.CORS_ORIGIN?.split(',')[0] ?? 'http://localhost:5173';
+
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
 
-      // CSP ajustada para permitir Swagger UI en desarrollo
-      contentSecurityPolicy: isProduction
-        ? undefined // En producción usa los defaults de Helmet
-        : {
-            directives: {
-              defaultSrc: ["'self'"],
-              connectSrc: ["'self'", 'https:'],
-              imgSrc: [
-                "'self'",
-                'data:',
-                'https:',
-                'https://validator.swagger.io',
-              ],
-              scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Necesario para Swagger
-              styleSrc: [
-                "'self'",
-                "'unsafe-inline'",
-                'https://fonts.googleapis.com',
-              ],
-            },
-          },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          connectSrc: ["'self'", 'https:'],
+          imgSrc: isProduction
+            ? ["'self'", 'data:']
+            : ["'self'", 'data:', 'https:', 'https://validator.swagger.io'],
+          scriptSrc: isProduction
+            ? ["'self'"]
+            : ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // unsafe solo para Swagger en dev
+          styleSrc: isProduction
+            ? ["'self'"]
+            : ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'], // unsafe solo para Swagger en dev
+          frameAncestors: ["'none'"], // Reemplaza X-Frame-Options
+        },
+      },
 
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 
       strictTransportSecurity: {
-        maxAge: 15552000,
+        maxAge: 31536000, // 1 año (requerido para HSTS preload)
         includeSubDomains: true,
-        preload: false,
+        preload: true,
       },
 
       frameguard: { action: 'deny' },
@@ -93,6 +92,11 @@ async function bootstrap() {
       },
     });
   }
+
+  const server = app.getHttpAdapter().getInstance() as Express;
+  server.get('/', (_req, res) => {
+    res.redirect(frontendUrl);
+  });
 
   await app.listen(process.env.PORT ?? 3000);
   console.log(`🚀 API corriendo en: http://localhost:3000`);
