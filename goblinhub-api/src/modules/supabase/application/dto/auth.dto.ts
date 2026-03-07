@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsEnum,
   MinLength,
+  Matches,
 } from 'class-validator';
 import { NivelExperiencia } from '../../domain/enums/user.enum';
 
@@ -23,6 +24,11 @@ export class CreateTesruserDto {
   email: string;
 
   @IsString()
+  @MinLength(8)
+  @Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message:
+      'The password must contain at least one uppercase letter, one lowercase letter, and one number.',
+  })
   password: string;
 }
 
@@ -31,6 +37,11 @@ export class SignInTestuserDto {
   email: string;
 
   @IsString()
+  @MinLength(8)
+  @Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message:
+      'The password must contain at least one uppercase letter, one lowercase letter, and one number.',
+  })
   password: string;
 }
 
@@ -39,7 +50,8 @@ export class SignInDto {
   email: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
   password: string;
 }
 
@@ -49,6 +61,10 @@ export class RegisterUserDto {
 
   @IsString()
   @MinLength(8)
+  @Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message:
+      'The password must contain at least one uppercase letter, one lowercase letter, and one number.',
+  })
   password: string;
 
   @IsString()
@@ -84,9 +100,17 @@ export class ResetPasswordDto {
 
   @IsString()
   @MinLength(8)
+  @Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message:
+      'The password must contain at least one uppercase letter, one lowercase letter, and one number.',
+  })
   newPassword: string;
 
   @IsString()
   @MinLength(8)
+  @Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message:
+      'The password must contain at least one uppercase letter, one lowercase letter, and one number.',
+  })
   confirmPassword: string;
 }

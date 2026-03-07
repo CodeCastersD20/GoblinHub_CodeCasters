@@ -1,8 +1,10 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class ForgotPasswordUseCase {
+  private readonly logger = new Logger(ForgotPasswordUseCase.name);
+
   constructor(
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
   ) {}
@@ -12,8 +14,11 @@ export class ForgotPasswordUseCase {
       redirectTo: process.env.SUPABASE_RESET_PASSWORD_URL,
     });
     if (error) {
-      throw new BadRequestException(error.message);
+      // Log internally but never expose the error — prevents user enumeration
+      this.logger.warn(`forgot-password silenced error: ${error.message}`);
     }
-    return { message: 'Correo de recuperación enviado' };
+    return {
+      message: 'If the email is registered, you will receive a recovery link.',
+    };
   }
 }

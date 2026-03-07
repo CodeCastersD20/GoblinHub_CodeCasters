@@ -28,6 +28,9 @@ import { SupabaseAuthGuard } from '../../guard/supabse-auth.guard';
 import type { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
 import { ForgotPasswordUseCase } from '../../application/use-case/forgot-password.use-case';
 import { ResetPasswordUseCase } from '../../application/use-case/reset-password.use-case';
+import { Throttle } from '@nestjs/throttler';
+import { Roles } from '../../guard/roles.decorator';
+import { RolUsuario } from '../../domain/enums/user.enum';
 
 @Controller('auth')
 export class SupabaseAuthController {
@@ -44,6 +47,7 @@ export class SupabaseAuthController {
   ) {}
 
   /** Endpoint de login limpio — solo devuelve access_token y refresh_token */
+  @Throttle({ default: { limit: 5, ttl: 90000 } })
   @Post('signin')
   @HttpCode(HttpStatus.OK)
   async signIn(@Body() dto: SignInDto) {
@@ -53,6 +57,7 @@ export class SupabaseAuthController {
     );
   }
 
+  @Throttle({ default: { limit: 5, ttl: 90000 } })
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
   async signUp(@Body() registerUserDto: RegisterUserDto) {
@@ -108,12 +113,14 @@ export class SupabaseAuthController {
     };
   }
 
+  @Throttle({ default: { limit: 5, ttl: 90000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return await this.forgotPasswordUseCase.forgotPassword(dto.email);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 90000 } })
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
@@ -126,6 +133,7 @@ export class SupabaseAuthController {
 
   /** Solo para desarrollo/testing interno — bloqueado en producción */
   @Post('test/signin')
+  @Roles(RolUsuario.admin)
   @HttpCode(HttpStatus.OK)
   async signInTestestuser(@Body() signInTestUserDto: SignInTestuserDto) {
     if (process.env.NODE_ENV === 'production') {

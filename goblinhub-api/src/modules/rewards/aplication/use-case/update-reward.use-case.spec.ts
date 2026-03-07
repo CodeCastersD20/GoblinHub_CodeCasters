@@ -1,13 +1,18 @@
 import { UpdateRewardUseCase } from './update-reward.use-case';
 import { RewardRepository } from '../../domain/repositories/reward.repository';
+import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario.repository';
 import { HttpException } from '@nestjs/common';
 import { Recompensa } from '../../domain/entities/reward.entity';
 import { TipoRecompensa } from '../../domain/enums/reward.enum';
 import { UpdateRecompensaDto } from '../dtos/update-reward.dto';
+import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
 
 describe('UpdateRewardUseCase', () => {
   let useCase: UpdateRewardUseCase;
   let rewardRepo: jest.Mocked<RewardRepository>;
+  let usuarioRepo: jest.Mocked<UsuarioRepository>;
+
+  const adminUserId = 'admin-uuid-1234';
 
   const mockExistingReward = new Recompensa(
     1,
@@ -25,7 +30,11 @@ describe('UpdateRewardUseCase', () => {
       update: jest.fn(),
     } as unknown as jest.Mocked<RewardRepository>;
 
-    useCase = new UpdateRewardUseCase(rewardRepo);
+    usuarioRepo = {
+      findRolById: jest.fn().mockResolvedValue(RolUsuario.admin),
+    } as unknown as jest.Mocked<UsuarioRepository>;
+
+    useCase = new UpdateRewardUseCase(rewardRepo, usuarioRepo);
   });
 
   it('debe actualizar la recompensa mezclando los nuevos datos con los existentes', async () => {
@@ -47,7 +56,7 @@ describe('UpdateRewardUseCase', () => {
     );
     rewardRepo.update.mockResolvedValue(updatedReward);
 
-    const result = await useCase.updateReward(1, updateDto);
+    const result = await useCase.updateReward(1, updateDto, adminUserId);
 
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(rewardRepo.update).toHaveBeenCalled();
@@ -62,7 +71,7 @@ describe('UpdateRewardUseCase', () => {
     rewardRepo.findById.mockResolvedValue(mockExistingReward);
     rewardRepo.update.mockResolvedValue(mockExistingReward);
 
-    const result = await useCase.updateReward(1, {}); // DTO vacío
+    const result = await useCase.updateReward(1, {}, adminUserId); // DTO vacío
 
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(rewardRepo.update).toHaveBeenCalled();
@@ -76,19 +85,25 @@ describe('UpdateRewardUseCase', () => {
   it('debe lanzar HttpException 404 si la recompensa no existe', async () => {
     rewardRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.updateReward(999, {})).rejects.toThrow(HttpException);
+    await expect(useCase.updateReward(999, {}, adminUserId)).rejects.toThrow(
+      HttpException,
+    );
   });
 
   it('debe lanzar HttpException 500 si el repositorio falla al buscar', async () => {
     rewardRepo.findById.mockRejectedValue(new Error('Error de base de datos'));
 
-    await expect(useCase.updateReward(1, {})).rejects.toThrow(HttpException);
+    await expect(useCase.updateReward(1, {}, adminUserId)).rejects.toThrow(
+      HttpException,
+    );
   });
 
   it('debe re-lanzar HttpException si ocurre dentro del catch', async () => {
     const errorHttp = new HttpException('No autorizado', 401);
     rewardRepo.findById.mockRejectedValue(errorHttp);
 
-    await expect(useCase.updateReward(1, {})).rejects.toThrow(errorHttp);
+    await expect(useCase.updateReward(1, {}, adminUserId)).rejects.toThrow(
+      errorHttp,
+    );
   });
 });

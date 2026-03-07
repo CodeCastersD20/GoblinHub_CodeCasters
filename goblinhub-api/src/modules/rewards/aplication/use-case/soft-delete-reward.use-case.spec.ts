@@ -1,14 +1,18 @@
 import { SoftDeleteRewardUseCase } from './sd-reward.use-case';
 import { RewardRepository } from '../../domain/repositories/reward.repository';
+import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario.repository';
 import { HttpException } from '@nestjs/common';
 import { Recompensa } from '../../domain/entities/reward.entity';
 import { TipoRecompensa } from '../../domain/enums/reward.enum';
+import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
 
 describe('SoftDeleteRewardUseCase', () => {
   let useCase: SoftDeleteRewardUseCase;
   let rewardRepo: jest.Mocked<RewardRepository>;
+  let usuarioRepo: jest.Mocked<UsuarioRepository>;
 
   const mockId = 1;
+  const adminUserId = 'admin-uuid-1234';
 
   beforeEach(() => {
     rewardRepo = {
@@ -16,7 +20,11 @@ describe('SoftDeleteRewardUseCase', () => {
       delete: jest.fn(),
     } as unknown as jest.Mocked<RewardRepository>;
 
-    useCase = new SoftDeleteRewardUseCase(rewardRepo);
+    usuarioRepo = {
+      findRolById: jest.fn().mockResolvedValue(RolUsuario.admin),
+    } as unknown as jest.Mocked<UsuarioRepository>;
+
+    useCase = new SoftDeleteRewardUseCase(rewardRepo, usuarioRepo);
   });
 
   it('debe realizar el soft delete exitosamente si la recompensa existe', async () => {
@@ -27,7 +35,7 @@ describe('SoftDeleteRewardUseCase', () => {
     // 2. Simulamos que el delete funciona (retorna void)
     rewardRepo.delete.mockResolvedValue(undefined);
 
-    await useCase.softDeleteReward(mockId);
+    await useCase.softDeleteReward(mockId, adminUserId);
 
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(rewardRepo.findById).toHaveBeenCalledWith(mockId);
@@ -39,7 +47,7 @@ describe('SoftDeleteRewardUseCase', () => {
     // Simulamos que el repositorio devuelve null
     rewardRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.softDeleteReward(mockId)).rejects.toThrow(
+    await expect(useCase.softDeleteReward(mockId, adminUserId)).rejects.toThrow(
       HttpException,
     );
 
@@ -52,7 +60,7 @@ describe('SoftDeleteRewardUseCase', () => {
     // Simulamos un error genérico (ej. base de datos fuera de línea)
     rewardRepo.findById.mockRejectedValue(new Error('Fallo de conexión'));
 
-    await expect(useCase.softDeleteReward(mockId)).rejects.toThrow(
+    await expect(useCase.softDeleteReward(mockId, adminUserId)).rejects.toThrow(
       HttpException,
     );
   });
@@ -62,6 +70,8 @@ describe('SoftDeleteRewardUseCase', () => {
     const customError = new HttpException('Error manual', 403);
     rewardRepo.findById.mockRejectedValue(customError);
 
-    await expect(useCase.softDeleteReward(mockId)).rejects.toThrow(customError);
+    await expect(useCase.softDeleteReward(mockId, adminUserId)).rejects.toThrow(
+      customError,
+    );
   });
 });

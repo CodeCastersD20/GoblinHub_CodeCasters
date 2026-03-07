@@ -16,6 +16,8 @@ export class SupabaseRegisterUserService {
 
   constructor(
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
+    @Inject('SUPABASE_ADMIN_CLIENT')
+    private readonly supabaseAdmin: SupabaseClient,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -63,16 +65,12 @@ export class SupabaseRegisterUserService {
         session: data.session,
       };
     } catch (prismaError) {
-      // Rollback: delete user from Supabase to avoid inconsistent state
-      // NOTE: requires SUPABASE_SERVICE_ROLE_KEY to use auth.admin.deleteUser
+      // Rollback automático: eliminar usuario de Supabase
+      await this.supabaseAdmin.auth.admin.deleteUser(supabaseUserId);
       this.logger.error(
-        `Failed to create profile in DB for user ${supabaseUserId}. ` +
-          `User was created in Supabase Auth. Manual rollback required.`,
-        prismaError,
+        `Rollback: usuario ${supabaseUserId} eliminado de Supabase Auth. Causa: ${String(prismaError)}`,
       );
-      throw new InternalServerErrorException(
-        'Failed to save user profile. Please contact support.',
-      );
+      throw new InternalServerErrorException('Failed to save user profile.');
     }
   }
 }

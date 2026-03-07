@@ -35,10 +35,11 @@ export class ProductoPrismaRepository extends ProductRepository {
         : undefined,
       prismaProducto.imagen_url ?? undefined,
       prismaProducto.deleted_at ?? undefined,
+      (prismaProducto.id_creador as string | null | undefined) ?? undefined,
     );
   }
 
-  async create(producto: Producto): Promise<Producto> {
+  async create(producto: Producto, id_creador: string): Promise<Producto> {
     const created = await this.prisma.producto.create({
       data: {
         nombre: producto.nombre,
@@ -53,6 +54,7 @@ export class ProductoPrismaRepository extends ProductRepository {
         es_nuevo: producto.es_nuevo,
         imagen_url: producto.imagen_url,
         activo: producto.activo,
+        id_creador: id_creador,
       },
     });
 

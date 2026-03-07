@@ -54,26 +54,34 @@ describe('SoftDeleteEventUseCase', () => {
     ).rejects.toThrow(HttpException);
   });
 
-  it('debe lanzar ForbiddenException si no es admin ni el creador', async () => {
-    eventRepo.findById.mockResolvedValue(mockEvent); // Creador es 'creador-123'
-    userRepo.findRolById.mockResolvedValue(null); // No es admin
+  it('debe lanzar ForbiddenException si no es admin ni empleado', async () => {
+    eventRepo.findById.mockResolvedValue(mockEvent);
+    userRepo.findRolById.mockResolvedValue(RolUsuario.jugador);
 
-    // Intentamos borrar con un usuario que NO es el creador ('user-intruso')
     await expect(
       useCase.softDeleteEvent('evento-123', 'user-intruso'),
     ).rejects.toThrow(ForbiddenException);
   });
 
-  it('debe permitir borrar si el usuario es el creador (aunque no sea admin)', async () => {
-    eventRepo.findById.mockResolvedValue(mockEvent); // Creador es 'creador-123'
-    userRepo.findRolById.mockResolvedValue(null); // No es admin
+  it('debe permitir borrar si el usuario es el creador (empleado)', async () => {
+    eventRepo.findById.mockResolvedValue(mockEvent);
+    userRepo.findRolById.mockResolvedValue(RolUsuario.empleado);
     eventRepo.delete.mockResolvedValue(mockEvent);
 
-    const result = await useCase.softDeleteEvent('evento-123', 'creador-123'); // Mismo ID que el creador
+    const result = await useCase.softDeleteEvent('evento-123', 'creador-123');
 
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(eventRepo.delete).toHaveBeenCalledWith('evento-123');
     expect(result).toEqual(mockEvent);
+  });
+
+  it('debe lanzar ForbiddenException si empleado intenta borrar evento de otro', async () => {
+    eventRepo.findById.mockResolvedValue(mockEvent); // Creador es 'creador-123'
+    userRepo.findRolById.mockResolvedValue(RolUsuario.empleado);
+
+    await expect(
+      useCase.softDeleteEvent('evento-123', 'otro-empleado'),
+    ).rejects.toThrow(ForbiddenException);
   });
 
   it('debe permitir borrar si el usuario es Admin (aunque no sea el creador)', async () => {

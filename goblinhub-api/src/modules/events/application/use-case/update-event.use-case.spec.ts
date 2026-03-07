@@ -52,9 +52,9 @@ describe('UpdateEventUseCase', () => {
     ).rejects.toThrow(HttpException);
   });
 
-  it('debe lanzar ForbiddenException si no es admin ni el creador', async () => {
+  it('debe lanzar ForbiddenException si no es admin ni empleado', async () => {
     eventRepo.findById.mockResolvedValue(mockEvent);
-    userRepo.findRolById.mockResolvedValue(null);
+    userRepo.findRolById.mockResolvedValue(RolUsuario.jugador);
 
     await expect(
       useCase.updateEvent('id-123', {} as UpdateEventDto, 'intruso-456'),
@@ -89,7 +89,7 @@ describe('UpdateEventUseCase', () => {
     ).rejects.toThrow(HttpException);
   });
 
-  it('debe actualizar correctamente si el usuario es el Creador', async () => {
+  it('debe actualizar correctamente si el usuario es el Creador (empleado)', async () => {
     const updatedEvent = new Event(
       'id-123',
       'Editado',
@@ -110,7 +110,7 @@ describe('UpdateEventUseCase', () => {
     );
 
     eventRepo.findById.mockResolvedValue(mockEvent);
-    userRepo.findRolById.mockResolvedValue(null);
+    userRepo.findRolById.mockResolvedValue(RolUsuario.empleado);
     eventRepo.findByName.mockResolvedValue(null);
     eventRepo.update.mockResolvedValue(updatedEvent);
 
@@ -123,6 +123,19 @@ describe('UpdateEventUseCase', () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(eventRepo.update).toHaveBeenCalled();
     expect(result.titulo).toBe('Editado');
+  });
+
+  it('debe lanzar ForbiddenException si empleado intenta actualizar evento de otro', async () => {
+    eventRepo.findById.mockResolvedValue(mockEvent); // Creador es 'creador-123'
+    userRepo.findRolById.mockResolvedValue(RolUsuario.empleado);
+
+    await expect(
+      useCase.updateEvent(
+        'id-123',
+        { titulo: 'Hack' } as UpdateEventDto,
+        'otro-empleado',
+      ),
+    ).rejects.toThrow(ForbiddenException);
   });
 
   it('debe actualizar correctamente si el usuario es Admin', async () => {

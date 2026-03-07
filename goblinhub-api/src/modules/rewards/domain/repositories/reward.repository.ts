@@ -4,7 +4,10 @@ export abstract class RewardRepository {
   abstract findAll(): Promise<Recompensa[]>;
   abstract findById(id: number): Promise<Recompensa | null>;
   abstract findByName(nombre: string): Promise<Recompensa | null>;
-  abstract create(recompensa: Recompensa): Promise<Recompensa>;
+  abstract create(
+    recompensa: Recompensa,
+    id_creador: string,
+  ): Promise<Recompensa>;
   abstract update(
     id: number,
     recompensa: Partial<Recompensa>,

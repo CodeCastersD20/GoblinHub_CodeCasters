@@ -20,8 +20,9 @@ export class UpdateProductoUseCase {
     try {
       // 1. Validar permisos del usuario
       const rol = await this.usuarioRepository.findRolById(id_usuario);
+      const isAdmin = rol === RolUsuario.admin;
 
-      if (rol !== RolUsuario.admin && rol !== RolUsuario.empleado) {
+      if (!isAdmin && rol !== RolUsuario.empleado) {
         throw new ForbiddenException(
           'No tienes permisos para actualizar productos',
         );
@@ -34,8 +35,13 @@ export class UpdateProductoUseCase {
         throw new HttpException({ Error: 'No se encontró el producto' }, 404);
       }
 
-      // 2. Construimos la entidad actualizada usando Nullish Coalescing (??)
-      // Si "data" trae el campo, lo usamos; si no, conservamos el de "existProducto"
+      // 3. Verificar propiedad si es empleado
+      if (!isAdmin && existProducto.id_creador !== id_usuario) {
+        throw new ForbiddenException(
+          'Solo puedes editar productos que hayas creado tú',
+        );
+      }
+
       const updatedProducto = new Producto(
         // --- Requeridos ---
         existProducto.id_producto,

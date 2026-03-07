@@ -32,8 +32,10 @@ import { Recompensa } from '../../domain/entities/reward.entity';
 import { CreateRecompensaDto } from '../../aplication/dtos/create-reward.dto';
 import { UpdateRecompensaDto } from '../../aplication/dtos/update-reward.dto';
 
-// --- Auth ---
 import { SupabaseAuthGuard } from '../../../supabase/guard/supabse-auth.guard';
+import { RolesGuard } from '../../../supabase/guard/roles.guard';
+import { Roles } from '../../../supabase/guard/roles.decorator';
+import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
 import type { AuthenticatedRequest } from '../../../supabase/interfaces/types/authenticated-request.interface';
 
 @ApiTags('rewards') // Agrupa en Swagger
@@ -74,7 +76,8 @@ export class RewardController {
   }
 
   @Post()
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin, RolUsuario.empleado)
   @ApiBearerAuth() // Muestra el candado en Swagger
   @ApiOperation({ summary: 'Crear una nueva recompensa (Requiere Auth)' })
   @ApiResponse({ status: 201, description: 'Recompensa creada exitosamente.' })
@@ -89,7 +92,8 @@ export class RewardController {
   }
 
   @Patch(':id')
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin, RolUsuario.empleado)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar una recompensa (Requiere Auth)' })
   @ApiParam({ name: 'id', example: 1 })
@@ -100,11 +104,16 @@ export class RewardController {
   ): Promise<Recompensa> {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
 
-    return await this.updateUseCase.updateReward(id, updateRewardDto);
+    return await this.updateUseCase.updateReward(
+      id,
+      updateRewardDto,
+      req.user.id,
+    );
   }
 
   @Delete(':id')
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Eliminar (Soft Delete) una recompensa' })
   @ApiParam({ name: 'id', example: 1 })
@@ -118,6 +127,6 @@ export class RewardController {
   ): Promise<void> {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
 
-    await this.deleteUseCase.softDeleteReward(id);
+    await this.deleteUseCase.softDeleteReward(id, req.user.id);
   }
 }

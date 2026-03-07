@@ -9,5 +9,6 @@ export class Recompensa {
     public tipo: TipoRecompensa,
     public valor_descuento?: number,
     public activa: boolean = true, // Por defecto es activa
+    public id_creador?: string,
   ) {}
 }

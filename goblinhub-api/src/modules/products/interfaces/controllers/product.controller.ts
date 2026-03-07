@@ -18,15 +18,18 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger'; // Importaciones de Swagger
 import { SupabaseAuthGuard } from '../../../supabase/guard/supabse-auth.guard';
+import { RolesGuard } from '../../../supabase/guard/roles.guard';
+import { Roles } from '../../../supabase/guard/roles.decorator';
+import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
+import { CategoriaProducto } from '../../domain/enums/product.enum';
+import type { AuthenticatedRequest } from '../../../supabase/interfaces/types/authenticated-request.interface';
+import { GetProductoUseCase } from '../../aplication/use-case/get-product.use-case';
 import { CreateProductoUseCase } from '../../aplication/use-case/create-product.use-case';
 import { UpdateProductoUseCase } from '../../aplication/use-case/update-product.use-case';
 import { SoftDeleteProductoUseCase } from '../../aplication/use-case/soft-deled-product.use-case';
-import { GetProductoUseCase } from '../../aplication/use-case/get-product.use-case';
 import { Producto } from '../../domain/entities/product.entity';
 import { CreateProductoDto } from '../../aplication/dtos/create-product.dtos';
 import { UpdateProductoDto } from '../../aplication/dtos/update-product.dto';
-import { CategoriaProducto } from '../../domain/enums/product.enum';
-import type { AuthenticatedRequest } from '../../../supabase/interfaces/types/authenticated-request.interface';
 
 @ApiTags('Productos') // Agrupa este controlador en la sección "Productos" de Swagger
 @Controller('productos')
@@ -79,7 +82,8 @@ export class ProductoController {
   }
 
   @Post()
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin, RolUsuario.empleado)
   @ApiBearerAuth('access-token') // Requiere token JWT
   @ApiOperation({ summary: 'Crear un nuevo producto (Admin)' })
   @ApiResponse({ status: 201, description: 'Producto creado exitosamente.' })
@@ -96,7 +100,8 @@ export class ProductoController {
   }
 
   @Put(':id')
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin, RolUsuario.empleado)
   @ApiBearerAuth('access-token')
   @ApiParam({ name: 'id', description: 'UUID del producto a actualizar' })
   @ApiResponse({ status: 200, description: 'Producto actualizado.' })
@@ -118,7 +123,8 @@ export class ProductoController {
   }
 
   @Delete(':id')
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Eliminación lógica de un producto' })
   @ApiParam({ name: 'id', description: 'UUID del producto a eliminar' })
