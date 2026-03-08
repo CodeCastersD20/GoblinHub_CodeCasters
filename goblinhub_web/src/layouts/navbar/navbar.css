@@ -196,12 +196,13 @@ html{
   background-color: var(--nav-dropdown-hover);
 }
 
-/* ---------- Divider ---------- */
+/* ---------- Separador ---------- */
 .usuario-dropdown__divider {
   height: 0.1rem;
   background-color: var(--nav-dropdown-border);
   margin: 0.4rem 0.6rem;
 }
+
 
 @keyframes dropdownFadeIn {
   from {

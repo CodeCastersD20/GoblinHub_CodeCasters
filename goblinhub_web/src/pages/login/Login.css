@@ -3,20 +3,25 @@
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    width: 100vw;
+    width: 100%;
     height: 100vh;
     margin: 0;
+    flex:1;
 }
 
 .goblin-login {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 200px;
-    background-color: ghostwhite;
+    width: 80%;
+    height: auto;
+    padding: 1rem;
+    box-sizing: border-box;
+    background-color: #ede7db;
     border-radius: 10px;
     box-shadow: 10px 10px rgb(76, 9, 137);
     animation: flotando 5s ease-in-out infinite;
+    border: 2px solid rgb(76, 9, 137);
 }
 
 
@@ -31,10 +36,10 @@
     display: flex;
     justify-content: center; 
     align-items: center;
-    background-color: rgb(235, 200, 219);
+    background-color: #f5f0e8;
     height: 100%;
-    max-width: 70vw;
-    flex: 1;
+    width: 70%;
+    flex-wrap: wrap;
     flex-direction: column;
     position: relative; 
 }
@@ -56,20 +61,19 @@
     justify-content: center;
     align-items: center;
     background-color: rgb(76, 9, 137);
-    max-width: 30vw;
+    width: 30%;
     height: 100%;
-    flex: 1;
 }
 
 .inicio-sesion{
-    font-size: 40px;
+    font-size: 3rem;
     color: white;
     margin: 20px;
 }
 
 input{
-    margin: 15px;
-    height: 30px;
+    margin: 10px;
+    height: 5%;
     width: 80%;
 }
 
@@ -77,11 +81,12 @@ input{
     color: rgb(235, 200, 219);
     text-decoration: none;
     margin: 10px;
+    cursor: pointer;
 }
 
-p{
+.cuenta{
     color: white;
-    font-size: 20px;
+    font-size: 1rem;
     margin: 10px;
 }
 
@@ -89,8 +94,8 @@ p{
     color: white;
     background-color: rgb(108, 188, 16);
     margin: 10px;
-    font-size: 20px;
-    height: 40px;
+    font-size: 1.3rem;
+    height: 2rem;
     width: 40%;
     border: none;
     border-radius: 5px;
@@ -98,23 +103,44 @@ p{
 
 .instrucciones{
     color: rgba(255, 255, 255, 0.682);
-    font-size: 18px;
+    font-size: 1rem;
     margin: 10px;
     text-align: start;
 }
 
-.botones{
-    display: flex;
-    justify-content: space-between;
-    width: 80%;
-}
 
 .cancelar{
     color: white;
     background-color: rgba(184, 16, 16);
     margin: 10px;
-    font-size: 20px;
-    height: 40px;
+    font-size: 2rem;
+    height: 20%;
     border: none;
     border-radius: 5px;
 }
+
+
+@media (max-width: 768px) {
+    .base-login {
+        flex-direction: column;
+    }
+
+    .goblin-login{
+        max-height: 10rem;
+        padding: 1rem;
+        box-sizing: border-box;
+    }
+
+    .logo-login {
+        height: 30%;
+        width: 100%;
+    }
+
+    .form-login {
+        height: 70%;
+        width: 100%;
+        justify-content: start;
+        padding-top: 2rem;
+    }
+}
+
