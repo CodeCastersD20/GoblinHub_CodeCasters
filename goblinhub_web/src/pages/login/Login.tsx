@@ -124,9 +124,9 @@ useEffect(() => {
                 onChange={(e) => setForgotEmail(e.target.value)}
               />
               {error && <span className="error-msg">{error}</span>}
-              <div className="botones">
+              <div className="botones-login">
                 <button
-                  className="entrar"
+                  className="enviar"
                   onClick={handleForgotPassword}
                   disabled={loading}
                 >

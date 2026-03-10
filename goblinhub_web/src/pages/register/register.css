@@ -1,15 +1,24 @@
+.register-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+}
+
 .base {
     display: flex;
     flex-direction: column;
     justify-content: flex-start; 
     align-items: center;
-    width: 80vw;
-    background-color: rgb(235, 200, 219);
+    width: 80%;
+    background-color: #ede7db ;
     padding: 0;
     overflow: hidden;
     border-radius: 20px;
     box-shadow: 10px 10px 0px rgba(184, 188, 16);
     border: 2px solid  rgb(76, 9, 137);
+    margin: 10px;
 }
 
 .encabezado{
@@ -19,13 +28,13 @@
     align-items: center;     
     background-color: rgb(76, 9, 137);
     width: 100%;
-}
+} 
 
 .goblin{
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 80px;
+    height: 100px;
     margin: 10px;
     background-color: ghostwhite;
     border-radius: 10px;
@@ -34,7 +43,9 @@
 
 .title{
     display: flex;
-    font-size: 40px;
+    font-size: 6rem;
+    font-weight: bold;
+    margin: 10px;
 }
 
 .subtitle{
@@ -50,40 +61,6 @@
     justify-content: center;   
     flex-direction: column;
     color: black;
-}
-
-.fases{
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between; 
-    align-items: center;     
-}
-
-.fase1, .fase2, .fase3{
-    display: flex;
-    border-radius: 100px;
-    border: 2px solid  rgb(76, 9, 137);
-    color:rgb(76, 9, 137);
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    margin: 10px;
-    margin-left: 8em;
-    margin-right: 8rem;
-}
-
-.fase1{
-    background-color: rgb(76, 9, 137);
-    color: white;
-}
-
-.datos-personales{
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    justify-content: center;
-    margin: 0px;
 }
 
 .titulo-datos{
@@ -103,7 +80,6 @@
     gap: 15px;
     align-items: center;
     justify-content: center;
-    background-color: rgb(235, 200, 219);
 }
 
 .campo{
@@ -125,16 +101,16 @@
     border: 2px solid rgb(76, 9, 137);
     border-radius: 8px;
     padding: 10px;
-    width: 100%;
-    font-size: 14px;
+    width: 80%;
+    font-size: 1.5rem;
     box-sizing: border-box;
 }
 
 .botones{
     display: flex;
     justify-content: space-between;
-    width: 100%;
-    margin: 5px;
+    width: 90%;
+    margin: 10px;
     margin-bottom: 10px;
 }
 
@@ -154,67 +130,89 @@
     margin-top: 2px;
 }
 
-
-/* Fases mejoradas */
+/* ---------- Fases ---------- */
 .fases {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
-    width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .fase-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
 .fase {
+  display: flex;
+  border-radius: 50%;
+  border: 2px solid rgb(76, 9, 137);
+  color: rgb(76, 9, 137);
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-weight: bold;
+  background-color: transparent;
+  font-family: inherit;
+}
+
+.fase.activa {
+  background-color: rgb(76, 9, 137);
+  color: white;
+}
+
+.fase.completada {
+  background-color: rgb(184, 188, 16);
+  border-color: rgb(184, 188, 16);
+  color: white;
+}
+
+.fase-linea {
+  width: 60px;
+  height: 2px;
+  background-color: rgb(76, 9, 137);
+  opacity: 0.3;
+  margin: 0 5px;
+  margin-top: 20px; 
+  flex-shrink: 0;
+}
+
+.fase-label {
+  font-size: 11px;
+  color: rgb(76, 9, 137);
+  opacity: 0.6;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.fase-label.activa-label {
+  opacity: 1;
+  font-weight: bold;
+}
+
+.fase1, .fase2, .fase3{
     display: flex;
     border-radius: 100px;
-    border: 2px solid rgb(76, 9, 137);
-    color: rgb(76, 9, 137);
+    border: 2px solid  rgb(76, 9, 137);
+    color:rgb(76, 9, 137);
     align-items: center;
     justify-content: center;
     width: 40px;
     height: 40px;
-    font-weight: bold;
-    background-color: transparent;
+    margin: 10px;
+    margin-left: 8rem;
+    margin-right: 8rem;
 }
 
-.fase.activa {
+.fase1{
     background-color: rgb(76, 9, 137);
     color: white;
-}
-
-.fase.completada {
-    background-color: rgb(184, 188, 16);
-    border-color: rgb(184, 188, 16);
-    color: white;
-}
-
-.fase-linea {
-    width: 60px;
-    height: 2px;
-    background-color: rgb(76, 9, 137);
-    margin: 0 5px;
-    margin-bottom: 22px;
-    opacity: 0.3;
-}
-
-.fase-label {
-    font-size: 11px;
-    color: rgb(76, 9, 137);
-    opacity: 0.6;
-    text-align: center;
-}
-
-.fase-label.activa-label {
-    opacity: 1;
-    font-weight: bold;
 }
 
 /* Secciones del formulario */
@@ -354,13 +352,6 @@
     display: block;
 }
 
-/* Botones */
-.botones {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    margin-top: 20px;
-}
 
 .regresar {
     padding: 10px 20px;
@@ -399,7 +390,7 @@
 .datos-personales {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     width: 100%;
     padding: 5px;
     box-sizing: border-box;
@@ -413,6 +404,7 @@
     color: rgb(76, 9, 137);
     font-variant: small-caps;
     letter-spacing: 1px;
+    align-self: start;
 }
 
 .subtitulo-datos {
@@ -420,6 +412,7 @@
     color: #666;
     margin-bottom: 10px;
     display: block;
+    align-self: start;
 }
 
 .resumen {
@@ -509,4 +502,49 @@
 
 .completar:hover {
     background-color: rgb(160, 165, 10) !important;
+}
+
+/* Responsive grid del formulario */
+@media (max-width: 768px) {
+    .base{
+        width: 90%;
+    }
+
+    .title{
+        font-size: 4rem;
+    }
+
+  .datos {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+    .base{
+        width: 95%;
+    }
+
+    .goblin{
+        height: 80px;
+    }
+
+        .title{
+        font-size: 3rem;
+    }
+
+    .subtitle{
+        font-size: 15px;
+    }
+
+  .datos {
+    grid-template-columns: 1fr;
+  }
+
+  .fase-linea {
+    width: 30px;
+  }
+
+  .fase-label {
+    font-size: 10px;
+  }
 }

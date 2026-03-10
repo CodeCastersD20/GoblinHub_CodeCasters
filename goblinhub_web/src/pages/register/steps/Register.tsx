@@ -48,7 +48,7 @@ function Register({ onSiguiente }: RegisterProps) {
   };
 
   return (
-    <div>
+    <div className="register-wrapper">
       <div className="base">
         <RegisterHeader faseActual={1} />
         <div className="formulario">

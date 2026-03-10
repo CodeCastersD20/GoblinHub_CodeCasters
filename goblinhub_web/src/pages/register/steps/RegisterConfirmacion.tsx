@@ -52,7 +52,7 @@ function RegisterConfirmacion({
   };
 
   return (
-    <div>
+    <div className="register-wrapper">
       <div className="base">
         <RegisterHeader faseActual={3} />
 
