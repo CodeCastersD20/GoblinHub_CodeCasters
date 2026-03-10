@@ -60,8 +60,4 @@ describe('GetMeUseCase', () => {
       foto_perfil_url: null,
     });
   });
-
-  it('[CI TEST] fallo intencional para demostrar pipeline', () => {
-    expect(true).toBe(false);
-  });
 });
