@@ -6,6 +6,7 @@ import { SupabaseAuthModule } from './modules/supabase/supabase-auth.module';
 import { BackupModule } from './modules/backup/backup.module';
 import { RewardModule } from './modules/rewards/reward.module';
 import { ProductoModule } from './modules/products/product.module';
+import { UploadModule } from './modules/upload/upload.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -26,6 +27,7 @@ import { APP_GUARD } from '@nestjs/core';
     BackupModule,
     RewardModule,
     ProductoModule,
+    UploadModule,
   ],
   controllers: [],
   providers: [
