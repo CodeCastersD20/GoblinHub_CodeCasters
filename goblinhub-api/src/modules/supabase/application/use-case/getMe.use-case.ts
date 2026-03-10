@@ -9,6 +9,7 @@ export interface MeResult {
   email: string | undefined;
   nombre: string;
   rol: UsuarioPerfil['rol'];
+  foto_perfil_url: string | null;
 }
 
 @Injectable()
@@ -28,6 +29,7 @@ export class GetMeUseCase {
       email,
       nombre: perfil.nombre,
       rol: perfil.rol,
+      foto_perfil_url: perfil.foto_perfil_url,
     };
   }
 }
