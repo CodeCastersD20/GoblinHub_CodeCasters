@@ -11,6 +11,7 @@ import { GetMeUseCase } from './application/use-case/getMe.use-case';
 import { SignInUseCase } from './application/use-case/signin.use-case';
 import { ForgotPasswordUseCase } from './application/use-case/forgot-password.use-case';
 import { ResetPasswordUseCase } from './application/use-case/reset-password.use-case';
+import { UpdateFotoPerfilUseCase } from './application/use-case/update-foto-perfil.use-case';
 import { SupabaseAuthGuard } from './guard/supabse-auth.guard';
 import { RolesGuard } from './guard/roles.guard';
 import { UsuarioRepository } from './domain/repositories/usuario.repository';
@@ -29,6 +30,7 @@ import { UsuarioRepositoryPrisma } from './infrastructure/prisma/usuario.reposit
     SignInUseCase,
     ForgotPasswordUseCase,
     ResetPasswordUseCase,
+    UpdateFotoPerfilUseCase,
     SupabaseAuthGuard,
     RolesGuard,
     {

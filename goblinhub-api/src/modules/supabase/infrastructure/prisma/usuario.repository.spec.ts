@@ -48,6 +48,7 @@ describe('UsuarioRepositoryPrisma', () => {
       findUniqueMock.mockResolvedValue({
         rol: 'jugador',
         nombre: 'Goblin Master',
+        foto_perfil_url: null,
       });
 
       const result = await repository.findProfileById('user-123');
@@ -55,10 +56,11 @@ describe('UsuarioRepositoryPrisma', () => {
       expect(result).toEqual({
         rol: RolUsuario.jugador,
         nombre: 'Goblin Master',
+        foto_perfil_url: null,
       });
       expect(findUniqueMock).toHaveBeenCalledWith({
         where: { id_usuario: 'user-123' },
-        select: { rol: true, nombre: true },
+        select: { rol: true, nombre: true, foto_perfil_url: true },
       });
     });
 
