@@ -69,7 +69,7 @@ function RegisterIntereses({ onSiguiente, onAnterior }: InteresesProps) {
   };
 
   return (
-    <div>
+    <div className="register-wrapper">
       <div className="base">
         <RegisterHeader faseActual={2} />
 
