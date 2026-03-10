@@ -11,6 +11,7 @@ describe('GetMeUseCase', () => {
     usuarioRepo = {
       findProfileById: jest.fn(),
       findRolById: jest.fn(),
+      updateFotoPerfil: jest.fn(),
     } as unknown as jest.Mocked<UsuarioRepository>;
 
     useCase = new GetMeUseCase(usuarioRepo);
@@ -20,6 +21,7 @@ describe('GetMeUseCase', () => {
     usuarioRepo.findProfileById.mockResolvedValue({
       nombre: 'Goblin Master',
       rol: RolUsuario.jugador,
+      foto_perfil_url: null,
     });
 
     const result = await useCase.getMyProfile('user-123', 'test@email.com');
@@ -29,6 +31,7 @@ describe('GetMeUseCase', () => {
       email: 'test@email.com',
       nombre: 'Goblin Master',
       rol: RolUsuario.jugador,
+      foto_perfil_url: null,
     });
   });
 
@@ -44,6 +47,7 @@ describe('GetMeUseCase', () => {
     usuarioRepo.findProfileById.mockResolvedValue({
       nombre: 'Admin',
       rol: RolUsuario.admin,
+      foto_perfil_url: null,
     });
 
     const result = await useCase.getMyProfile('user-456', undefined);
@@ -53,6 +57,7 @@ describe('GetMeUseCase', () => {
       email: undefined,
       nombre: 'Admin',
       rol: RolUsuario.admin,
+      foto_perfil_url: null,
     });
   });
 });
