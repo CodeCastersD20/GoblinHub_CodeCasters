@@ -3,7 +3,6 @@ import {
   UsuarioRepository,
   type UsuarioPerfil,
 } from '../../domain/repositories/usuario.repository';
-import { NivelExperiencia } from '../../domain/enums/user.enum';
 
 export interface MeResult {
   id: string;
@@ -35,12 +34,12 @@ export class GetMeUseCase {
       id,
       email,
       nombre: perfil.nombre,
-      apellidos: perfil.apellidos as string,
-      telefono: perfil.telefono as string | null,
+      apellidos: perfil.apellidos,
+      telefono: perfil.telefono,
       fecha_nacimiento: perfil.fecha_nacimiento,
-      nivel_experiencia: perfil.nivel_experiencia as NivelExperiencia,
-      puntos_fidelidad: perfil.puntos_fidelidad as number,
-      bio: perfil.bio as string | null,
+      nivel_experiencia: perfil.nivel_experiencia,
+      puntos_fidelidad: perfil.puntos_fidelidad,
+      bio: perfil.bio,
       rol: perfil.rol,
       foto_perfil_url: perfil.foto_perfil_url,
     };
