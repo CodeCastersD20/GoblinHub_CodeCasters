@@ -24,7 +24,7 @@ const Login: React.FC = () => {
     try {
       const { data } = await login(email, password);
       localStorage.setItem("token", data.access_token);
-      navigate("/auth-home");
+      navigate("/");
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
         ? (err.response?.data?.message ?? "Correo o contraseña incorrectos")
@@ -52,20 +52,19 @@ const Login: React.FC = () => {
     }
   }, [forgotEmail]);
 
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter") {
-      if (forgotPassword) {
-        handleForgotPassword();
-      } else {
-        handleLogin();
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        if (forgotPassword) {
+          handleForgotPassword();
+        } else {
+          handleLogin();
+        }
       }
-    }
-  };
-  window.addEventListener("keydown", handleKeyDown);
-  return () => window.removeEventListener("keydown", handleKeyDown);
-}, [forgotPassword, handleLogin, handleForgotPassword]);
-
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [forgotPassword, handleLogin, handleForgotPassword]);
 
   return (
     <div className="base-login">
