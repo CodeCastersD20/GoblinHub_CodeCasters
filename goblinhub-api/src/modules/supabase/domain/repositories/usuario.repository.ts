@@ -1,9 +1,24 @@
-import { RolUsuario } from '../enums/user.enum';
+import { NivelExperiencia, RolUsuario } from '../enums/user.enum';
 
 export interface UsuarioPerfil {
   rol: RolUsuario;
   nombre: string;
+  apellidos: string;
+  telefono: string | null;
+  fecha_nacimiento: Date;
+  nivel_experiencia: NivelExperiencia;
+  puntos_fidelidad: number;
+  bio: string | null;
   foto_perfil_url: string | null;
+}
+
+export interface UpdatePerfilData {
+  nombre?: string;
+  apellidos?: string;
+  telefono?: string | null;
+  fecha_nacimiento?: Date;
+  nivel_experiencia?: NivelExperiencia;
+  bio?: string | null;
 }
 
 export abstract class UsuarioRepository {
@@ -12,5 +27,9 @@ export abstract class UsuarioRepository {
   abstract updateFotoPerfil(
     id_usuario: string,
     foto_perfil_url: string | null,
+  ): Promise<void>;
+  abstract updateProfile(
+    id_usuario: string,
+    data: UpdatePerfilData,
   ): Promise<void>;
 }

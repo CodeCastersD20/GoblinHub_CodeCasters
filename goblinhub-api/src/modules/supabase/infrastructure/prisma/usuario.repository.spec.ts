@@ -48,6 +48,12 @@ describe('UsuarioRepositoryPrisma', () => {
       findUniqueMock.mockResolvedValue({
         rol: 'jugador',
         nombre: 'Goblin Master',
+        apellidos: 'Test',
+        telefono: null,
+        fecha_nacimiento: new Date('2000-01-01'),
+        nivel_experiencia: 'novato',
+        puntos_fidelidad: 0,
+        bio: null,
         foto_perfil_url: null,
       });
 
@@ -56,11 +62,27 @@ describe('UsuarioRepositoryPrisma', () => {
       expect(result).toEqual({
         rol: RolUsuario.jugador,
         nombre: 'Goblin Master',
+        apellidos: 'Test',
+        telefono: null,
+        fecha_nacimiento: new Date('2000-01-01'),
+        nivel_experiencia: 'novato',
+        puntos_fidelidad: 0,
+        bio: null,
         foto_perfil_url: null,
       });
       expect(findUniqueMock).toHaveBeenCalledWith({
         where: { id_usuario: 'user-123' },
-        select: { rol: true, nombre: true, foto_perfil_url: true },
+        select: {
+          rol: true,
+          nombre: true,
+          apellidos: true,
+          telefono: true,
+          fecha_nacimiento: true,
+          nivel_experiencia: true,
+          puntos_fidelidad: true,
+          bio: true,
+          foto_perfil_url: true,
+        },
       });
     });
 

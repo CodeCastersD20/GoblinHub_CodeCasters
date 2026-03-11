@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  Patch,
   Post,
   Put,
   UnauthorizedException,
@@ -43,6 +44,8 @@ import type { AuthenticatedRequest } from '../../interfaces/types/authenticated-
 import { ForgotPasswordUseCase } from '../../application/use-case/forgot-password.use-case';
 import { ResetPasswordUseCase } from '../../application/use-case/reset-password.use-case';
 import { UpdateFotoPerfilUseCase } from '../../application/use-case/update-foto-perfil.use-case';
+import { UpdatePerfilUseCase } from '../../application/use-case/update-perfil.use-case';
+import type { UpdatePerfilDto } from '../../application/use-case/update-perfil.use-case';
 import { Throttle } from '@nestjs/throttler';
 import { Roles } from '../../guard/roles.decorator';
 import { RolUsuario } from '../../domain/enums/user.enum';
@@ -60,6 +63,7 @@ export class SupabaseAuthController {
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly updateFotoPerfilUseCase: UpdateFotoPerfilUseCase,
+    private readonly updatePerfilUseCase: UpdatePerfilUseCase,
   ) {}
 
   /** Endpoint de login limpio — solo devuelve access_token y refresh_token */
@@ -159,6 +163,23 @@ export class SupabaseAuthController {
       signInTestUserDto.email,
       signInTestUserDto.password,
     );
+  }
+
+  @Patch('me')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Actualizar datos del perfil del usuario autenticado',
+  })
+  @ApiResponse({ status: 200, description: 'Perfil actualizado correctamente' })
+  @HttpCode(HttpStatus.OK)
+  async updatePerfil(
+    @Body() dto: UpdatePerfilDto,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<{ message: string }> {
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+    await this.updatePerfilUseCase.execute(req.user.id, dto);
+    return { message: 'Perfil actualizado correctamente' };
   }
 
   @Put('me/foto')
