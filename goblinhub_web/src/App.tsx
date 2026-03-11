@@ -33,7 +33,7 @@ function App() {
 
         {/* Rutas protegidas (requieren JWT) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/auth-home" element={<AuthHome />} />
+          <Route path="/home" element={<AuthHome />} />
           <Route path="/perfil" element={<PerfilPage />} />
         </Route>
       </Routes>
