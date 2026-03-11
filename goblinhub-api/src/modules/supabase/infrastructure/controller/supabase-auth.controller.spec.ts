@@ -10,6 +10,7 @@ import { SignInUseCase } from '../../application/use-case/signin.use-case';
 import { ForgotPasswordUseCase } from '../../application/use-case/forgot-password.use-case';
 import { ResetPasswordUseCase } from '../../application/use-case/reset-password.use-case';
 import { UpdateFotoPerfilUseCase } from '../../application/use-case/update-foto-perfil.use-case';
+import { UpdatePerfilUseCase } from '../../application/use-case/update-perfil.use-case';
 import { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
 import { RolUsuario, NivelExperiencia } from '../../domain/enums/user.enum';
 import { Session, User } from '@supabase/supabase-js';
@@ -26,6 +27,7 @@ describe('SupabaseAuthController', () => {
   let forgotPasswordUseCase: jest.Mocked<ForgotPasswordUseCase>;
   let resetPasswordUseCase: jest.Mocked<ResetPasswordUseCase>;
   let updateFotoPerfilUseCase: jest.Mocked<UpdateFotoPerfilUseCase>;
+  let updatePerfilUseCase: jest.Mocked<UpdatePerfilUseCase>;
 
   beforeEach(() => {
     validationService = {
@@ -69,6 +71,10 @@ describe('SupabaseAuthController', () => {
       delete: jest.fn(),
     } as unknown as jest.Mocked<UpdateFotoPerfilUseCase>;
 
+    updatePerfilUseCase = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<UpdatePerfilUseCase>;
+
     controller = new SupabaseAuthController(
       validationService,
       refreshService,
@@ -80,6 +86,7 @@ describe('SupabaseAuthController', () => {
       forgotPasswordUseCase,
       resetPasswordUseCase,
       updateFotoPerfilUseCase,
+      updatePerfilUseCase,
     );
   });
 
@@ -210,6 +217,12 @@ describe('SupabaseAuthController', () => {
         id: 'user-1',
         email: 'test@email.com',
         nombre: 'Test',
+        apellidos: 'User',
+        telefono: null,
+        fecha_nacimiento: new Date('2000-01-01'),
+        nivel_experiencia: NivelExperiencia.novato,
+        puntos_fidelidad: 0,
+        bio: null,
         rol: RolUsuario.jugador,
         foto_perfil_url: null,
       });
