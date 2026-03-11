@@ -62,19 +62,15 @@ test.describe("Página de Inicio pública (/)", () => {
     await expect(page).toHaveURL("/");
   });
 
-  test("con sesión redirige a /home", async ({ page }) => {
-    await page.route("**/auth/me", (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(MOCK_USER),
-      }),
-    );
+  test("con sesión permanece en / mostrando la landing pública", async ({
+    page,
+  }) => {
     await page.addInitScript(() => {
       localStorage.setItem("token", "fake-test-token-e2e");
     });
     await page.goto("/");
-    await expect(page).toHaveURL("/home");
+    await expect(page).toHaveURL("/");
+    await expect(page.getByText("GoblinHub")).toBeVisible();
   });
 });
 
