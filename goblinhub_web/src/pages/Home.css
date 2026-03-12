@@ -1,0 +1,409 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Nunito:wght@400;600;700&display=swap");
+
+/* ---------- Variables ---------- */
+:root {
+  --lp-bg: #f5f0e8;
+  --lp-purple: #6b21a8;
+  --lp-purple-dark: #4c1d95;
+  --lp-lime: #84cc16;
+  --lp-lime-dark: #65a30d;
+  --lp-card-bg: #ffffff;
+  --lp-border: #c084fc;
+  --lp-text: #1c1917;
+  --lp-muted: #57534e;
+  --lp-font-display: "Cinzel", serif;
+  --lp-font-body: "Nunito", sans-serif;
+}
+
+/* ---------- Página ---------- */
+.lp-page {
+  background-color: var(--lp-bg);
+  min-height: 100vh;
+  font-family: var(--lp-font-body);
+  color: var(--lp-text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0px 24px 72px;
+  gap: 72px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---------- Dados flotantes de fondo ---------- */
+.lp-dice-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.lp-die {
+  position: absolute;
+  opacity: 0.35;
+  user-select: none;
+  animation: lp-float linear infinite;
+  line-height: 1;
+}
+
+@keyframes lp-float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-40px) rotate(120deg);
+  }
+  66% {
+    transform: translateY(20px) rotate(240deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(360deg);
+  }
+}
+
+/* Asegura que el contenido quede sobre los dados */
+.lp-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Hero ---------- */
+.lp-hero {
+  text-align: center;
+  max-width: 720px;
+}
+
+/* ── Logo + marca ─ apilados verticalmente ── */
+.lp-hero__logo {
+  height: 88px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 12px;
+  filter: drop-shadow(0 2px 10px rgba(107, 33, 168, 0.3));
+}
+
+.lp-hero__brand {
+  display: block;
+  font-family: var(--lp-font-display);
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 700;
+  color: var(--lp-purple);
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+}
+
+.lp-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #bbf7d0;
+  color: #14532d;
+  border: 1.5px solid #4ade80;
+  font-family: var(--lp-font-body);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  margin-bottom: 20px;
+}
+
+.lp-hero__title {
+  font-family: var(--lp-font-display);
+  font-size: clamp(32px, 6vw, 64px);
+  font-weight: 700;
+  color: var(--lp-purple);
+  line-height: 1.12;
+  margin: 0 0 16px;
+}
+
+.lp-hero__subtitle {
+  font-size: 17px;
+  color: var(--lp-muted);
+  line-height: 1.7;
+  margin: 0 0 32px;
+}
+
+/* ── CTAs ── */
+.lp-hero__ctas {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.lp-btn {
+  display: inline-block;
+  padding: 12px 28px;
+  border-radius: 999px;
+  font-family: var(--lp-font-body);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.lp-btn--primary {
+  background-color: var(--lp-purple);
+  color: #ffffff;
+  border: 2px solid var(--lp-purple);
+}
+
+.lp-btn--primary:hover {
+  background-color: var(--lp-purple-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(107, 33, 168, 0.3);
+}
+
+.lp-btn--secondary {
+  background-color: transparent;
+  color: var(--lp-purple);
+  border: 2px solid var(--lp-border);
+}
+
+.lp-btn--secondary:hover {
+  background-color: #ede9fe;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(107, 33, 168, 0.12);
+}
+
+/* ---------- Título de sección ---------- */
+.lp-section-title {
+  font-family: var(--lp-font-display);
+  font-size: clamp(22px, 3vw, 36px);
+  font-weight: 700;
+  color: var(--lp-purple);
+  text-align: center;
+  margin: 0 0 32px;
+}
+
+/* ---------- Categorías / Features ---------- */
+.lp-features {
+  width: 100%;
+  max-width: 900px;
+}
+
+.lp-features__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.lp-feature-card {
+  background: var(--lp-card-bg);
+  border: 2px solid var(--lp-border);
+  border-radius: 14px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+  padding: 28px 20px;
+  text-align: center;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.lp-feature-card:hover {
+  transform: translateY(-4px) translateX(-4px);
+  box-shadow: 6px 6px 0 0 rgb(108, 188, 16);
+}
+
+.lp-feature-card__icon {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.lp-feature-card__title {
+  font-family: var(--lp-font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--lp-purple);
+  margin: 0 0 8px;
+}
+
+.lp-feature-card__desc {
+  font-size: 13px;
+  color: var(--lp-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ---------- Ubicación ---------- */
+.lp-store {
+  width: 100%;
+  max-width: 860px;
+  background: var(--lp-card-bg);
+  border: 2px solid var(--lp-border);
+  border-radius: 20px;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.09);
+  padding: 32px 28px 36px;
+}
+
+.lp-store__address {
+  font-size: 15px;
+  color: var(--lp-muted);
+  text-align: center;
+  margin: -16px 0 24px;
+}
+
+.lp-map-container {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--lp-border);
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-map-placeholder {
+  font-size: 15px;
+  color: var(--lp-muted);
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 600px) {
+  .lp-page {
+    padding: 32px 16px 48px;
+    gap: 48px;
+  }
+
+  .lp-store {
+    padding: 24px 16px 28px;
+  }
+
+  .lp-winners__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Últimos ganadores ---------- */
+.lp-winners {
+  width: 100%;
+  max-width: 860px;
+}
+
+.lp-winners__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.lp-winner-card {
+  background: var(--lp-card-bg);
+  border: 2px solid var(--lp-border);
+  border-radius: 14px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+  padding: 24px 16px;
+  text-align: center;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.lp-winner-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(107, 33, 168, 0.15);
+}
+
+.lp-winner-card--1 {
+  border-color: #f59e0b;
+}
+.lp-winner-card--2 {
+  border-color: #94a3b8;
+}
+.lp-winner-card--3 {
+  border-color: #b45309;
+}
+
+.lp-winner-card__icon {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 8px;
+}
+.lp-winner-card__place {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--lp-muted);
+  margin: 0 0 4px;
+}
+.lp-winner-card__nombre {
+  font-family: var(--lp-font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--lp-purple);
+  margin: 0 0 4px;
+}
+.lp-winner-card__juego {
+  font-size: 13px;
+  color: var(--lp-muted);
+  margin: 0 0 8px;
+}
+.lp-winner-card__puntos {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--lp-lime-dark);
+  margin: 0;
+}
+
+/* ---------- Próximo evento ---------- */
+.lp-next-event {
+  width: 100%;
+  max-width: 860px;
+}
+
+.lp-next-event__card {
+  background: var(--lp-card-bg);
+  border: 2px solid var(--lp-border);
+  border-radius: 20px;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.09);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.lp-next-event__badge {
+  background: #ede9fe;
+  color: var(--lp-purple);
+  border: 1.5px solid var(--lp-border);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lp-next-event__title {
+  font-family: var(--lp-font-display);
+  font-size: clamp(16px, 2.5vw, 22px);
+  font-weight: 700;
+  color: var(--lp-purple);
+  margin: 0;
+}
+
+.lp-next-event__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 14px;
+  color: var(--lp-muted);
+  font-weight: 600;
+}
+
+.lp-next-event__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lp-next-event__cta {
+  align-self: flex-start;
+}
