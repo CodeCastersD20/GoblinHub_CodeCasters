@@ -1,12 +1,15 @@
 @import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Nunito:wght@400;600;700&display=swap");
 
 /* ---------- Base REM ---------- */
+
 html{
   font-size: 62.5%;
 }
 
 /* ---------- Variables ---------- */
+
 :root {
+
   --nav-bg: #f5f0e8;
   --nav-border: #c084fc;
   --nav-shadow: 0 0.2rem 1.6rem rgba(107, 33, 168, 0.1);
@@ -24,251 +27,254 @@ html{
   --nav-dropdown-shadow: 0 0.8rem 3.2rem rgba(107, 33, 168, 0.15);
   --nav-dropdown-border: #e9d5ff;
   --nav-dropdown-hover: #f5f0e8;
-  --nav-dropdown-danger: #dc2626;
-  --nav-dropdown-danger-hover: #fef2f2;
 
   --nav-font: "Nunito", sans-serif;
+
 }
 
-/* ---------- Contenedor principal ---------- */
+/* ---------- Navbar ---------- */
+
 .logo-container {
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   background-color: var(--nav-bg);
   border-bottom: 0.2rem solid var(--nav-border);
   box-shadow: var(--nav-shadow);
+
   height: var(--nav-height);
   padding: 0 3.2rem;
+
   position: sticky;
   top: 0;
+
   z-index: 100;
+
   font-family: var(--nav-font);
+
 }
 
 /* ---------- Logo ---------- */
+
 .Logo {
   display: flex;
   align-items: center;
-  flex-shrink: 0;
 }
 
 .nav-goblin {
+
   height: 4.4rem;
-  width: auto;
-  object-fit: contain;
   transition: transform 0.2s ease;
+
 }
 
-.goblin:hover {
+.nav-goblin:hover {
+
   transform: scale(1.06);
+
 }
 
-/* ---------- Botones de navegación ---------- */
+.usuario-wrapper {
+  position: relative;
+}
+
+.usuario {
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 4rem;
+  height: 4rem;
+
+  border-radius: 999rem;
+
+  background-color: var(--nav-profile-bg);
+  color: var(--nav-profile-color);
+
+  font-size: 1.8rem;
+
+  border: 0.2rem solid var(--nav-border);
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+
+}
+
+.usuario:hover {
+
+  background-color: var(--nav-profile-hover-bg);
+  transform: scale(1.05);
+
+}
+
+.usuario-dropdown {
+
+  position: absolute;
+  top: calc(100% + 1rem);
+  right: 0;
+
+  background: white;
+
+  border-radius: 1rem;
+
+  box-shadow: var(--nav-dropdown-shadow);
+
+  min-width: 18rem;
+
+  padding: 0.5rem;
+
+  z-index: 200;
+
+}
+
+.usuario-dropdown__item {
+
+  width: 100%;
+  padding: 1rem;
+
+  background: transparent;
+  border: none;
+
+  text-align: left;
+
+  font-size: 1.4rem;
+
+  cursor: pointer;
+
+}
+
+.usuario-dropdown__item:hover {
+
+  background: var(--nav-dropdown-hover);
+
+}
+
+.usuario-dropdown__divider {
+
+  height: 0.1rem;
+  background: var(--nav-dropdown-border);
+  margin: 0.4rem 0;
+
+}
+
+/* ---------- Navegación ---------- */
+
 .nav-botones {
+
   display: flex;
   align-items: center;
   gap: 0.6rem;
+
   flex: 1;
   justify-content: center;
-}
 
-.nav-botones .custom-button,
-.nav-botones a .custom-button {
-  background-color: transparent;
-  color: var(--nav-purple);
-  font-family: var(--nav-font);
-  font-weight: 700;
-  font-size: 1.4rem;
-  padding: 0.8rem 1.6rem;
-  border-radius: 0.8rem;
-  border: none;
-  cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.nav-botones .custom-button:hover,
-.nav-botones a .custom-button:hover {
-  color: rgb(108, 188, 16)
 }
 
 .nav-botones a {
   text-decoration: none;
 }
 
-.usuario-wrapper {
-  position: relative;
-  flex-shrink: 0;
-}
+.nav-botones .custom-button {
 
-/* ---------- Perfil ---------- */
-.nav-btn--login{
-  background-color: var(--nav-profile-bg);
-  color: var(--nav-profile-color);
-  font-family: var(--nav-font);
-  font-weight: 700;
-  font-size: 1.4rem;
-  padding: 0.8rem 1.6rem;
-  border-radius: 0.8rem;
-  border: none;
-  cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.nav-btn--login:hover{
-  color: var(--nav-profile-bg);
-  background-color: var(--nav-purple-hover);
-}
-
-.usuario {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  min-width: 4rem;
-  height: 4rem;
-  padding: 0 1rem;
-  border-radius: 999rem;
-  background-color: var(--nav-profile-bg);
-  color: var(--nav-profile-color);
-  cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
-  border: 0.2rem solid var(--nav-border);
-}
-
-.usuario__nombre {
-  font-family: var(--nav-font);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--nav-purple);
-  white-space: nowrap;
-}
-
-.usuario:hover {
-  background-color: var(--nav-profile-hover-bg);
-  transform: scale(1.07);
-}
-
-.usuario--active {
-  background-color: var(--nav-profile-active-bg);
-  transform: scale(1.07);
-}
-
-/* ---------- Dropdown ---------- */
-.usuario-dropdown {
-  position: absolute;
-  top: calc(100% + 1rem);
-  right: 0;
-  background-color: var(--nav-dropdown-bg);
-  border: 0.15rem solid var(--nav-dropdown-border);
-  border-radius: 1.2rem;
-  box-shadow: var(--nav-dropdown-shadow);
-  min-width: 18rem;
-  padding: 0.6rem;
-  z-index: 200;
-  animation: dropdownFadeIn 0.18s ease forwards;
-}
-
-/* ---------- Items ---------- */
-.usuario-dropdown__item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-  padding: 1rem 1.4rem;
-  border: none;
   background: transparent;
-  border-radius: 0.8rem;
-  font-family: var(--nav-font);
-  font-size: 1.4rem;
-  font-weight: 600;
   color: var(--nav-purple);
+
+  font-weight: 700;
+  font-size: 1.4rem;
+
+  padding: 0.8rem 1.6rem;
+
+  border-radius: 0.8rem;
+  border: none;
+
   cursor: pointer;
+
 }
 
-.usuario-dropdown__item:hover {
-  background-color: var(--nav-dropdown-hover);
+.nav-botones .custom-button:hover {
+
+  color: rgb(108, 188, 16);
+
 }
 
-/* ---------- Separador ---------- */
-.usuario-dropdown__divider {
-  height: 0.1rem;
-  background-color: var(--nav-dropdown-border);
-  margin: 0.4rem 0.6rem;
-}
+/* ---------- Botón hamburguesa ---------- */
 
+.hamburguesa {
 
-@keyframes dropdownFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-0.6rem);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  display: none;
+
 }
 
 /* ---------- Overlay ---------- */
+
 .overlay {
+
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.4);
+
   z-index: 998;
+
+}
+
+/* ---------- Menú móvil ---------- */
+
+.ham-botones {
+
+  display: none;
+
+}
+
+.ham-cerrar {
+
+  display: none;
+
 }
 
 /* ---------- Responsive ---------- */
-.ham-botones{
-  display: none;
-}
-
-.ham-cerrar{
-  display: none;
-}
-
-
-.hamburguesa{
-  display: none;
-}
 
 @media (max-width: 76.8rem) {
 
-  .hamburguesa {
-    display: block;
-    background: transparent;
-    border: none;
-    font-size: 3rem;
-    color: var(--nav-purple);
-    order: 3;
+  .nav-botones {
+    display: none;
   }
 
   .auth-desktop {
     display: none;
   }
 
-  .nav-botones {
-    display: none;
+  .hamburguesa {
+
+    display: block;
+
+    background: transparent;
+    border: none;
+
+    font-size: 3.2rem;
+    color: var(--nav-purple);
+
+    cursor: pointer;
+
   }
 
-  .usuario-wrapper {
-    order: 2;
+  .usuario-wrapper{
+    display:none;
   }
 
   .ham-botones {
+
     position: fixed;
     top: 0;
     right: 0;
+
     height: 100vh;
     width: 25rem;
 
     background-image: linear-gradient(to bottom, #6b21a8, #9c6bea);
-    color: #fff;
 
     display: flex;
     flex-direction: column;
@@ -276,47 +282,68 @@ html{
     padding: 8rem 2rem 2rem;
 
     transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
+
+    transition: transform 0.35s cubic-bezier(.25,.8,.25,1);
 
     z-index: 999;
+
+    box-shadow: -0.6rem 0 2rem rgba(0,0,0,0.2);
+
   }
 
   .ham-botones.activo {
+
     transform: translateX(0);
+
+  }
+
+  .ham-cerrar {
+
+    display: block;
+
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+
+    font-size: 2.4rem;
+
+    background: transparent;
+    border: none;
+
+    color: #fff;
+
+    cursor: pointer;
+
   }
 
 }
 
+/* ---------- Botones móvil ---------- */
+
 .ham-button {
+
   display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  margin-top: 2rem;
-  background-color: transparent;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  font-size: 1.8rem;
-  padding: 1rem 2rem;
-  transition: background-color 0.2s ease;
-  display: flex;
-  gap: 2rem;
   justify-content: center;
+
   width: 100%;
+
+  margin-top: 2rem;
+
+  background: transparent;
+  border: none;
+
+  color: #fff;
+
+  font-size: 1.8rem;
+
+  padding: 1rem 2rem;
+
+  cursor: pointer;
+
 }
 
 .ham-button:hover {
-  background-color: var(--nav-purple-hover);
-}
 
-.ham-cerrar {
-  display: block;
-  top: 2rem;
-  right: 2rem;
-  position: absolute;
-  cursor: pointer;
-  font-size: 2.4rem;
-  background: transparent;
-  border: none;
-  color: #fff;
+  background-color: var(--nav-purple-hover);
+
 }

@@ -13,6 +13,10 @@ import AuthHome from "./pages/Home/Home";
 import PerfilPage from "./pages/perfil/PerfilPage";
 import ProductosDetalle from "./pages/products/ProductosDetalle/productsDetails";
 import ResetPassword from "./pages/resetPassword/ResetPassword";
+import EventosAdmin from "./pages/perfil/administration/eventos/EventoAdmin";
+
+import AdminDashboard from "./pages/perfil/administration/Administration";
+import VerEventoPage from "./pages/perfil/administration/eventos/verEvento/VerEvento";
 
 function App() {
   return (
@@ -20,22 +24,31 @@ function App() {
       <Nav />
 
       <Routes>
-        {/* Rutas públicas */}
-        <Route path="/productos/:id" element={<ProductosDetalle />} />
+
+        {/* PUBLICAS */}
+
         <Route path="/" element={<Home />} />
         <Route path="/productos" element={<Products />} />
+        <Route path="/productos/:id" element={<ProductosDetalle />} />
         <Route path="/contacto" element={<AboutUs />} />
         <Route path="/eventos" element={<CalendarioAventuras />} />
         <Route path="/eventos/:id" element={<EventoDetalle />} />
         <Route path="/register" element={<RegisterFlow />} />
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/eventosAdmin" element={<EventosAdmin />} />
+        <Route path="/verEvento/:id" element={<VerEventoPage />} />
 
-        {/* Rutas protegidas (requieren JWT) */}
+        {/* USUARIOS LOGUEADOS */}
+
         <Route element={<ProtectedRoute />}>
           <Route path="/auth-home" element={<AuthHome />} />
           <Route path="/perfil" element={<PerfilPage />} />
         </Route>
+
+        {/* ADMIN */}
+          <Route path="/admin" element={<AdminDashboard />} />
+
       </Routes>
     </>
   );
