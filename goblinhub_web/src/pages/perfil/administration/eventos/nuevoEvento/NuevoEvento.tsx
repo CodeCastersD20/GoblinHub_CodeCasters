@@ -143,12 +143,13 @@ function EventoNuevo({ evento, onSuccess }: EventoNuevoProps) {
 
       }, 1000);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
 
-      setError(
-        err?.response?.data?.message ||
-        "Error al guardar el evento"
-      );
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Error al guardar el evento");
+      }
 
     } finally {
 
