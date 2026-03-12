@@ -85,9 +85,13 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "modules/events/aplication/use-case/**/*.ts",
+      "modules/events/application/use-case/**/*.ts",
       "modules/products/aplication/use-case/**/*.ts",
       "modules/rewards/aplication/use-case/**/*.ts",
+      "modules/supabase/application/use-case/**/*.ts",
+      "modules/supabase/infrastructure/controller/**/*.ts",
+      "modules/supabase/infrastructure/prisma/**/*.ts",
+      "modules/supabase/guard/**/*.ts",
       "!**/*.spec.ts",
       "!**/*.module.ts"
     ],
