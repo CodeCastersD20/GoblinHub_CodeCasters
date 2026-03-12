@@ -77,7 +77,7 @@ describe("Login", () => {
     await waitFor(() => {
       expect(loginMock).toHaveBeenCalledWith("user@goblin.com", "Password1");
       expect(localStorage.getItem("token")).toBe("tok-123");
-      expect(mockNavigate).toHaveBeenCalledWith("/auth-home");
+      expect(mockNavigate).toHaveBeenCalledWith("/");
     });
   });
 

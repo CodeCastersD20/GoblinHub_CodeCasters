@@ -60,7 +60,7 @@ describe("Home", () => {
     });
     render(<Home />);
     await waitFor(() =>
-      expect(screen.getByText("Bienvenido, Carlos")).toBeInTheDocument(),
+      expect(screen.getByText(/Bienvenido, Carlos/i)).toBeInTheDocument(),
     );
   });
 

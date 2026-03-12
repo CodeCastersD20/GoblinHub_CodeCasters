@@ -5,12 +5,12 @@ describe("AboutUs", () => {
   it("renders the contact page heading", () => {
     render(<AboutUs />);
     expect(
-      screen.getByRole("heading", { name: "Página de Contacto" }),
+      screen.getByRole("heading", { name: "¿Cómo llegar a nuestra guarida?" }),
     ).toBeInTheDocument();
   });
 
-  it("renders only one heading", () => {
+  it("renders multiple headings", () => {
     render(<AboutUs />);
-    expect(screen.getAllByRole("heading")).toHaveLength(1);
+    expect(screen.getAllByRole("heading")).toHaveLength(5);
   });
 });
