@@ -1,14 +1,29 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
+  Patch,
   Post,
+  Put,
   UnauthorizedException,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
   Request,
   HttpStatus,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { SupabaseValidationTokenService } from '../../application/use-case/validationT.use-case';
 import { SupabaseRefreshTokenService } from '../../application/use-case/refreshT.use-case';
 import { SupabaseGetUserProfileService } from '../../application/use-case/getUserProfile.use-case';
@@ -28,6 +43,9 @@ import { SupabaseAuthGuard } from '../../guard/supabse-auth.guard';
 import type { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
 import { ForgotPasswordUseCase } from '../../application/use-case/forgot-password.use-case';
 import { ResetPasswordUseCase } from '../../application/use-case/reset-password.use-case';
+import { UpdateFotoPerfilUseCase } from '../../application/use-case/update-foto-perfil.use-case';
+import { UpdatePerfilUseCase } from '../../application/use-case/update-perfil.use-case';
+import type { UpdatePerfilDto } from '../../application/use-case/update-perfil.use-case';
 import { Throttle } from '@nestjs/throttler';
 import { Roles } from '../../guard/roles.decorator';
 import { RolUsuario } from '../../domain/enums/user.enum';
@@ -44,6 +62,8 @@ export class SupabaseAuthController {
     private readonly signInUseCase: SignInUseCase,
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
+    private readonly updateFotoPerfilUseCase: UpdateFotoPerfilUseCase,
+    private readonly updatePerfilUseCase: UpdatePerfilUseCase,
   ) {}
 
   /** Endpoint de login limpio — solo devuelve access_token y refresh_token */
@@ -143,5 +163,80 @@ export class SupabaseAuthController {
       signInTestUserDto.email,
       signInTestUserDto.password,
     );
+  }
+
+  @Patch('me')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Actualizar datos del perfil del usuario autenticado',
+  })
+  @ApiResponse({ status: 200, description: 'Perfil actualizado correctamente' })
+  @HttpCode(HttpStatus.OK)
+  async updatePerfil(
+    @Body() dto: UpdatePerfilDto,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<{ message: string }> {
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+    await this.updatePerfilUseCase.execute(req.user.id, dto);
+    return { message: 'Perfil actualizado correctamente' };
+  }
+
+  @Put('me/foto')
+  @UseGuards(SupabaseAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Actualizar foto de perfil del usuario autenticado',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Imagen de perfil (jpeg, png, webp, gif · máx 5 MB)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'URL pública de la nueva foto de perfil',
+    schema: {
+      example: { foto_perfil_url: 'https://…/profiles/uuid/uuid.jpg' },
+    },
+  })
+  async updateFotoPerfil(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<{ foto_perfil_url: string }> {
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+    if (!file)
+      throw new BadRequestException('Se requiere un archivo de imagen válido');
+    const url = await this.updateFotoPerfilUseCase.update(req.user.id, file);
+    return { foto_perfil_url: url };
+  }
+
+  @Delete('me/foto')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Eliminar foto de perfil del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Foto de perfil eliminada' })
+  @HttpCode(HttpStatus.OK)
+  async deleteFotoPerfil(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<{ message: string }> {
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+    await this.updateFotoPerfilUseCase.delete(req.user.id);
+    return { message: 'Foto de perfil eliminada correctamente' };
   }
 }

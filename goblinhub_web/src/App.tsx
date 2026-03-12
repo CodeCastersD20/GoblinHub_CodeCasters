@@ -42,7 +42,7 @@ function App() {
         {/* USUARIOS LOGUEADOS */}
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/auth-home" element={<AuthHome />} />
+          <Route path="/home" element={<AuthHome />} />
           <Route path="/perfil" element={<PerfilPage />} />
         </Route>
 
