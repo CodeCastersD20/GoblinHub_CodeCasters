@@ -1,18 +1,24 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test('has title', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+test.describe("Register flow", () => {
+  test("register page renders step 1 form", async ({ page }) => {
+    await page.goto("/register");
+    await expect(page.getByText("Información personal")).toBeVisible();
+    await expect(page.getByPlaceholder("Tu nombre")).toBeVisible();
+    await expect(page.getByPlaceholder("Tu correo")).toBeVisible();
+  });
 
-  // Expect a title "to contain" a substring.
-  await expect(page).toHaveTitle(/Playwright/);
-});
+  test("products page shows inventory heading", async ({ page }) => {
+    await page.goto("/productos");
+    await expect(
+      page.getByRole("heading", { name: "Nuestro inventario" }),
+    ).toBeVisible();
+  });
 
-test('get started link', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
-
-  // Click the get started link.
-  await page.getByRole('link', { name: 'Get started' }).click();
-
-  // Expects page to have a heading with the name of Installation.
-  await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
+  test("events page shows calendar heading", async ({ page }) => {
+    await page.goto("/eventos");
+    await expect(
+      page.getByRole("heading", { name: "Calendario de Aventuras" }),
+    ).toBeVisible();
+  });
 });

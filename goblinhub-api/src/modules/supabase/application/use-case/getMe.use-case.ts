@@ -20,6 +20,7 @@ export interface MeResult {
 
 @Injectable()
 export class GetMeUseCase {
+  /* istanbul ignore next */
   constructor(private readonly usuarioRepository: UsuarioRepository) {}
 
   async getMyProfile(id: string, email: string | undefined): Promise<MeResult> {

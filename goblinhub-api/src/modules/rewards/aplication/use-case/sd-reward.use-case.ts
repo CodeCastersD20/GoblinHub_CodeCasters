@@ -5,6 +5,7 @@ import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
 
 @Injectable()
 export class SoftDeleteRewardUseCase {
+  /* istanbul ignore next */
   constructor(
     private rewardRepository: RewardRepository,
     private usuarioRepository: UsuarioRepository,

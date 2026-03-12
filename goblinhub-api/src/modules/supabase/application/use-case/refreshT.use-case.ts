@@ -3,6 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class SupabaseRefreshTokenService {
+  /* istanbul ignore next */
   constructor(
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
   ) {}

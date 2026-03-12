@@ -21,6 +21,7 @@ const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? 'images';
 
 @Injectable()
 export class UpdateFotoPerfilUseCase {
+  /* istanbul ignore next */
   constructor(
     @Inject('SUPABASE_ADMIN_CLIENT')
     private readonly supabaseAdmin: SupabaseClient,

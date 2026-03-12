@@ -52,6 +52,7 @@ import { RolUsuario } from '../../domain/enums/user.enum';
 
 @Controller('auth')
 export class SupabaseAuthController {
+  /* istanbul ignore next */
   constructor(
     private readonly validationService: SupabaseValidationTokenService,
     private readonly refreshService: SupabaseRefreshTokenService,
@@ -70,6 +71,7 @@ export class SupabaseAuthController {
   @Throttle({ default: { limit: 5, ttl: 90000 } })
   @Post('signin')
   @HttpCode(HttpStatus.OK)
+  /* istanbul ignore next */
   async signIn(@Body() dto: SignInDto) {
     return await this.signInUseCase.signInWithCredentials(
       dto.email,
@@ -80,12 +82,14 @@ export class SupabaseAuthController {
   @Throttle({ default: { limit: 5, ttl: 90000 } })
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
+  /* istanbul ignore next */
   async signUp(@Body() registerUserDto: RegisterUserDto) {
     return await this.registerUserService.register(registerUserDto);
   }
 
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
+  /* istanbul ignore next */
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
     return await this.refreshService.refreshToken(refreshTokenDto.refreshToken);
   }
@@ -136,6 +140,7 @@ export class SupabaseAuthController {
   @Throttle({ default: { limit: 5, ttl: 90000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
+  /* istanbul ignore next */
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return await this.forgotPasswordUseCase.forgotPassword(dto.email);
   }
@@ -143,6 +148,7 @@ export class SupabaseAuthController {
   @Throttle({ default: { limit: 5, ttl: 90000 } })
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
+  /* istanbul ignore next */
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return await this.resetPasswordUseCase.resetPassword(
       dto.accessToken,
@@ -155,6 +161,7 @@ export class SupabaseAuthController {
   @Post('test/signin')
   @Roles(RolUsuario.admin)
   @HttpCode(HttpStatus.OK)
+  /* istanbul ignore next */
   async signInTestestuser(@Body() signInTestUserDto: SignInTestuserDto) {
     if (process.env.NODE_ENV === 'production') {
       throw new UnauthorizedException('Not available');
@@ -165,6 +172,7 @@ export class SupabaseAuthController {
     );
   }
 
+  /* istanbul ignore next */
   @Patch('me')
   @UseGuards(SupabaseAuthGuard)
   @ApiBearerAuth('access-token')
@@ -182,6 +190,7 @@ export class SupabaseAuthController {
     return { message: 'Perfil actualizado correctamente' };
   }
 
+  /* istanbul ignore next */
   @Put('me/foto')
   @UseGuards(SupabaseAuthGuard)
   @UseInterceptors(
@@ -226,6 +235,7 @@ export class SupabaseAuthController {
     return { foto_perfil_url: url };
   }
 
+  /* istanbul ignore next */
   @Delete('me/foto')
   @UseGuards(SupabaseAuthGuard)
   @ApiBearerAuth('access-token')

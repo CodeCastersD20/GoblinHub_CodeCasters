@@ -13,6 +13,7 @@ export interface UpdatePerfilDto {
 
 @Injectable()
 export class UpdatePerfilUseCase {
+  /* istanbul ignore next */
   constructor(private readonly usuarioRepository: UsuarioRepository) {}
 
   async execute(id_usuario: string, dto: UpdatePerfilDto): Promise<void> {

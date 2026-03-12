@@ -113,6 +113,36 @@ describe('SupabaseAuthGuard', () => {
     );
   });
 
+  it('debe manejar error tipo string en extractErrorMessage', async () => {
+    validationService.validtoken.mockRejectedValue('string error message');
+
+    const context = createMockContext('Bearer some-token');
+
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('debe manejar error tipo objeto con message en extractErrorMessage', async () => {
+    validationService.validtoken.mockRejectedValue({ message: 'object error' });
+
+    const context = createMockContext('Bearer some-token');
+
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('debe manejar error desconocido (fallback Unknown error) en extractErrorMessage', async () => {
+    validationService.validtoken.mockRejectedValue(42);
+
+    const context = createMockContext('Bearer some-token');
+
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
   it('debe asignar el usuario al request cuando es válido', async () => {
     validationService.validtoken.mockResolvedValue({
       success: true,
