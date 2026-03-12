@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Nav from "./layouts/navbar/navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -13,11 +13,17 @@ import AuthHome from "./pages/Home/Home";
 import PerfilPage from "./pages/perfil/PerfilPage";
 import ProductosDetalle from "./pages/products/ProductosDetalle/productsDetails";
 import ResetPassword from "./pages/resetPassword/ResetPassword";
+import ConfirmAccount from "./pages/confirmAccount/ConfirmAccount";
 
 function App() {
+  const location = useLocation();
+  const hideNav = ["/register", "/confirm-account", "/reset-password"].includes(
+    location.pathname,
+  );
+
   return (
     <>
-      <Nav />
+      {!hideNav && <Nav />}
 
       <Routes>
         {/* Rutas públicas */}
@@ -30,12 +36,16 @@ function App() {
         <Route path="/register" element={<RegisterFlow />} />
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/confirm-account" element={<ConfirmAccount />} />
 
-        {/* Rutas protegidas (requieren JWT) */}
+        {/* Ruta protegidas (requieren JWT) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/auth-home" element={<AuthHome />} />
           <Route path="/perfil" element={<PerfilPage />} />
         </Route>
+
+        {/* Cualquier ruta desconocida → inicio */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );
