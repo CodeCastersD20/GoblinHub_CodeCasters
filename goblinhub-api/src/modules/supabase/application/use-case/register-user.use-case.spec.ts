@@ -121,4 +121,36 @@ describe('SupabaseRegisterUserService', () => {
 
     expect(adminMock.deleteUser).toHaveBeenCalledWith('supa-uuid-2');
   });
+
+  it('debe registrar exitosamente cuando los campos opcionales son undefined', async () => {
+    supabase.auth.signUp = jest.fn().mockResolvedValue({
+      data: {
+        user: { id: 'supa-uuid-3', email: 'optional@email.com' },
+        session: null,
+      },
+      error: null,
+    });
+
+    (prisma.usuario.create as jest.Mock).mockResolvedValue({
+      id_usuario: 'supa-uuid-3',
+      nombre: 'Sin Opcionales',
+      apellidos: 'Test',
+      rol: 'jugador',
+      nivel_experiencia: NivelExperiencia.novato,
+      created_at: new Date(),
+    });
+
+    const dtoSinOpcionales = {
+      email: 'optional@email.com',
+      password: 'Password1',
+      nombre: 'Sin Opcionales',
+      apellidos: 'Test',
+      fecha_nacimiento: '2000-01-15',
+    } as RegisterUserDto;
+
+    const result = await service.register(dtoSinOpcionales);
+
+    expect(result.success).toBe(true);
+    expect(result.user.id).toBe('supa-uuid-3');
+  });
 });
