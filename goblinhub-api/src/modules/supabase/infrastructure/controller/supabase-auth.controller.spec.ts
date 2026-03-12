@@ -292,6 +292,94 @@ describe('SupabaseAuthController', () => {
     });
   });
 
+  describe('updatePerfil', () => {
+    it('debe actualizar el perfil del usuario autenticado', async () => {
+      const req = {
+        user: { id: 'user-1', email: 'test@email.com' },
+      } as unknown as AuthenticatedRequest;
+
+      updatePerfilUseCase.execute.mockResolvedValue(undefined);
+
+      const result = await controller.updatePerfil({ nombre: 'Nuevo' }, req);
+      expect(result).toEqual({ message: 'Perfil actualizado correctamente' });
+    });
+
+    it('debe lanzar UnauthorizedException si no hay usuario', async () => {
+      const req = { user: undefined } as unknown as AuthenticatedRequest;
+
+      await expect(
+        controller.updatePerfil({ nombre: 'Nuevo' }, req),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('updateFotoPerfil', () => {
+    const mockFile = {
+      mimetype: 'image/jpeg',
+      size: 1024,
+      buffer: Buffer.from('img'),
+    } as Express.Multer.File;
+
+    it('debe actualizar la foto de perfil del usuario', async () => {
+      const req = {
+        user: { id: 'user-1' },
+      } as unknown as AuthenticatedRequest;
+
+      updateFotoPerfilUseCase.update.mockResolvedValue(
+        'https://supabase.io/foto.webp',
+      );
+
+      const result = await controller.updateFotoPerfil(mockFile, req);
+      expect(result).toEqual({
+        foto_perfil_url: 'https://supabase.io/foto.webp',
+      });
+    });
+
+    it('debe lanzar UnauthorizedException si no hay usuario', async () => {
+      const req = { user: undefined } as unknown as AuthenticatedRequest;
+
+      await expect(controller.updateFotoPerfil(mockFile, req)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('debe lanzar BadRequestException si no se adjunta archivo', async () => {
+      const req = {
+        user: { id: 'user-1' },
+      } as unknown as AuthenticatedRequest;
+
+      await expect(
+        controller.updateFotoPerfil(
+          undefined as unknown as Express.Multer.File,
+          req,
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('deleteFotoPerfil', () => {
+    it('debe eliminar la foto de perfil del usuario', async () => {
+      const req = {
+        user: { id: 'user-1' },
+      } as unknown as AuthenticatedRequest;
+
+      updateFotoPerfilUseCase.delete.mockResolvedValue(undefined);
+
+      const result = await controller.deleteFotoPerfil(req);
+      expect(result).toEqual({
+        message: 'Foto de perfil eliminada correctamente',
+      });
+    });
+
+    it('debe lanzar UnauthorizedException si no hay usuario', async () => {
+      const req = { user: undefined } as unknown as AuthenticatedRequest;
+
+      await expect(controller.deleteFotoPerfil(req)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
+
   describe('signInTestestuser', () => {
     it('debe delegar al createTestUserService en entorno no producción', async () => {
       const originalEnv = process.env.NODE_ENV;
