@@ -27,7 +27,7 @@ const Login: React.FC = () => {
       if (data.refresh_token) {
         localStorage.setItem("refresh_token", data.refresh_token);
       }
-      navigate("/auth-home");
+      navigate("/");
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
         ? (err.response?.data?.message ?? "Correo o contraseña incorrectos")
