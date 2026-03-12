@@ -29,10 +29,12 @@ function App() {
       {!hideNav && <Nav />}
 
       <Routes>
-        {/* Rutas públicas */}
-        <Route path="/productos/:id" element={<ProductosDetalle />} />
+
+        {/* PUBLICAS */}
+
         <Route path="/" element={<Home />} />
         <Route path="/productos" element={<Products />} />
+        <Route path="/productos/:id" element={<ProductosDetalle />} />
         <Route path="/contacto" element={<AboutUs />} />
         <Route path="/eventos" element={<CalendarioAventuras />} />
         <Route path="/eventos/:id" element={<EventoDetalle />} />
