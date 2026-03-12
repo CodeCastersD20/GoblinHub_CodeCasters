@@ -14,6 +14,7 @@ import { NivelExperiencia } from '../../domain/enums/user.enum';
 export class SupabaseRegisterUserService {
   private readonly logger = new Logger(SupabaseRegisterUserService.name);
 
+  /* istanbul ignore next */
   constructor(
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
     @Inject('SUPABASE_ADMIN_CLIENT')

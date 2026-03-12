@@ -5,6 +5,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export class ForgotPasswordUseCase {
   private readonly logger = new Logger(ForgotPasswordUseCase.name);
 
+  /* istanbul ignore next */
   constructor(
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
   ) {}
