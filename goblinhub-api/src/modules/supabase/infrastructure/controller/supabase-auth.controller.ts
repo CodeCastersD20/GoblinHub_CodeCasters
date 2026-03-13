@@ -14,6 +14,7 @@ import {
   UseInterceptors,
   Request,
   HttpStatus,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -36,6 +37,7 @@ import {
   RefreshTokenDto,
   RegisterUserDto,
   ResetPasswordDto,
+  AdminUpdateUserDto,
   SignInDto,
   SignInTestuserDto,
 } from '../../application/dto/auth.dto';
@@ -50,6 +52,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Roles } from '../../guard/roles.decorator';
 import { RolUsuario } from '../../domain/enums/user.enum';
 import { RolesGuard } from '../../guard/roles.guard';
+import { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 
 @Controller('auth')
 export class SupabaseAuthController {
@@ -66,6 +69,7 @@ export class SupabaseAuthController {
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly updateFotoPerfilUseCase: UpdateFotoPerfilUseCase,
     private readonly updatePerfilUseCase: UpdatePerfilUseCase,
+    private readonly usuarioRepository: UsuarioRepository,
   ) {}
 
   /** Endpoint de login limpio — solo devuelve access_token y refresh_token */
@@ -250,5 +254,68 @@ export class SupabaseAuthController {
     if (!req.user) throw new UnauthorizedException('User not authenticated');
     await this.updateFotoPerfilUseCase.delete(req.user.id);
     return { message: 'Foto de perfil eliminada correctamente' };
+  }
+
+  @Get('admin/users')
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin, RolUsuario.empleado)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Listar usuarios para panel administrativo' })
+  @ApiResponse({ status: 200, description: 'Usuarios listados correctamente' })
+  async getAdminUsers() {
+    return await this.usuarioRepository.findAllForAdmin();
+  }
+
+  @Patch('admin/users/:id')
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin, RolUsuario.empleado)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Actualizar usuario desde panel administrativo' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuario actualizado correctamente',
+  })
+  async updateAdminUser(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: AdminUpdateUserDto,
+  ): Promise<{ message: string }> {
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+
+    const currentRole = await this.usuarioRepository.findRolById(req.user.id);
+    if (!currentRole) {
+      throw new UnauthorizedException('User role not found');
+    }
+
+    if (currentRole !== RolUsuario.admin) {
+      const sanitizedDto: AdminUpdateUserDto = {
+        nombre: dto.nombre,
+        apellidos: dto.apellidos,
+        nivel_experiencia: dto.nivel_experiencia,
+      };
+      await this.usuarioRepository.updateUserForAdmin(id, sanitizedDto);
+      return { message: 'Usuario actualizado correctamente' };
+    }
+
+    await this.usuarioRepository.updateUserForAdmin(id, dto);
+    return { message: 'Usuario actualizado correctamente' };
+  }
+
+  @Delete('admin/users/:id')
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles(RolUsuario.admin)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Desactivar usuario (soft delete) desde admin' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuario desactivado correctamente',
+  })
+  async deleteAdminUser(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<{ message: string }> {
+    if (!req.user) throw new UnauthorizedException('User not authenticated');
+    await this.usuarioRepository.softDeleteForAdmin(id);
+    return { message: 'Usuario desactivado correctamente' };
   }
 }
