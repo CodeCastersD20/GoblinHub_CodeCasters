@@ -18,6 +18,7 @@ import EventosAdmin from "./pages/perfil/administration/eventos/EventoAdmin";
 import AdminDashboard from "./pages/perfil/administration/Administration";
 import VerEventoPage from "./pages/perfil/administration/eventos/verEvento/VerEvento";
 import UsuariosAdmin from "./pages/perfil/administration/usuarios/UsuariosAdmin";
+import Administracion from "./pages/perfil/administracion/Administracion";
 
 function App() {
   const location = useLocation();
@@ -51,6 +52,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/home" element={<AuthHome />} />
           <Route path="/perfil" element={<PerfilPage />} />
+          <Route path="/administration" element={<Administracion />} />
         </Route>
 
         {/* ADMIN */}
