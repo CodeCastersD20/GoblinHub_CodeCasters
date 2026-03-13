@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import "./Administration.css";
+import type React from "react";
 
 function AdminDashboard() {
   const adminCards = [
@@ -42,7 +43,7 @@ function AdminDashboard() {
             key={card.id}
             to={card.link}
             className="admin-card"
-            style={{ "--card-color": card.color } as any}
+            style={{ "--card-color": card.color } as React.CSSProperties}
           >
             <div className={`admin-card-icon ${card.color}`}>{card.icon}</div>
             <h2 className="admin-card-title">{card.title}</h2>

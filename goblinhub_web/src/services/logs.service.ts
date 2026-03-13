@@ -9,7 +9,7 @@ export interface LogEntity {
   mensaje: string;
   id_usuario?: string | null;
   ip_address?: string | null;
-  datos_extra?: any | null;
+  datos_extra?: unknown | null;
   fecha_hora: string;
   usuario?: {
     nombre: string;

@@ -18,7 +18,7 @@ import AdminDashboard from "./pages/perfil/administration/Administration";
 import VerEventoPage from "./pages/perfil/administration/eventos/verEvento/VerEvento";
 import UsuariosAdmin from "./pages/perfil/administration/usuarios/UsuariosAdmin";
 import LogsAdmin from "./pages/admin/logs/LogsAdmin";
-import ProductosAdmin from "./pages/perfil/administration/productos/productosAdmin";
+//import ProductosAdmin from "./pages/perfil/administration/productos/productosAdmin";
 import Administracion from "./pages/perfil/administracion/Administracion";
 import Reportes from "./pages/perfil/administracion/reportes/Reportes";
 

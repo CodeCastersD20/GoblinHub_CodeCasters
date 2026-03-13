@@ -17,7 +17,7 @@ export class LogController {
   async getLogs(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Query('tipo') tipo?: any,
+    @Query('tipo') tipo?: string,
     @Query('accion') accion?: string,
     @Query('usuarioId') usuarioId?: string,
     @Query('desde') desde?: string,
@@ -27,7 +27,7 @@ export class LogController {
     const filters: LogFilters = {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 50,
-      tipo,
+      tipo: tipo as LogFilters['tipo'],
       accion,
       usuarioId,
       fechaDesde: desde,

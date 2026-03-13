@@ -9,10 +9,7 @@ import { PrismaModule } from 'src/connect/prisma.module';
 import { SupabaseAuthModule } from '../supabase/supabase-auth.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    SupabaseAuthModule,
-  ], 
+  imports: [PrismaModule, SupabaseAuthModule],
   controllers: [LogController],
   providers: [
     GetLogsUseCase,
@@ -21,8 +18,6 @@ import { SupabaseAuthModule } from '../supabase/supabase-auth.module';
       useClass: PrismaLogRepository,
     },
   ],
-  exports: [
-    LOG_REPOSITORY, 
-  ],
+  exports: [LOG_REPOSITORY],
 })
 export class LogsModule {}
