@@ -1,7 +1,7 @@
 import { SoftDeleteRewardUseCase } from './sd-reward.use-case';
 import { RewardRepository } from '../../domain/repositories/reward.repository';
 import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario.repository';
-import { HttpException } from '@nestjs/common';
+import { ForbiddenException, HttpException } from '@nestjs/common';
 import { Recompensa } from '../../domain/entities/reward.entity';
 import { TipoRecompensa } from '../../domain/enums/reward.enum';
 import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
@@ -73,5 +73,13 @@ describe('SoftDeleteRewardUseCase', () => {
     await expect(useCase.softDeleteReward(mockId, adminUserId)).rejects.toThrow(
       customError,
     );
+  });
+
+  it('debe lanzar ForbiddenException si el usuario no es admin (ej: empleado)', async () => {
+    usuarioRepo.findRolById.mockResolvedValue(RolUsuario.empleado);
+
+    await expect(
+      useCase.softDeleteReward(mockId, 'empleado-uuid'),
+    ).rejects.toThrow(ForbiddenException);
   });
 });

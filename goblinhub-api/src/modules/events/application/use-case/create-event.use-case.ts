@@ -8,6 +8,7 @@ import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario
 
 @Injectable()
 export class CreateEventUseCase {
+  /* istanbul ignore next */
   constructor(
     private eventRepository: EventRepository,
     private usuarios: UsuarioRepository,

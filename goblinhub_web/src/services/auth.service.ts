@@ -1,5 +1,9 @@
 import api from "../lib/api";
-import type { RegisterUserDto, MeResponseDto } from "../types/auth.types";
+import type {
+  RegisterUserDto,
+  MeResponseDto,
+  UpdatePerfilDto,
+} from "../types/auth.types";
 
 export const login = (email: string, password: string) =>
   api.post("/auth/signin", { email, password });
@@ -26,3 +30,12 @@ export const resetPassword = (
     newPassword,
     confirmPassword,
   });
+
+export const uploadFotoPerfil = (file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return api.put<{ foto_perfil_url: string }>("/auth/me/foto", form);
+};
+
+export const updatePerfil = (data: UpdatePerfilDto) =>
+  api.patch<{ message: string }>("/auth/me", data);

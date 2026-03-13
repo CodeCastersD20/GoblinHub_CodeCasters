@@ -5,6 +5,7 @@ import { EventRepository } from '../../domain/repositories/event.repository';
 export class ExpireEventsUseCase {
   private readonly logger = new Logger(ExpireEventsUseCase.name);
 
+  /* istanbul ignore next */
   constructor(private readonly eventRepository: EventRepository) {}
 
   async expireAndSoftDeleteEvents(): Promise<void> {

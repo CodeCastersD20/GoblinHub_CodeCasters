@@ -3,44 +3,43 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'; // Importa Swagger
 import helmet from 'helmet';
+import type { Express, Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const isProduction = process.env.NODE_ENV === 'production';
 
+  const frontendUrl =
+    process.env.CORS_ORIGIN?.split(',')[0] ?? 'http://localhost:5173';
+
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
 
-      // CSP ajustada para permitir Swagger UI en desarrollo
-      contentSecurityPolicy: isProduction
-        ? undefined // En producción usa los defaults de Helmet
-        : {
-            directives: {
-              defaultSrc: ["'self'"],
-              connectSrc: ["'self'", 'https:'],
-              imgSrc: [
-                "'self'",
-                'data:',
-                'https:',
-                'https://validator.swagger.io',
-              ],
-              scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Necesario para Swagger
-              styleSrc: [
-                "'self'",
-                "'unsafe-inline'",
-                'https://fonts.googleapis.com',
-              ],
-            },
-          },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          connectSrc: ["'self'", 'https:'],
+          imgSrc: isProduction
+            ? ["'self'", 'data:']
+            : ["'self'", 'data:', 'https:', 'https://validator.swagger.io'],
+          scriptSrc: isProduction
+            ? ["'self'"]
+            : ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // unsafe solo para Swagger en dev
+          styleSrc: isProduction
+            ? ["'self'"]
+            : ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'], // unsafe solo para Swagger en dev
+          frameAncestors: ["'none'"], // Reemplaza X-Frame-Options
+        },
+      },
 
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 
       strictTransportSecurity: {
-        maxAge: 15552000,
+        maxAge: 31536000, // 1 año (requerido para HSTS preload)
         includeSubDomains: true,
-        preload: false,
+        preload: true,
       },
 
       frameguard: { action: 'deny' },
@@ -50,7 +49,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(',') ?? [],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   });
@@ -93,6 +92,40 @@ async function bootstrap() {
       },
     });
   }
+
+  const server = app.getHttpAdapter().getInstance() as Express;
+
+  // Redirige al frontend si alguien accede directo desde el navegador
+  // Las peticiones AJAX/fetch del frontend traen headers como Origin, X-Requested-With o Authorization
+  server.use((req: Request, res: Response, next: NextFunction) => {
+    // Permitir Swagger en desarrollo
+    if (!isProduction && req.path.startsWith('/api/docs')) {
+      return next();
+    }
+
+    // Permitir la ruta raíz (ya tiene su propio redirect)
+    if (req.path === '/') {
+      return next();
+    }
+
+    // Si la petición trae Origin, Authorization o X-Requested-With, es del frontend/API client
+    const hasOrigin = !!req.headers['origin'];
+    const hasAuth = !!req.headers['authorization'];
+    const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
+    const acceptsJson =
+      req.headers['accept']?.includes('application/json') ?? false;
+
+    if (hasOrigin || hasAuth || isAjax || acceptsJson) {
+      return next();
+    }
+
+    // Si es una petición directa del navegador (sin los headers anteriores), redirige al frontend
+    return res.redirect(frontendUrl);
+  });
+
+  server.get('/', (_req: Request, res: Response) => {
+    res.redirect(frontendUrl);
+  });
 
   await app.listen(process.env.PORT ?? 3000);
   console.log(`🚀 API corriendo en: http://localhost:3000`);

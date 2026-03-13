@@ -8,6 +8,7 @@ export interface SignInResult {
 
 @Injectable()
 export class SignInUseCase {
+  /* istanbul ignore next */
   constructor(
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
   ) {}

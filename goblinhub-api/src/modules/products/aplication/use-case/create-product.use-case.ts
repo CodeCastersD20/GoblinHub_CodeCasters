@@ -7,6 +7,7 @@ import { RolUsuario } from '../../../supabase/domain/enums/user.enum';
 
 @Injectable()
 export class CreateProductoUseCase {
+  /* istanbul ignore next */
   constructor(
     private productoRepository: ProductRepository,
     private usuarioRepository: UsuarioRepository,

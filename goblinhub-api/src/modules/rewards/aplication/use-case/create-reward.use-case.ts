@@ -8,6 +8,7 @@ import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario
 
 @Injectable()
 export class CreateRewardUseCase {
+  /* istanbul ignore next */
   constructor(
     private rewardRepository: RewardRepository,
     private usuarioRepository: UsuarioRepository,

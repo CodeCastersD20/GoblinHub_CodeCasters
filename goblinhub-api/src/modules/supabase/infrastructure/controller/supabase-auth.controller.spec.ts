@@ -9,6 +9,8 @@ import { GetMeUseCase } from '../../application/use-case/getMe.use-case';
 import { SignInUseCase } from '../../application/use-case/signin.use-case';
 import { ForgotPasswordUseCase } from '../../application/use-case/forgot-password.use-case';
 import { ResetPasswordUseCase } from '../../application/use-case/reset-password.use-case';
+import { UpdateFotoPerfilUseCase } from '../../application/use-case/update-foto-perfil.use-case';
+import { UpdatePerfilUseCase } from '../../application/use-case/update-perfil.use-case';
 import { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
 import { RolUsuario, NivelExperiencia } from '../../domain/enums/user.enum';
 import { Session, User } from '@supabase/supabase-js';
@@ -24,6 +26,8 @@ describe('SupabaseAuthController', () => {
   let signInUseCase: jest.Mocked<SignInUseCase>;
   let forgotPasswordUseCase: jest.Mocked<ForgotPasswordUseCase>;
   let resetPasswordUseCase: jest.Mocked<ResetPasswordUseCase>;
+  let updateFotoPerfilUseCase: jest.Mocked<UpdateFotoPerfilUseCase>;
+  let updatePerfilUseCase: jest.Mocked<UpdatePerfilUseCase>;
 
   beforeEach(() => {
     validationService = {
@@ -62,6 +66,15 @@ describe('SupabaseAuthController', () => {
       resetPassword: jest.fn(),
     } as unknown as jest.Mocked<ResetPasswordUseCase>;
 
+    updateFotoPerfilUseCase = {
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as unknown as jest.Mocked<UpdateFotoPerfilUseCase>;
+
+    updatePerfilUseCase = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<UpdatePerfilUseCase>;
+
     controller = new SupabaseAuthController(
       validationService,
       refreshService,
@@ -72,6 +85,8 @@ describe('SupabaseAuthController', () => {
       signInUseCase,
       forgotPasswordUseCase,
       resetPasswordUseCase,
+      updateFotoPerfilUseCase,
+      updatePerfilUseCase,
     );
   });
 
@@ -202,7 +217,14 @@ describe('SupabaseAuthController', () => {
         id: 'user-1',
         email: 'test@email.com',
         nombre: 'Test',
+        apellidos: 'User',
+        telefono: null,
+        fecha_nacimiento: new Date('2000-01-01'),
+        nivel_experiencia: NivelExperiencia.novato,
+        puntos_fidelidad: 0,
+        bio: null,
         rol: RolUsuario.jugador,
+        foto_perfil_url: null,
       });
 
       const result = await controller.getMe(req);
@@ -267,6 +289,94 @@ describe('SupabaseAuthController', () => {
       });
 
       expect(result.message).toContain('actualizada');
+    });
+  });
+
+  describe('updatePerfil', () => {
+    it('debe actualizar el perfil del usuario autenticado', async () => {
+      const req = {
+        user: { id: 'user-1', email: 'test@email.com' },
+      } as unknown as AuthenticatedRequest;
+
+      updatePerfilUseCase.execute.mockResolvedValue(undefined);
+
+      const result = await controller.updatePerfil({ nombre: 'Nuevo' }, req);
+      expect(result).toEqual({ message: 'Perfil actualizado correctamente' });
+    });
+
+    it('debe lanzar UnauthorizedException si no hay usuario', async () => {
+      const req = { user: undefined } as unknown as AuthenticatedRequest;
+
+      await expect(
+        controller.updatePerfil({ nombre: 'Nuevo' }, req),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('updateFotoPerfil', () => {
+    const mockFile = {
+      mimetype: 'image/jpeg',
+      size: 1024,
+      buffer: Buffer.from('img'),
+    } as Express.Multer.File;
+
+    it('debe actualizar la foto de perfil del usuario', async () => {
+      const req = {
+        user: { id: 'user-1' },
+      } as unknown as AuthenticatedRequest;
+
+      updateFotoPerfilUseCase.update.mockResolvedValue(
+        'https://supabase.io/foto.webp',
+      );
+
+      const result = await controller.updateFotoPerfil(mockFile, req);
+      expect(result).toEqual({
+        foto_perfil_url: 'https://supabase.io/foto.webp',
+      });
+    });
+
+    it('debe lanzar UnauthorizedException si no hay usuario', async () => {
+      const req = { user: undefined } as unknown as AuthenticatedRequest;
+
+      await expect(controller.updateFotoPerfil(mockFile, req)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('debe lanzar BadRequestException si no se adjunta archivo', async () => {
+      const req = {
+        user: { id: 'user-1' },
+      } as unknown as AuthenticatedRequest;
+
+      await expect(
+        controller.updateFotoPerfil(
+          undefined as unknown as Express.Multer.File,
+          req,
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('deleteFotoPerfil', () => {
+    it('debe eliminar la foto de perfil del usuario', async () => {
+      const req = {
+        user: { id: 'user-1' },
+      } as unknown as AuthenticatedRequest;
+
+      updateFotoPerfilUseCase.delete.mockResolvedValue(undefined);
+
+      const result = await controller.deleteFotoPerfil(req);
+      expect(result).toEqual({
+        message: 'Foto de perfil eliminada correctamente',
+      });
+    });
+
+    it('debe lanzar UnauthorizedException si no hay usuario', async () => {
+      const req = { user: undefined } as unknown as AuthenticatedRequest;
+
+      await expect(controller.deleteFotoPerfil(req)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
