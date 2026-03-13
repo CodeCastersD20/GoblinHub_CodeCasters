@@ -3,6 +3,7 @@ import { ExecutionContext } from '@nestjs/common';
 import { SupabaseAuthGuard } from './supabse-auth.guard';
 import { SupabaseValidationTokenService } from '../application/use-case/validationT.use-case';
 import { User } from '@supabase/supabase-js';
+import { PrismaService } from '../../../connect/prisma.service';
 
 const mockSupabaseUser: User = {
   id: 'user-1',
@@ -18,6 +19,7 @@ const mockSupabaseUser: User = {
 describe('SupabaseAuthGuard', () => {
   let guard: SupabaseAuthGuard;
   let validationService: jest.Mocked<SupabaseValidationTokenService>;
+  let prismaService: { usuario: { findUnique: jest.Mock } };
 
   const createMockContext = (authHeader?: string): ExecutionContext => {
     const request = {
@@ -41,7 +43,19 @@ describe('SupabaseAuthGuard', () => {
       validtoken: jest.fn(),
     } as unknown as jest.Mocked<SupabaseValidationTokenService>;
 
-    guard = new SupabaseAuthGuard(validationService);
+    prismaService = {
+      usuario: {
+        findUnique: jest.fn().mockResolvedValue({
+          activo: true,
+          deleted_at: null,
+        }),
+      },
+    };
+
+    guard = new SupabaseAuthGuard(
+      validationService,
+      prismaService as unknown as PrismaService,
+    );
   });
 
   it('debe permitir acceso si el token es válido', async () => {

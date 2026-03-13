@@ -59,7 +59,6 @@ export class UsuarioRepositoryPrisma extends UsuarioRepository {
 
   async findAllForAdmin(): Promise<AdminUserSummary[]> {
     const usuarios = await this.prisma.usuario.findMany({
-      where: { deleted_at: null },
       select: {
         id_usuario: true,
         nombre: true,
@@ -95,9 +94,19 @@ export class UsuarioRepositoryPrisma extends UsuarioRepository {
     id_usuario: string,
     data: AdminUserUpdateData,
   ): Promise<void> {
+    const payload: Record<string, unknown> = { ...data };
+
+    if (data.activo === true) {
+      payload.deleted_at = null;
+    }
+
+    if (data.activo === false && !('deleted_at' in payload)) {
+      payload.deleted_at = new Date();
+    }
+
     await this.prisma.usuario.update({
       where: { id_usuario },
-      data,
+      data: payload,
     });
   }
 
