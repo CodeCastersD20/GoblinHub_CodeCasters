@@ -18,6 +18,9 @@ import AdminDashboard from "./pages/perfil/administration/Administration";
 import VerEventoPage from "./pages/perfil/administration/eventos/verEvento/VerEvento";
 import UsuariosAdmin from "./pages/perfil/administration/usuarios/UsuariosAdmin";
 import LogsAdmin from "./pages/admin/logs/LogsAdmin";
+import ProductosAdmin from "./pages/perfil/administration/productos/productosAdmin";
+import Administracion from "./pages/perfil/administracion/Administracion";
+import Reportes from "./pages/perfil/administracion/reportes/Reportes";
 
 function App() {
   const location = useLocation();
@@ -49,6 +52,8 @@ function App() {
         {/* Ruta protegidas (requieren JWT) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/perfil" element={<PerfilPage />} />
+          <Route path="/administration" element={<Administracion />} />
+          <Route path="/admin/reportes" element={<Reportes />} />
         </Route>
 
         {/* ADMIN */}
