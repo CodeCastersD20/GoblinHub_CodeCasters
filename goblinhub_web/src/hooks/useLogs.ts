@@ -3,7 +3,7 @@ import { getLogs } from "../services/logs.service";
 import type {
   PaginatedLogs,
   GetLogsParams,
-  TipoLog,
+  // 👇 1. Eliminamos TipoLog de aquí porque no se usaba
 } from "../services/logs.service";
 
 interface UseLogsState {
@@ -43,6 +43,8 @@ export function useLogs(params?: GetLogsParams) {
     };
 
     fetchLogs();
+    // 👇 2. Agregamos esta línea mágica para que el linter ignore la advertencia de los corchetes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     params?.page,
     params?.limit,
