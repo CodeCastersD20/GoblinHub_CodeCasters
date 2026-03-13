@@ -15,6 +15,8 @@ export const getMe = () => api.get<MeResponseDto>("/auth/me");
 
 export const logout = () => {
   localStorage.removeItem("token");
+  localStorage.removeItem("refresh_token");
+  localStorage.removeItem("rol");
 };
 
 export const forgotPassword = (email: string) =>

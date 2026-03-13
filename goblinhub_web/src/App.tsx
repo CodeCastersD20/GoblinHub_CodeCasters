@@ -9,7 +9,6 @@ import CalendarioAventuras from "./pages/Events/main";
 import EventoDetalle from "./pages/Events/EventoDetalle/EventoDetalle";
 import Login from "./pages/login/Login";
 import RegisterFlow from "./pages/register/RegisterFlow";
-import AuthHome from "./pages/Home/Home";
 import PerfilPage from "./pages/perfil/PerfilPage";
 import ProductosDetalle from "./pages/products/ProductosDetalle/productsDetails";
 import ResetPassword from "./pages/resetPassword/ResetPassword";
@@ -31,7 +30,6 @@ function App() {
       {!hideNav && <Nav />}
 
       <Routes>
-
         {/* PUBLICAS */}
 
         <Route path="/" element={<Home />} />
@@ -44,19 +42,22 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/confirm-account" element={<ConfirmAccount />} />
-        <Route path="/eventosAdmin" element={<EventosAdmin />} />
-        <Route path="/verEvento/:id" element={<VerEventoPage />} />
-        <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
 
         {/* Ruta protegidas (requieren JWT) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/home" element={<AuthHome />} />
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/administration" element={<Administracion />} />
         </Route>
 
         {/* ADMIN */}
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route
+          element={<ProtectedRoute allowedRoles={["admin", "empleado"]} />}
+        >
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/eventosAdmin" element={<EventosAdmin />} />
+          <Route path="/verEvento/:id" element={<VerEventoPage />} />
+          <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
+        </Route>
 
         {/* Cualquier ruta desconocida → inicio */}
         <Route path="*" element={<Navigate to="/" replace />} />

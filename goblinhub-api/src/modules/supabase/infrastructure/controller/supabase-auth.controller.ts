@@ -49,6 +49,7 @@ import type { UpdatePerfilDto } from '../../application/use-case/update-perfil.u
 import { Throttle } from '@nestjs/throttler';
 import { Roles } from '../../guard/roles.decorator';
 import { RolUsuario } from '../../domain/enums/user.enum';
+import { RolesGuard } from '../../guard/roles.guard';
 
 @Controller('auth')
 export class SupabaseAuthController {
@@ -159,6 +160,7 @@ export class SupabaseAuthController {
 
   /** Solo para desarrollo/testing interno — bloqueado en producción */
   @Post('test/signin')
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
   @Roles(RolUsuario.admin)
   @HttpCode(HttpStatus.OK)
   /* istanbul ignore next */
