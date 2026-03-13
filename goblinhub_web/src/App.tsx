@@ -56,10 +56,13 @@ function App() {
           <Route path="/admin/reportes" element={<Reportes />} />
         </Route>
 
-        {/* ADMIN */}
-        <Route path="/admin" element={<AdminDashboard />} />
+        {/* ADMIN (Solo para rol 'admin') */}
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/logs" element={<LogsAdmin />} />
+          <Route path="/eventosAdmin" element={<EventosAdmin />} />
+          <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
+          <Route path="/verEvento/:id" element={<VerEventoPage />} />
         </Route>
 
         {/* Cualquier ruta desconocida → inicio */}
