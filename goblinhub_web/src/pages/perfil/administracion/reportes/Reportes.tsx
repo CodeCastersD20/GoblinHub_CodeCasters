@@ -1,6 +1,210 @@
+import { useEffect, useMemo, useState } from "react";
 import "./Reportes.css";
+import { useLogs } from "../../../../hooks/useLogs";
+import type { GetLogsParams, TipoLog } from "../../../../services/logs.service";
+import {
+  getDashboardMetrics,
+  type DashboardMetrics,
+} from "../../../../services/reportes.service";
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LineElement,
+  LinearScale,
+  PointElement,
+  Tooltip,
+} from "chart.js";
+import { Bar, Doughnut, Line } from "react-chartjs-2";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Filler,
+);
+
+const getIsoDate = (date: Date) => date.toISOString().split("T")[0];
+
+const todayIso = getIsoDate(new Date());
+
+const last30DaysIso = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() - 30);
+  return getIsoDate(d);
+})();
 
 export default function Reportes() {
+  const [startDateInput, setStartDateInput] = useState(last30DaysIso);
+  const [endDateInput, setEndDateInput] = useState(todayIso);
+  const [logTypeInput, setLogTypeInput] = useState<TipoLog | "">("");
+  const [logLimitInput, setLogLimitInput] = useState<"50" | "100" | "200">(
+    "50",
+  );
+
+  const [startDate, setStartDate] = useState(last30DaysIso);
+  const [endDate, setEndDate] = useState(todayIso);
+  const [logType, setLogType] = useState<TipoLog | "">("");
+  const [logLimit, setLogLimit] = useState<50 | 100 | 200>(50);
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+
+  const params = useMemo<GetLogsParams>(
+    () => ({
+      limit: logLimit,
+      tipo: logType || undefined,
+      desde: startDate || undefined,
+      hasta: endDate || undefined,
+      includeTotal: false,
+    }),
+    [logLimit, logType, startDate, endDate],
+  );
+
+  const { data, loading, error } = useLogs(params);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        setMetricsLoading(true);
+        const response = await getDashboardMetrics(6);
+        setMetrics(response.data);
+      } catch {
+        setMetrics(null);
+      } finally {
+        setMetricsLoading(false);
+      }
+    };
+
+    void fetchMetrics();
+  }, []);
+
+  const applyFilters = () => {
+    setStartDate(startDateInput);
+    setEndDate(endDateInput);
+    setLogType(logTypeInput);
+    setLogLimit(Number(logLimitInput) as 50 | 100 | 200);
+  };
+
+  const formatLogType = (tipo: TipoLog) =>
+    ({ info: "Info", success: "Success", warning: "Warning", error: "Error" })[
+      tipo
+    ];
+
+  const formatLogDate = (value: string) =>
+    new Date(value).toLocaleString("es-CL", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const getLogActor = (log: {
+    usuario?: { nombre: string; apellidos: string } | null;
+    id_usuario?: string | null;
+  }) => {
+    if (log.usuario) return `${log.usuario.nombre} ${log.usuario.apellidos}`;
+    if (log.id_usuario) return `Usuario ${log.id_usuario}`;
+    return "Sistema";
+  };
+
+  const safeValue = (value?: number | null, suffix = "") => {
+    if (value === null || value === undefined) return "--";
+    return `${value}${suffix}`;
+  };
+
+  const growthChartData = useMemo(() => {
+    const users = metrics?.crecimientoUsuarios ?? [];
+    const events = metrics?.crecimientoEventos ?? [];
+    return {
+      labels: users.map((item) => item.label),
+      datasets: [
+        {
+          label: "Usuarios",
+          data: users.map((item) => item.value),
+          borderColor: "#5E2B8E",
+          backgroundColor: "rgba(94, 43, 142, 0.15)",
+          tension: 0.35,
+          fill: true,
+          borderWidth: 3,
+        },
+        {
+          label: "Eventos",
+          data: events.map((item) => item.value),
+          borderColor: "#B8D92A",
+          backgroundColor: "rgba(184, 217, 42, 0.2)",
+          tension: 0.35,
+          fill: true,
+          borderWidth: 3,
+        },
+      ],
+    };
+  }, [metrics]);
+
+  const levelChartData = useMemo(() => {
+    const levels = metrics?.distribucionNiveles ?? [];
+    return {
+      labels: levels.map((item) => item.label),
+      datasets: [
+        {
+          data: levels.map((item) => item.value),
+          backgroundColor: ["#5E2B8E", "#B8D92A", "#FF6B35", "#2563EB"],
+          borderColor: "#ffffff",
+          borderWidth: 2,
+        },
+      ],
+    };
+  }, [metrics]);
+
+  const eventTypeChartData = useMemo(() => {
+    const eventsByType = metrics?.eventosPorTipo ?? [];
+    return {
+      labels: eventsByType.map((item) => item.label),
+      datasets: [
+        {
+          label: "Eventos",
+          data: eventsByType.map((item) => item.value),
+          backgroundColor: [
+            "#5E2B8E",
+            "#B8D92A",
+            "#FF6B35",
+            "#2563EB",
+            "#F59E0B",
+          ],
+          borderRadius: 8,
+        },
+      ],
+    };
+  }, [metrics]);
+
+  const attendanceChartData = useMemo(() => {
+    const attendance = metrics?.asistenciaPorMes ?? [];
+    return {
+      labels: attendance.map((item) => item.label),
+      datasets: [
+        {
+          label: "Asistencias",
+          data: attendance.map((item) => item.value),
+          backgroundColor: "rgba(94, 43, 142, 0.75)",
+          borderRadius: 8,
+        },
+      ],
+    };
+  }, [metrics]);
+
+  const hasMetricsData = (metrics?.crecimientoUsuarios?.length ?? 0) > 0;
+  const hasLevelsData = (metrics?.distribucionNiveles?.length ?? 0) > 0;
+  const hasEventTypeData = (metrics?.eventosPorTipo?.length ?? 0) > 0;
+  const hasAttendanceData = (metrics?.asistenciaPorMes?.length ?? 0) > 0;
+
   return (
     <div>
       <div className="dashboard-container">
@@ -16,16 +220,20 @@ export default function Reportes() {
               type="date"
               className="date-input"
               id="startDate"
-              value="2026-02-01"
+              value={startDateInput}
+              onChange={(e) => setStartDateInput(e.target.value)}
             />
             <span>hasta</span>
             <input
               type="date"
               className="date-input"
               id="endDate"
-              value="2026-02-16"
+              value={endDateInput}
+              onChange={(e) => setEndDateInput(e.target.value)}
             />
-            <button className="btn btn-primary">🔄 Actualizar</button>
+            <button className="btn btn-primary" onClick={applyFilters}>
+              🔄 Actualizar
+            </button>
           </div>
         </div>
 
@@ -34,46 +242,52 @@ export default function Reportes() {
             <div className="stat-header">
               <div>
                 <div className="stat-label">Usuarios Activos</div>
-                <div className="stat-value">187</div>
+                <div className="stat-value">
+                  {safeValue(metrics?.summary.usuariosActivos)}
+                </div>
               </div>
               <div className="stat-icon">👥</div>
             </div>
-            <div className="stat-trend trend-up">
-              ↑ +12% vs periodo anterior
-            </div>
+            <div className="stat-trend trend-up">Dato en tiempo real</div>
           </div>
 
           <div className="stat-card">
             <div className="stat-header">
               <div>
                 <div className="stat-label">Eventos Realizados</div>
-                <div className="stat-value">18</div>
+                <div className="stat-value">
+                  {safeValue(metrics?.summary.eventosRealizados)}
+                </div>
               </div>
               <div className="stat-icon">📅</div>
             </div>
-            <div className="stat-trend trend-up">↑ +3 eventos este periodo</div>
+            <div className="stat-trend trend-up">Dato en tiempo real</div>
           </div>
 
           <div className="stat-card">
             <div className="stat-header">
               <div>
                 <div className="stat-label">Total Asistencias</div>
-                <div className="stat-value">342</div>
+                <div className="stat-value">
+                  {safeValue(metrics?.summary.totalAsistencias)}
+                </div>
               </div>
               <div className="stat-icon">🎯</div>
             </div>
-            <div className="stat-trend trend-up">↑ +18% participación</div>
+            <div className="stat-trend trend-up">Dato en tiempo real</div>
           </div>
 
           <div className="stat-card">
             <div className="stat-header">
               <div>
                 <div className="stat-label">Tasa de Conversión</div>
-                <div className="stat-value">68%</div>
+                <div className="stat-value">
+                  {safeValue(metrics?.summary.tasaConversion, "%")}
+                </div>
               </div>
               <div className="stat-icon">📈</div>
             </div>
-            <div className="stat-trend trend-up">↑ +5% este periodo</div>
+            <div className="stat-trend trend-up">Dato en tiempo real</div>
           </div>
         </div>
 
@@ -85,7 +299,18 @@ export default function Reportes() {
               </h2>
             </div>
             <div className="chart-container large">
-              <canvas id="mainChart"></canvas>
+              {metricsLoading || !hasMetricsData ? (
+                <p className="chart-fallback">--</p>
+              ) : (
+                <Line
+                  data={growthChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: "bottom" } },
+                  }}
+                />
+              )}
             </div>
           </div>
 
@@ -94,7 +319,18 @@ export default function Reportes() {
               <h2 className="chart-title">🎯 Distribución por Nivel</h2>
             </div>
             <div className="chart-container">
-              <canvas id="levelChart"></canvas>
+              {metricsLoading || !hasLevelsData ? (
+                <p className="chart-fallback">--</p>
+              ) : (
+                <Doughnut
+                  data={levelChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: "bottom" } },
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -105,7 +341,18 @@ export default function Reportes() {
               <h2 className="chart-title">📊 Eventos por Tipo</h2>
             </div>
             <div className="chart-container">
-              <canvas id="eventsChart"></canvas>
+              {metricsLoading || !hasEventTypeData ? (
+                <p className="chart-fallback">--</p>
+              ) : (
+                <Bar
+                  data={eventTypeChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                  }}
+                />
+              )}
             </div>
           </div>
 
@@ -114,7 +361,18 @@ export default function Reportes() {
               <h2 className="chart-title">👥 Asistencia por Mes</h2>
             </div>
             <div className="chart-container">
-              <canvas id="attendanceChart"></canvas>
+              {metricsLoading || !hasAttendanceData ? (
+                <p className="chart-fallback">--</p>
+              ) : (
+                <Bar
+                  data={attendanceChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -135,96 +393,39 @@ export default function Reportes() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>
-                    <div className="rank-badge first">1</div>
-                  </td>
-                  <td>
-                    <div className="user-cell">
-                      <div className="user-avatar-small">S</div>
-                      <span>Sadrach García</span>
-                    </div>
-                  </td>
-                  <td>
-                    <strong>23</strong>
-                  </td>
-                  <td>
-                    <strong>1,450</strong>
-                  </td>
-                  <td>Veterano</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className="rank-badge second">2</div>
-                  </td>
-                  <td>
-                    <div className="user-cell">
-                      <div className="user-avatar-small">J</div>
-                      <span>Jesús Martínez</span>
-                    </div>
-                  </td>
-                  <td>
-                    <strong>21</strong>
-                  </td>
-                  <td>
-                    <strong>1,320</strong>
-                  </td>
-                  <td>Veterano</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className="rank-badge third">3</div>
-                  </td>
-                  <td>
-                    <div className="user-cell">
-                      <div className="user-avatar-small">M</div>
-                      <span>Miguel Sánchez</span>
-                    </div>
-                  </td>
-                  <td>
-                    <strong>19</strong>
-                  </td>
-                  <td>
-                    <strong>1,180</strong>
-                  </td>
-                  <td>Veterano</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className="rank-badge">4</div>
-                  </td>
-                  <td>
-                    <div className="user-cell">
-                      <div className="user-avatar-small">P</div>
-                      <span>Patricia Díaz</span>
-                    </div>
-                  </td>
-                  <td>
-                    <strong>17</strong>
-                  </td>
-                  <td>
-                    <strong>1,050</strong>
-                  </td>
-                  <td>Intermedio</td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className="rank-badge">5</div>
-                  </td>
-                  <td>
-                    <div className="user-cell">
-                      <div className="user-avatar-small">E</div>
-                      <span>Erick Arvayo</span>
-                    </div>
-                  </td>
-                  <td>
-                    <strong>15</strong>
-                  </td>
-                  <td>
-                    <strong>920</strong>
-                  </td>
-                  <td>Intermedio</td>
-                </tr>
+                {(metrics?.topUsuarios?.length ?? 0) === 0 && (
+                  <tr>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>--</td>
+                  </tr>
+                )}
+                {metrics?.topUsuarios?.map((user, index) => (
+                  <tr key={user.id_usuario}>
+                    <td>
+                      <div className="rank-badge">{index + 1}</div>
+                    </td>
+                    <td>
+                      <div className="user-cell">
+                        <div className="user-avatar-small">
+                          {(user.nombre?.[0] ?? "-").toUpperCase()}
+                        </div>
+                        <span>
+                          {user.nombre || "--"} {user.apellidos || ""}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <strong>{safeValue(user.eventosAsistidos)}</strong>
+                    </td>
+                    <td>
+                      <strong>{safeValue(user.puntos)}</strong>
+                    </td>
+                    <td>{user.nivel || "--"}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -246,21 +447,63 @@ export default function Reportes() {
           <div className="logs-header">
             <h2 className="logs-title">📋 Registro de Actividad (Logs)</h2>
             <div className="logs-filters">
-              <select className="filter-select" id="logTypeFilter">
+              <select
+                className="filter-select"
+                id="logTypeFilter"
+                value={logTypeInput}
+                onChange={(e) =>
+                  setLogTypeInput(e.target.value as TipoLog | "")
+                }
+              >
                 <option value="">Todos los tipos</option>
                 <option value="info">Info</option>
                 <option value="success">Success</option>
                 <option value="warning">Warning</option>
                 <option value="error">Error</option>
               </select>
-              <select className="filter-select" id="logLimitFilter">
+              <select
+                className="filter-select"
+                id="logLimitFilter"
+                value={logLimitInput}
+                onChange={(e) =>
+                  setLogLimitInput(e.target.value as "50" | "100" | "200")
+                }
+              >
                 <option value="50">Últimos 50</option>
                 <option value="100">Últimos 100</option>
                 <option value="200">Últimos 200</option>
               </select>
             </div>
           </div>
-          <div className="logs-body" id="logsContainer"></div>
+          <div className="logs-body" id="logsContainer">
+            {loading && <p className="log-message">Cargando logs...</p>}
+            {error && <p className="log-message">{error}</p>}
+
+            {!loading && !error && (data?.data?.length ?? 0) === 0 && (
+              <p className="log-message">
+                No hay logs para los filtros seleccionados.
+              </p>
+            )}
+
+            {!loading &&
+              !error &&
+              data?.data?.map((log) => (
+                <article key={log.id_log} className={`log-entry ${log.tipo}`}>
+                  <header className="log-header">
+                    <span className={`log-type ${log.tipo}`}>
+                      {formatLogType(log.tipo)}
+                    </span>
+                    <time className="log-time">
+                      {formatLogDate(log.fecha_hora)}
+                    </time>
+                  </header>
+                  <p className="log-message">{log.mensaje}</p>
+                  <p className="log-details">
+                    Accion: {log.accion} | Usuario: {getLogActor(log)}
+                  </p>
+                </article>
+              ))}
+          </div>
         </div>
       </div>
     </div>
