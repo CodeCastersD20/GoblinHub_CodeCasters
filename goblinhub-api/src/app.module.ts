@@ -9,6 +9,7 @@ import { ProductoModule } from './modules/products/product.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { LogsModule } from './modules/logs/logs.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { APP_GUARD } from '@nestjs/core';
     }),
     ScheduleModule.forRoot(),
     EventModule,
+    LogsModule,
     SupabaseAuthModule,
     BackupModule,
     RewardModule,

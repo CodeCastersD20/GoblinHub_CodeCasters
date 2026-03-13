@@ -18,6 +18,7 @@ import EventosAdmin from "./pages/perfil/administration/eventos/EventoAdmin";
 import AdminDashboard from "./pages/perfil/administration/Administration";
 import VerEventoPage from "./pages/perfil/administration/eventos/verEvento/VerEvento";
 import UsuariosAdmin from "./pages/perfil/administration/usuarios/UsuariosAdmin";
+import LogsAdmin from "./pages/admin/logs/LogsAdmin";
 
 function App() {
   const location = useLocation();
@@ -30,7 +31,6 @@ function App() {
       {!hideNav && <Nav />}
 
       <Routes>
-
         {/* PUBLICAS */}
 
         <Route path="/" element={<Home />} />
@@ -55,6 +55,9 @@ function App() {
 
         {/* ADMIN */}
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+          <Route path="/admin/logs" element={<LogsAdmin />} />
+        </Route>
 
         {/* Cualquier ruta desconocida → inicio */}
         <Route path="*" element={<Navigate to="/" replace />} />
