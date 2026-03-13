@@ -1,5 +1,6 @@
 name: GoblinHub Web CI
 
+
 on:
   push:
     branches: [main, develop]
