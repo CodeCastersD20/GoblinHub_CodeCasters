@@ -17,8 +17,10 @@ import EventosAdmin from "./pages/perfil/administration/eventos/EventoAdmin";
 import AdminDashboard from "./pages/perfil/administration/Administration";
 import VerEventoPage from "./pages/perfil/administration/eventos/verEvento/VerEvento";
 import UsuariosAdmin from "./pages/perfil/administration/usuarios/UsuariosAdmin";
-import ProductosAdmin from "./pages/perfil/administration/productos/productosAdmin";
+import LogsAdmin from "./pages/admin/logs/LogsAdmin";
+//import ProductosAdmin from "./pages/perfil/administration/productos/productosAdmin";
 import Administracion from "./pages/perfil/administracion/Administracion";
+import Reportes from "./pages/perfil/administracion/reportes/Reportes";
 
 function App() {
   const location = useLocation();
@@ -46,22 +48,21 @@ function App() {
         <Route path="/eventosAdmin" element={<EventosAdmin />} />
         <Route path="/verEvento/:id" element={<VerEventoPage />} />
         <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
-        <Route path="/productosAdmin" element={<ProductosAdmin />} />
 
         {/* Ruta protegidas (requieren JWT) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/administration" element={<Administracion />} />
+          <Route path="/admin/reportes" element={<Reportes />} />
         </Route>
 
-        {/* ADMIN */}
-        <Route
-          element={<ProtectedRoute allowedRoles={["admin", "empleado"]} />}
-        >
+        {/* ADMIN (Solo para rol 'admin') */}
+        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/logs" element={<LogsAdmin />} />
           <Route path="/eventosAdmin" element={<EventosAdmin />} />
-          <Route path="/verEvento/:id" element={<VerEventoPage />} />
           <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
+          <Route path="/verEvento/:id" element={<VerEventoPage />} />
         </Route>
 
         {/* Cualquier ruta desconocida → inicio */}

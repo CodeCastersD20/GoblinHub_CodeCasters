@@ -1,7 +1,9 @@
 import React from "react";
 import "./Administracion.css";
+import { useNavigate } from "react-router-dom";
 
 const Administracion: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <div className="base-welcome">
       <div className="container">
@@ -82,7 +84,7 @@ const Administracion: React.FC = () => {
 
         <h2 className="section-title">🎛️ Módulos de Gestión</h2>
         <div className="modules-grid">
-          <a href="admin-usuarios.html" className="module-card">
+          <div  className="module-card">
             <div className="module-header">
               <div className="module-icon">👥</div>
               <h3 className="module-title">Usuarios</h3>
@@ -104,9 +106,9 @@ const Administracion: React.FC = () => {
                 </div>
               </div>
             </div>
-          </a>
+          </div>
 
-          <a href="admin-eventos-crud.html" className="module-card">
+          <div  className="module-card">
             <div className="module-header">
               <div className="module-icon">📅</div>
               <h3 className="module-title">Eventos</h3>
@@ -128,9 +130,9 @@ const Administracion: React.FC = () => {
                 </div>
               </div>
             </div>
-          </a>
+          </div>
 
-          <a href="capacitacion-novatos.html" className="module-card">
+          <div  className="module-card">
             <div className="module-header">
               <div className="module-icon">🌱</div>
               <h3 className="module-title">Captación de Novatos</h3>
@@ -152,9 +154,9 @@ const Administracion: React.FC = () => {
                 </div>
               </div>
             </div>
-          </a>
+          </div>
 
-          <a href="admin-reportes.html" className="module-card">
+          <div  className="module-card" onClick={() => navigate("/admin/reportes")} style={{ cursor: "pointer" }}>
             <div className="module-header">
               <div className="module-icon">📊</div>
               <h3 className="module-title">Reportes & Analytics</h3>
@@ -176,9 +178,9 @@ const Administracion: React.FC = () => {
                 </div>
               </div>
             </div>
-          </a>
+          </div>
 
-          <a className="module-card">
+          <div className="module-card">
             <div className="module-header">
               <div className="module-icon">📦</div>
               <h3 className="module-title">Productos</h3>
@@ -200,7 +202,7 @@ const Administracion: React.FC = () => {
                 </div>
               </div>
             </div>
-          </a>
+          </div>
         </div>
 
         <div className="charts-section">
