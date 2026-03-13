@@ -9,6 +9,7 @@ export interface LogFilters {
   fechaHasta?: string;
   page?: number;
   limit?: number;
+  includeTotal?: boolean;
 }
 
 // Respuesta paginada
