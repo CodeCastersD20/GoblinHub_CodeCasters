@@ -1,83 +1,95 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./UsuariosAdmin.css";
 import EditarUsuarioModal from "./EditarUsuario/EditarUsuario";
 import type { Usuario } from "./EditarUsuario/EditarUsuario";
+import {
+  deleteAdminUser,
+  getAdminUsers,
+  updateAdminUser,
+  type AdminUserApi,
+} from "../../../../services/users-admin.service";
+import defaultAvatar from "../../../../assets/default_perfil.png";
 
-const usuariosMock: Usuario[] = [
-  {
-    id: 1,
-    nombre: "Juan Pérez",
-    foto: "https://i.pravatar.cc/150?img=3",
-    nivel: "novato",
-    interes: "Warhammer 40k",
-    eventosAsistidos: 3,
-    estado: "activo",
-    fechaRegistro: "2026-03-01",
-  },
-  {
-    id: 2,
-    nombre: "Ana Torres",
-    foto: "https://i.pravatar.cc/150?img=5",
-    nivel: "veterano",
-    interes: "D&D",
-    eventosAsistidos: 12,
-    estado: "activo",
-    fechaRegistro: "2025-11-21",
-  },
-  {
-    id: 3,
-    nombre: "Carlos Ruiz",
-    foto: "https://i.pravatar.cc/150?img=8",
-    nivel: "intermedio",
-    interes: "Magic",
-    eventosAsistidos: 7,
-    estado: "inactivo",
-    fechaRegistro: "2026-03-05",
-  },
-];
+const mapUser = (user: AdminUserApi): Usuario => ({
+  id: user.id,
+  nombre: user.nombre,
+  apellidos: user.apellidos,
+  foto: user.foto_perfil_url ?? defaultAvatar,
+  nivel: user.nivel_experiencia,
+  rol: user.rol,
+  interes: "-",
+  eventosAsistidos: user.eventos_asistidos,
+  estado: user.activo ? "activo" : "inactivo",
+  email: user.email,
+  fechaRegistro: user.created_at.split("T")[0] ?? user.created_at,
+});
 
 function UsuariosAdmin() {
-  const [usuarios, setUsuarios] = useState<Usuario[]>(usuariosMock);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [usuarioEditar, setUsuarioEditar] = useState<Usuario | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const guardarUsuario = (usuarioEditado: Usuario) => {
-    setUsuarios(
-      usuarios.map((u) =>
-        u.id === usuarioEditado.id ? usuarioEditado : u
+  useEffect(() => {
+    getAdminUsers()
+      .then((res: { data: AdminUserApi[] }) =>
+        setUsuarios(res.data.map(mapUser)),
       )
-    );
+      .catch(() => setError("No se pudieron cargar los usuarios"))
+      .finally(() => setLoading(false));
+  }, []);
 
-    setUsuarioEditar(null);
+  const guardarUsuario = async (usuarioEditado: Usuario) => {
+    try {
+      await updateAdminUser(usuarioEditado.id, {
+        nombre: usuarioEditado.nombre,
+        apellidos: usuarioEditado.apellidos,
+        nivel_experiencia: usuarioEditado.nivel,
+        rol: usuarioEditado.rol,
+        activo: usuarioEditado.estado === "activo",
+      });
+
+      setUsuarios((prev) =>
+        prev.map((u) => (u.id === usuarioEditado.id ? usuarioEditado : u)),
+      );
+      setUsuarioEditar(null);
+    } catch {
+      setError("No se pudo actualizar el usuario");
+    }
   };
 
-  const eliminarUsuario = (id: number) => {
-    setUsuarios(usuarios.filter((u) => u.id !== id));
+  const eliminarUsuario = async (id: string) => {
+    try {
+      await deleteAdminUser(id);
+      setUsuarios((prev) => prev.filter((u) => u.id !== id));
+    } catch {
+      setError("No se pudo desactivar el usuario");
+    }
   };
 
   /* ---------- Estadísticas ---------- */
 
   const totalUsuarios = usuarios.length;
 
-  const usuariosActivos = usuarios.filter(
-    (u) => u.estado === "activo"
-  ).length;
+  const usuariosActivos = usuarios.filter((u) => u.estado === "activo").length;
 
   const hace7dias = new Date();
   hace7dias.setDate(hace7dias.getDate() - 7);
 
   const nuevosUsuarios = usuarios.filter(
-    (u) => new Date(u.fechaRegistro) >= hace7dias
+    (u) => new Date(u.fechaRegistro) >= hace7dias,
   ).length;
 
   return (
     <div className="users-admin-container">
-
       <h1>Administración de Usuarios</h1>
+
+      {loading && <p>Cargando usuarios...</p>}
+      {error && <p>{error}</p>}
 
       {/* ---------- RESUMEN ---------- */}
 
       <div className="users-stats">
-
         <div className="stat-card">
           <h3>Total de usuarios</h3>
           <p>{totalUsuarios}</p>
@@ -92,13 +104,11 @@ function UsuariosAdmin() {
           <h3>Nuevos esta semana</h3>
           <p>{nuevosUsuarios}</p>
         </div>
-
       </div>
 
       {/* ---------- TABLA ---------- */}
 
       <table className="users-table">
-
         <thead>
           <tr>
             <th>Foto</th>
@@ -113,11 +123,8 @@ function UsuariosAdmin() {
         </thead>
 
         <tbody>
-
           {usuarios.map((usuario) => (
-
             <tr key={usuario.id}>
-
               <td>
                 <img
                   src={usuario.foto}
@@ -134,7 +141,6 @@ function UsuariosAdmin() {
               <td>{usuario.fechaRegistro}</td>
 
               <td className="user-actions">
-
                 <button
                   className="user-edit-btn"
                   onClick={() => setUsuarioEditar(usuario)}
@@ -148,29 +154,21 @@ function UsuariosAdmin() {
                 >
                   Eliminar
                 </button>
-
               </td>
-
             </tr>
-
           ))}
-
         </tbody>
-
       </table>
 
       {/* ---------- MODAL ---------- */}
 
       {usuarioEditar && (
-
         <EditarUsuarioModal
           usuario={usuarioEditar}
           onClose={() => setUsuarioEditar(null)}
           onGuardar={guardarUsuario}
         />
-
       )}
-
     </div>
   );
 }
