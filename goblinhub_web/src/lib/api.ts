@@ -4,6 +4,13 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 });
 
+const getBackendMessage = (error: unknown): string => {
+  if (!axios.isAxiosError(error)) return "";
+  const payload = error.response?.data as { message?: string | string[] };
+  if (Array.isArray(payload?.message)) return payload.message.join(" ");
+  return typeof payload?.message === "string" ? payload.message : "";
+};
+
 // Adjunta el token JWT automáticamente en cada request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -16,6 +23,18 @@ api.interceptors.response.use(
   (response) => response,
   async (error: unknown) => {
     if (!axios.isAxiosError(error)) return Promise.reject(error);
+
+    const message = getBackendMessage(error);
+    if (
+      error.response?.status === 401 &&
+      message.toLowerCase().includes("usuario no encontrado")
+    ) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("rol");
+      window.location.href = "/login";
+      return Promise.reject(error);
+    }
 
     const originalRequest = error.config as typeof error.config & {
       _retry?: boolean;
