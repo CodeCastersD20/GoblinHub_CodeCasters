@@ -1,15 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Nunito:wght@400;600;700&display=swap");
 
-/* ---------- Base REM ---------- */
-
-html{
+html {
   font-size: 62.5%;
 }
 
-/* ---------- Variables ---------- */
-
 :root {
-
   --nav-bg: #f5f0e8;
   --nav-border: #c084fc;
   --nav-shadow: 0 0.2rem 1.6rem rgba(107, 33, 168, 0.1);
@@ -20,7 +15,7 @@ html{
 
   --nav-profile-bg: #ede9fe;
   --nav-profile-color: #6b21a8;
-  --nav-profile-hover-bg: #d8b4fe;
+  --nav-profile-hover-bg: #ddd6fe;
   --nav-profile-active-bg: #c084fc;
 
   --nav-dropdown-bg: #ffffff;
@@ -29,321 +24,295 @@ html{
   --nav-dropdown-hover: #f5f0e8;
 
   --nav-font: "Nunito", sans-serif;
-
 }
 
-/* ---------- Navbar ---------- */
-
 .logo-container {
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   background-color: var(--nav-bg);
   border-bottom: 0.2rem solid var(--nav-border);
   box-shadow: var(--nav-shadow);
-
   height: var(--nav-height);
   padding: 0 3.2rem;
-
   position: sticky;
   top: 0;
-
   z-index: 100;
-
-  font-family: var(--nav-font);
-
 }
-
-/* ---------- Logo ---------- */
 
 .Logo {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .nav-goblin {
-
   height: 4.4rem;
+  width: auto;
+  object-fit: contain;
   transition: transform 0.2s ease;
-
 }
 
 .nav-goblin:hover {
-
   transform: scale(1.06);
-
 }
-
-.usuario-wrapper {
-  position: relative;
-}
-
-.usuario {
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 4rem;
-  height: 4rem;
-
-  border-radius: 999rem;
-
-  background-color: var(--nav-profile-bg);
-  color: var(--nav-profile-color);
-
-  font-size: 1.8rem;
-
-  border: 0.2rem solid var(--nav-border);
-
-  cursor: pointer;
-
-  transition: all 0.2s ease;
-
-}
-
-.usuario:hover {
-
-  background-color: var(--nav-profile-hover-bg);
-  transform: scale(1.05);
-
-}
-
-.usuario-dropdown {
-
-  position: absolute;
-  top: calc(100% + 1rem);
-  right: 0;
-
-  background: white;
-
-  border-radius: 1rem;
-
-  box-shadow: var(--nav-dropdown-shadow);
-
-  min-width: 18rem;
-
-  padding: 0.5rem;
-
-  z-index: 200;
-
-}
-
-.usuario-dropdown__item {
-
-  width: 100%;
-  padding: 1rem;
-
-  background: transparent;
-  border: none;
-
-  text-align: left;
-
-  font-size: 1.4rem;
-
-  cursor: pointer;
-
-}
-
-.usuario-dropdown__item:hover {
-
-  background: var(--nav-dropdown-hover);
-
-}
-
-.usuario-dropdown__divider {
-
-  height: 0.1rem;
-  background: var(--nav-dropdown-border);
-  margin: 0.4rem 0;
-
-}
-
-/* ---------- Navegación ---------- */
 
 .nav-botones {
-
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-
-  flex: 1;
   justify-content: center;
-
+  gap: 0.6rem;
+  flex: 1;
 }
 
 .nav-botones a {
   text-decoration: none;
 }
 
-.nav-botones .custom-button {
-
-  background: transparent;
+.nav-botones .custom-button,
+.nav-botones a .custom-button {
   color: var(--nav-purple);
-
+  font-family: var(--nav-font);
   font-weight: 700;
   font-size: 1.4rem;
-
   padding: 0.8rem 1.6rem;
-
   border-radius: 0.8rem;
   border: none;
-
   cursor: pointer;
-
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
-.nav-botones .custom-button:hover {
-
-  color: rgb(108, 188, 16);
-
+.nav-botones .custom-button:hover,
+.nav-botones a .custom-button:hover {
+  color: #6cbc10;
 }
 
-/* ---------- Botón hamburguesa ---------- */
+.usuario-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.nav-btn--login {
+  background-color: var(--nav-profile-bg);
+  color: var(--nav-profile-color);
+  font-family: var(--nav-font);
+  font-weight: 700;
+  font-size: 1.4rem;
+  padding: 0.8rem 1.6rem;
+  border-radius: 0.8rem;
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.nav-btn--login:hover {
+  color: var(--nav-profile-bg);
+  background-color: var(--nav-purple-hover);
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4rem;
+  height: 4rem;
+  padding: 0;
+  border-radius: 999rem;
+  background-color: var(--nav-profile-bg);
+  color: var(--nav-profile-color);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+  border: 0.2rem solid var(--nav-border);
+}
+
+.usuario:hover {
+  background-color: var(--nav-profile-hover-bg);
+  transform: scale(1.07);
+}
+
+.usuario--active {
+  background-color: var(--nav-profile-active-bg);
+  transform: scale(1.07);
+}
+
+.usuario-avatar {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 999rem;
+  object-fit: cover;
+}
+
+.usuario-dropdown {
+  position: absolute;
+  top: calc(100% + 1rem);
+  right: 0;
+  background-color: var(--nav-dropdown-bg);
+  border: 0.15rem solid var(--nav-dropdown-border);
+  border-radius: 1.2rem;
+  box-shadow: var(--nav-dropdown-shadow);
+  min-width: 18rem;
+  padding: 0.6rem;
+  z-index: 200;
+  animation: dropdownFadeIn 0.18s ease forwards;
+  transform-origin: top right;
+}
+
+.usuario-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -0.7rem;
+  right: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  background-color: var(--nav-dropdown-bg);
+  border-left: 0.15rem solid var(--nav-dropdown-border);
+  border-top: 0.15rem solid var(--nav-dropdown-border);
+  transform: rotate(45deg);
+}
+
+.usuario-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.4rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.8rem;
+  font-family: var(--nav-font);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--nav-purple);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.usuario-dropdown__item:hover {
+  background-color: var(--nav-dropdown-hover);
+  color: var(--nav-purple-hover);
+}
+
+.usuario-dropdown__divider {
+  height: 0.1rem;
+  background-color: var(--nav-dropdown-border);
+  margin: 0.4rem 0.6rem;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-0.6rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
 
 .hamburguesa {
-
   display: none;
-
 }
-
-/* ---------- Overlay ---------- */
-
-.overlay {
-
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-
-  z-index: 998;
-
-}
-
-/* ---------- Menú móvil ---------- */
 
 .ham-botones {
-
   display: none;
-
 }
 
 .ham-cerrar {
-
   display: none;
-
 }
 
-/* ---------- Responsive ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 998;
+}
 
 @media (max-width: 76.8rem) {
+  .logo-container {
+    padding: 0 1.6rem;
+    gap: 1rem;
+  }
 
   .nav-botones {
     display: none;
   }
 
-  .auth-desktop {
-    display: none;
-  }
-
   .hamburguesa {
-
     display: block;
-
     background: transparent;
     border: none;
-
-    font-size: 3.2rem;
+    font-size: 3rem;
     color: var(--nav-purple);
-
     cursor: pointer;
-
-  }
-
-  .usuario-wrapper{
-    display:none;
   }
 
   .ham-botones {
-
     position: fixed;
     top: 0;
     right: 0;
-
     height: 100vh;
     width: 25rem;
-
     background-image: linear-gradient(to bottom, #6b21a8, #9c6bea);
-
     display: flex;
     flex-direction: column;
-
     padding: 8rem 2rem 2rem;
-
     transform: translateX(100%);
-
-    transition: transform 0.35s cubic-bezier(.25,.8,.25,1);
-
+    transition: transform 0.3s ease-in-out;
     z-index: 999;
-
-    box-shadow: -0.6rem 0 2rem rgba(0,0,0,0.2);
-
   }
 
   .ham-botones.activo {
-
     transform: translateX(0);
+  }
 
+  .ham-botones a {
+    text-decoration: none;
+  }
+
+  .ham-button {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.8rem;
+    background-color: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 1.8rem;
+    padding: 1rem 2rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .ham-button:hover {
+    background-color: var(--nav-purple-hover);
   }
 
   .ham-cerrar {
-
     display: block;
-
-    position: absolute;
     top: 2rem;
     right: 2rem;
-
+    position: absolute;
+    cursor: pointer;
     font-size: 2.4rem;
-
     background: transparent;
     border: none;
-
     color: #fff;
-
-    cursor: pointer;
-
   }
 
-}
-
-/* ---------- Botones móvil ---------- */
-
-.ham-button {
-
-  display: flex;
-  justify-content: center;
-
-  width: 100%;
-
-  margin-top: 2rem;
-
-  background: transparent;
-  border: none;
-
-  color: #fff;
-
-  font-size: 1.8rem;
-
-  padding: 1rem 2rem;
-
-  cursor: pointer;
-
-}
-
-.ham-button:hover {
-
-  background-color: var(--nav-purple-hover);
-
+  .usuario-dropdown {
+    right: -3rem;
+  }
 }
