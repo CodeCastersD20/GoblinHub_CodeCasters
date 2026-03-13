@@ -13,6 +13,7 @@ import AuthHome from "./pages/Home/Home";
 import PerfilPage from "./pages/perfil/PerfilPage";
 import ProductosDetalle from "./pages/products/ProductosDetalle/productsDetails";
 import ResetPassword from "./pages/resetPassword/ResetPassword";
+import Administracion from "./pages/perfil/administracion/Administracion";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/auth-home" element={<AuthHome />} />
           <Route path="/perfil" element={<PerfilPage />} />
+          <Route path="/administration" element={<Administracion />} />
         </Route>
       </Routes>
     </>
