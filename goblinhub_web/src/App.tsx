@@ -14,7 +14,6 @@ import ProductosDetalle from "./pages/products/ProductosDetalle/productsDetails"
 import ResetPassword from "./pages/resetPassword/ResetPassword";
 import ConfirmAccount from "./pages/confirmAccount/ConfirmAccount";
 import EventosAdmin from "./pages/perfil/administracion/eventos/EventoAdmin";
-import AdminDashboard from "./pages/perfil/administracion/Administracion";
 import VerEventoPage from "./pages/perfil/administracion/eventos/verEvento/VerEvento";
 import UsuariosAdmin from "./pages/perfil/administracion/usuarios/UsuariosAdmin";
 import LogsAdmin from "./pages/admin/logs/LogsAdmin";
@@ -60,7 +59,7 @@ function App() {
 
         {/* ADMIN (Solo para rol 'admin') */}
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<Administracion />} />
           <Route path="/admin/logs" element={<LogsAdmin />} />
           <Route path="/eventosAdmin" element={<EventosAdmin />} />
           <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
