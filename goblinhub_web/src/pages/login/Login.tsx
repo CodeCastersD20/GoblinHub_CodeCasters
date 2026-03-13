@@ -5,6 +5,7 @@ import "./Login.css";
 import {
   login,
   forgotPassword as sendForgotPassword,
+  getMe,
 } from "../../services/auth.service";
 
 const Login: React.FC = () => {
@@ -27,6 +28,24 @@ const Login: React.FC = () => {
       if (data.refresh_token) {
         localStorage.setItem("refresh_token", data.refresh_token);
       }
+
+      const signInRole =
+        typeof data.rol === "string" ? data.rol.toLowerCase() : null;
+
+      if (signInRole) {
+        localStorage.setItem("rol", signInRole);
+      } else {
+        try {
+          const meResponse = await getMe();
+          const meRole = meResponse.data?.rol;
+          if (typeof meRole === "string") {
+            localStorage.setItem("rol", meRole.toLowerCase());
+          }
+        } catch {
+          localStorage.removeItem("rol");
+        }
+      }
+
       navigate("/");
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
