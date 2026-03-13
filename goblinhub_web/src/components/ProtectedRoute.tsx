@@ -5,15 +5,21 @@ interface ProtectedRouteProps {
 }
 
 function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-
   const token = localStorage.getItem("token");
   const rol = localStorage.getItem("rol")?.toLowerCase();
+  const normalizedAllowedRoles = allowedRoles?.map((role) =>
+    role.toLowerCase(),
+  );
 
   if (!token) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(rol || "")) {
+  if (normalizedAllowedRoles && !rol) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(rol || "")) {
     return <Navigate to="/" replace />;
   }
 

@@ -38,6 +38,26 @@ api.interceptors.response.use(
           localStorage.setItem("token", data.access_token);
           if (data.refresh_token)
             localStorage.setItem("refresh_token", data.refresh_token);
+
+          if (!localStorage.getItem("rol")) {
+            try {
+              const meResponse = await axios.get<{ rol?: string }>(
+                `${import.meta.env.VITE_API_URL}/auth/me`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${data.access_token}`,
+                  },
+                },
+              );
+              const role = meResponse.data?.rol;
+              if (typeof role === "string") {
+                localStorage.setItem("rol", role.toLowerCase());
+              }
+            } catch {
+              localStorage.removeItem("rol");
+            }
+          }
+
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
           }
@@ -45,10 +65,12 @@ api.interceptors.response.use(
         } catch {
           localStorage.removeItem("token");
           localStorage.removeItem("refresh_token");
+          localStorage.removeItem("rol");
           window.location.href = "/login";
         }
       } else {
         localStorage.removeItem("token");
+        localStorage.removeItem("rol");
         window.location.href = "/login";
       }
     }

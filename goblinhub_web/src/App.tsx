@@ -9,7 +9,6 @@ import CalendarioAventuras from "./pages/Events/main";
 import EventoDetalle from "./pages/Events/EventoDetalle/EventoDetalle";
 import Login from "./pages/login/Login";
 import RegisterFlow from "./pages/register/RegisterFlow";
-import AuthHome from "./pages/Home/Home";
 import PerfilPage from "./pages/perfil/PerfilPage";
 import ProductosDetalle from "./pages/products/ProductosDetalle/productsDetails";
 import ResetPassword from "./pages/resetPassword/ResetPassword";
@@ -19,6 +18,8 @@ import AdminDashboard from "./pages/perfil/administration/Administration";
 import VerEventoPage from "./pages/perfil/administration/eventos/verEvento/VerEvento";
 import UsuariosAdmin from "./pages/perfil/administration/usuarios/UsuariosAdmin";
 import LogsAdmin from "./pages/admin/logs/LogsAdmin";
+import ProductosAdmin from "./pages/perfil/administration/productos/productosAdmin";
+import Administracion from "./pages/perfil/administracion/Administracion";
 
 function App() {
   const location = useLocation();
@@ -46,17 +47,22 @@ function App() {
         <Route path="/eventosAdmin" element={<EventosAdmin />} />
         <Route path="/verEvento/:id" element={<VerEventoPage />} />
         <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
+        <Route path="/productosAdmin" element={<ProductosAdmin />} />
 
         {/* Ruta protegidas (requieren JWT) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/home" element={<AuthHome />} />
           <Route path="/perfil" element={<PerfilPage />} />
+          <Route path="/administration" element={<Administracion />} />
         </Route>
 
         {/* ADMIN */}
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin/logs" element={<LogsAdmin />} />
+        <Route
+          element={<ProtectedRoute allowedRoles={["admin", "empleado"]} />}
+        >
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/eventosAdmin" element={<EventosAdmin />} />
+          <Route path="/verEvento/:id" element={<VerEventoPage />} />
+          <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
         </Route>
 
         {/* Cualquier ruta desconocida → inicio */}
