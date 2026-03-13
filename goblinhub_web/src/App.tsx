@@ -17,6 +17,7 @@ import ConfirmAccount from "./pages/confirmAccount/ConfirmAccount";
 import EventosAdmin from "./pages/perfil/administration/eventos/EventoAdmin";
 import AdminDashboard from "./pages/perfil/administration/Administration";
 import VerEventoPage from "./pages/perfil/administration/eventos/verEvento/VerEvento";
+import UsuariosAdmin from "./pages/perfil/administration/usuarios/UsuariosAdmin";
 
 function App() {
   const location = useLocation();
@@ -44,6 +45,7 @@ function App() {
         <Route path="/confirm-account" element={<ConfirmAccount />} />
         <Route path="/eventosAdmin" element={<EventosAdmin />} />
         <Route path="/verEvento/:id" element={<VerEventoPage />} />
+        <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
 
         {/* Ruta protegidas (requieren JWT) */}
         <Route element={<ProtectedRoute />}>
