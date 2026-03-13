@@ -31,8 +31,7 @@ interface Props {
 
 function CrearProductos({ onClose, onCrear }: Props) {
 
-  const [form, setForm] = useState<Producto>({
-    id: Date.now(),
+  const [form, setForm] = useState<Omit<Producto, "id">>({
 
     nombre: "",
     marca: "",
@@ -73,10 +72,7 @@ function CrearProductos({ onClose, onCrear }: Props) {
 
       setForm({
         ...form,
-        [name]:
-          type === "number"
-            ? Number(value)
-            : value,
+        [name]: type === "number" ? Number(value) : value,
       });
 
     }
@@ -97,7 +93,12 @@ function CrearProductos({ onClose, onCrear }: Props) {
       return;
     }
 
-    onCrear(form);
+    const nuevoProducto: Producto = {
+      id: Date.now(),
+      ...form,
+    };
+
+    onCrear(nuevoProducto);
     onClose();
 
   };
