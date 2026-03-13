@@ -18,6 +18,7 @@ import EventosAdmin from "./pages/perfil/administration/eventos/EventoAdmin";
 import AdminDashboard from "./pages/perfil/administration/Administration";
 import VerEventoPage from "./pages/perfil/administration/eventos/verEvento/VerEvento";
 import UsuariosAdmin from "./pages/perfil/administration/usuarios/UsuariosAdmin";
+import ProductosAdmin from "./pages/perfil/administration/productos/productosAdmin";
 
 function App() {
   const location = useLocation();
@@ -46,6 +47,7 @@ function App() {
         <Route path="/eventosAdmin" element={<EventosAdmin />} />
         <Route path="/verEvento/:id" element={<VerEventoPage />} />
         <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
+        <Route path="/productosAdmin" element={<ProductosAdmin />} />
 
         {/* Ruta protegidas (requieren JWT) */}
         <Route element={<ProtectedRoute />}>
