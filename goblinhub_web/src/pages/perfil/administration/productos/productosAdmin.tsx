@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "./ProductosAdmin.css";
+import "./productosAdmin.css";
 
 import CrearProductos from "./crearProductos/crearProductos";
 import EditarProducto from "./editarProductos/editarProductos";
