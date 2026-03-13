@@ -7,6 +7,7 @@ import Login from "./Login";
 vi.mock("../../services/auth.service", () => ({
   login: vi.fn(),
   forgotPassword: vi.fn(),
+  getMe: vi.fn(),
 }));
 
 // Mock useNavigate
@@ -19,15 +20,18 @@ vi.mock("react-router-dom", async (importOriginal) => {
 import {
   login,
   forgotPassword as forgotPasswordSvc,
+  getMe,
 } from "../../services/auth.service";
 
 const loginMock = vi.mocked(login);
 const forgotPasswordMock = vi.mocked(forgotPasswordSvc);
+const getMeMock = vi.mocked(getMe);
 
 describe("Login", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    getMeMock.mockResolvedValue({ data: { rol: "jugador" } } as never);
   });
 
   const renderLogin = () =>
@@ -60,7 +64,7 @@ describe("Login", () => {
     expect(passInput).toHaveValue("SecretPass1");
   });
 
-  it("llama a login y navega a /auth-home en éxito", async () => {
+  it("llama a login, hidrata rol y navega en éxito", async () => {
     loginMock.mockResolvedValue({
       data: { access_token: "tok-123", refresh_token: "ref-456" },
     } as never);
@@ -77,6 +81,8 @@ describe("Login", () => {
     await waitFor(() => {
       expect(loginMock).toHaveBeenCalledWith("user@goblin.com", "Password1");
       expect(localStorage.getItem("token")).toBe("tok-123");
+      expect(localStorage.getItem("rol")).toBe("jugador");
+      expect(getMeMock).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
   });
