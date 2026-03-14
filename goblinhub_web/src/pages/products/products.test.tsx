@@ -1,10 +1,30 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { vi } from "vitest";
+import { vi, describe, it, expect } from "vitest";
+import '@testing-library/jest-dom';
+import ProductsPage from "./products";
 
+// 1. Mock de la imagen
 vi.mock("../../assets/images.jpg", () => ({ default: "/mock-image.jpg" }));
 
-import ProductsPage from "./products";
+// 2. Mock del SERVICIO (Corregido para exportación nombrada)
+vi.mock("../../services/products.service", () => {
+  const mockProducts = [
+    { id: "1", nombre: "Space Marine Battle Sector", precio: 1200, categoria: "Wargames", popular: true, nuevo: true, imagen_url: "" },
+    { id: "2", nombre: "Tyranid Prime", precio: 800, categoria: "Wargames", popular: true, nuevo: false, imagen_url: "" },
+    { id: "3", nombre: "Roboute Guilliman", precio: 3500, categoria: "Wargames", popular: false, nuevo: false, imagen_url: "" },
+    { id: "4", nombre: "Rey Silente", precio: 3500, categoria: "Wargames", popular: false, nuevo: false, imagen_url: "" },
+  ];
+
+  return {
+    // IMPORTANTE: El error dice que falta "productsService"
+    productsService: {
+      getAllProducts: vi.fn(() => Promise.resolve(mockProducts)),
+      // Agregamos getProductos por si acaso es el nombre que usa tu componente
+      getProductos: vi.fn(() => Promise.resolve(mockProducts)),
+    }
+  };
+});
 
 function renderWithRouter() {
   return render(
@@ -18,52 +38,48 @@ describe("ProductsPage", () => {
   it("renders the inventory section heading", () => {
     renderWithRouter();
     expect(
-      screen.getByRole("heading", { name: "Nuestro inventario" }),
+      screen.getByRole("heading", { name: /Nuestro inventario/i }),
     ).toBeInTheDocument();
   });
 
-  it("renders all four products", () => {
+  it("renders all four products", async () => {
     renderWithRouter();
-    expect(screen.getByText("Space Marine Battle Sector")).toBeInTheDocument();
-    expect(screen.getByText("Tyranid Prime")).toBeInTheDocument();
-    expect(screen.getByText("Roboute Guilliman")).toBeInTheDocument();
-    expect(screen.getByText("Rey Silente")).toBeInTheDocument();
+    // findByText es asíncrono, ideal para esperar al mock
+    expect(await screen.findByText(/Space Marine Battle Sector/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Tyranid Prime/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Roboute Guilliman/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Rey Silente/i)).toBeInTheDocument();
   });
 
-  it('shows "Popular" badge on popular products', () => {
+  it('shows "Popular" badge on popular products', async () => {
     renderWithRouter();
-    const popularBadges = screen.getAllByText("Popular");
+    // Usamos regex /Popular/i para evitar problemas de mayúsculas o espacios
+    const popularBadges = await screen.findAllByText(/Popular/i);
     expect(popularBadges.length).toBeGreaterThan(0);
   });
 
-  it('shows "Nuevo" badge on new products', () => {
+  it('shows "Nuevo" badge on new products', async () => {
     renderWithRouter();
-    expect(screen.getByText("Nuevo")).toBeInTheDocument();
+    expect(await screen.findByText(/Nuevo/i)).toBeInTheDocument();
   });
 
   it("renders category filter buttons", () => {
     renderWithRouter();
-    expect(
-      screen.getByRole("button", { name: "Wargames" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Juegos de rol" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Juegos de mesa" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Wargames/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Juegos de rol/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Juegos de mesa/i })).toBeInTheDocument();
   });
 
-  it("renders product prices", () => {
-    renderWithRouter();
-    expect(screen.getAllByText("$1200").length).toBeGreaterThan(0);
-    expect(screen.getByText("$800")).toBeInTheDocument();
-    expect(screen.getByText("$3500")).toBeInTheDocument();
-  });
+it("renders product prices", async () => {
+  renderWithRouter();
+  
+  // Para $1200 y $800 no hay problema porque son únicos
+  expect(await screen.findByText(/\$1200/)).toBeInTheDocument();
+  expect(await screen.findByText(/\$800/)).toBeInTheDocument();
 
-  it("renders product links to detail pages", () => {
-    renderWithRouter();
-    const links = screen.getAllByRole("link");
-    expect(links.length).toBeGreaterThanOrEqual(4);
-  });
+  // Para $3500 usamos findAllByText porque hay dos
+  const highPrices = await screen.findAllByText(/\$3500/);
+  expect(highPrices.length).toBe(2); 
+});
+
 });

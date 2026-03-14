@@ -1,56 +1,64 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'; // Importa Swagger
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import type { Express, Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
 
   const isProduction = process.env.NODE_ENV === 'production';
 
   const frontendUrl =
     process.env.CORS_ORIGIN?.split(',')[0] ?? 'http://localhost:5173';
 
+  // --- CONFIGURACIÓN DE SEGURIDAD (HELMET) ---
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
-
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          connectSrc: ["'self'", 'https:'],
-          imgSrc: isProduction
-            ? ["'self'", 'data:']
-            : ["'self'", 'data:', 'https:', 'https://validator.swagger.io'],
+          connectSrc: [
+            "'self'",
+            'https:',
+            'http://localhost:3000',
+            'ws://localhost:3000',
+          ],
+          // Hemos expandido imgSrc para que no te bloquee las fotos de productos (Supabase, etc.)
+          imgSrc: ["'self'", 'data:', 'https:', 'http://localhost:3000', '*'],
           scriptSrc: isProduction
             ? ["'self'"]
-            : ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // unsafe solo para Swagger en dev
+            : ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
           styleSrc: isProduction
             ? ["'self'"]
-            : ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'], // unsafe solo para Swagger en dev
-          frameAncestors: ["'none'"], // Reemplaza X-Frame-Options
+            : ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+          frameAncestors: ["'none'"],
         },
       },
-
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-
       strictTransportSecurity: {
-        maxAge: 31536000, // 1 año (requerido para HSTS preload)
+        maxAge: 31536000,
         includeSubDomains: true,
         preload: true,
       },
-
       frameguard: { action: 'deny' },
       noSniff: true,
     }),
   );
 
+  // --- CONFIGURACIÓN DE CORS ---
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') ?? [],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: [frontendUrl, 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'X-Requested-With',
+    ],
     credentials: true,
   });
 
@@ -62,7 +70,7 @@ async function bootstrap() {
     }),
   );
 
-  // --- CONFIGURACIÓN DE SWAGGER ---
+  // --- SWAGGER ---
   if (!isProduction) {
     const config = new DocumentBuilder()
       .setTitle('GoblinHub API')
@@ -71,7 +79,6 @@ async function bootstrap() {
       )
       .setVersion('1.0')
       .addBearerAuth(
-        // Habilita autenticación JWT en la UI
         {
           type: 'http',
           scheme: 'bearer',
@@ -80,46 +87,59 @@ async function bootstrap() {
           description: 'Introduce tu token JWT de Supabase',
           in: 'header',
         },
-        'access-token', // Nombre de referencia para los controladores
+        'access-token',
       )
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
-    // URL: http://localhost:3000/api/docs
     SwaggerModule.setup('api/docs', app, document, {
-      swaggerOptions: {
-        persistAuthorization: true, // Mantiene el token aunque recargues la página
-      },
+      swaggerOptions: { persistAuthorization: true },
     });
   }
 
   const server = app.getHttpAdapter().getInstance() as Express;
 
-  // Redirige al frontend si alguien accede directo desde el navegador
-  // Las peticiones AJAX/fetch del frontend traen headers como Origin, X-Requested-With o Authorization
+  // --- MIDDLEWARE DE REDIRECCIÓN Y LOGS DE RUTA ---
   server.use((req: Request, res: Response, next: NextFunction) => {
-    // Permitir Swagger en desarrollo
-    if (!isProduction && req.path.startsWith('/api/docs')) {
+    const path = req.path;
+
+    // Log para saber qué está llegando al servidor
+    if (path.includes('/productos')) {
+      logger.log(
+        `📥 API HIT: ${req.method} ${path} - Origin: ${req.headers.origin}`,
+      );
+    }
+
+    // 1. Permitir Swagger y rutas raíz
+    if (path.startsWith('/api/docs') || path === '/') {
       return next();
     }
 
-    // Permitir la ruta raíz (ya tiene su propio redirect)
-    if (req.path === '/') {
+    // 2. EXCEPCIÓN DE API: Dejar pasar estas rutas siempre al router de Nest
+    const apiPaths = [
+      '/productos',
+      '/auth',
+      '/events',
+      '/rewards',
+      '/logs',
+      '/backup',
+      '/upload',
+    ];
+    if (apiPaths.some((apiPath) => path.startsWith(apiPath))) {
       return next();
     }
 
-    // Si la petición trae Origin, Authorization o X-Requested-With, es del frontend/API client
+    // 3. Filtro de seguridad para redirección al Frontend
     const hasOrigin = !!req.headers['origin'];
     const hasAuth = !!req.headers['authorization'];
     const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest';
-    const acceptsJson =
-      req.headers['accept']?.includes('application/json') ?? false;
+    const acceptsJson = req.headers['accept']?.includes('application/json');
 
     if (hasOrigin || hasAuth || isAjax || acceptsJson) {
       return next();
     }
 
-    // Si es una petición directa del navegador (sin los headers anteriores), redirige al frontend
+    // 4. Si es una carga directa de página en el navegador que no conocemos, al front
     return res.redirect(frontendUrl);
   });
 
@@ -129,8 +149,5 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
   console.log(`🚀 API corriendo en: http://localhost:3000`);
-  if (!isProduction) {
-    console.log(`📑 Swagger disponible en: http://localhost:3000/api/docs`);
-  }
 }
 void bootstrap();
