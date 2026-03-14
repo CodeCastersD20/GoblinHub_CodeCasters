@@ -4,24 +4,24 @@ test.describe("Register flow", () => {
   
   test("register page renders step 1 form", async ({ page }) => {
     await page.goto("/register");
-    await expect(page.getByText("Información personal")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByPlaceholder("Tu nombre")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Información personal/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByPlaceholder(/Tu nombre/i)).toBeVisible({ timeout: 10000 });
   });
 
   test("products page shows inventory heading", async ({ page }) => {
-    // 1. MOCK ESPECÍFICO: Interceptamos solo la llamada al BACKEND (Puerto 3000)
-    // Esto evita que Playwright intercepte la navegación a http://localhost:5173/productos
-    await page.route('**/localhost:3000/productos*', async (route) => {
+    // 1. MOCK DE API: Corregido el acceso a la URL
+    // Usamos url.href para obtener el string completo de la dirección
+    await page.route((url) => url.href.includes('productos') && !url.href.includes('5173'), async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify([
           { 
             id: "1", 
-            nombre: "Producto Mock", 
+            nombre: "Producto Mock CI", 
             precio: 100, 
             categoria: "Wargames", 
-            descripcion: "test", 
+            descripcion: "Descripción para test", 
             imagen_url: "", 
             stock: 5 
           }
@@ -29,23 +29,26 @@ test.describe("Register flow", () => {
       });
     });
 
-    // 2. Navegamos a la ruta del FRONTEND
     await page.goto("/productos");
 
-    // 3. Usamos un selector más robusto. 
-    // Si getByRole sigue fallando, es que el h2/h1 no tiene ese nombre accesible.
-    // Probamos con getByText que suele ser infalible para títulos.
     const heading = page.getByText(/inventario/i);
     await expect(heading).toBeVisible({ timeout: 15000 });
   });
 
   test("events page shows calendar heading", async ({ page }) => {
-    // Mock específico para la API de eventos
-    await page.route('**/localhost:3000/eventos*', async (route) => {
+    // 2. MOCK DE API: Corregido el acceso a la URL
+    await page.route((url) => url.href.includes('eventos') && !url.href.includes('5173'), async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([]),
+        body: JSON.stringify([
+          {
+            id: "1",
+            titulo: "Evento Mock",
+            fecha: "2026-12-31",
+            descripcion: "Diversión en el CI"
+          }
+        ]),
       });
     });
 
