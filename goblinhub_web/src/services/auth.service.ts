@@ -41,3 +41,11 @@ export const uploadFotoPerfil = (file: File) => {
 
 export const updatePerfil = (data: UpdatePerfilDto) =>
   api.patch<{ message: string }>("/auth/me", data);
+
+export const getAdminUsers = (q?: string, rol?: string) =>
+  api.get("/auth/admin/users", {
+    params: {
+      q: q || undefined,   // Si no hay texto, no envía 'q' o va vacío
+      rol: rol !== 'todos' ? rol : undefined // Si el filtro es 'todos', no filtramos por rol
+    }
+  });

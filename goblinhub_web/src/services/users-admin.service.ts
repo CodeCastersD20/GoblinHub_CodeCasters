@@ -21,8 +21,14 @@ export interface AdminUserUpdateDto {
   activo?: boolean;
 }
 
-export const getAdminUsers = () => api.get<AdminUserApi[]>("/auth/admin/users");
-
+export const getAdminUsers = (q?: string, rol?: string) => {
+  return api.get("/auth/admin/users", {
+    params: {
+      q: q || undefined, // Si está vacío, no lo manda
+      rol: rol !== "todos" ? rol : undefined, // Si es 'todos', no aplica el filtro
+    },
+  });
+};
 export const updateAdminUser = (id: string, data: AdminUserUpdateDto) =>
   api.patch<{ message: string }>(`/auth/admin/users/${id}`, data);
 

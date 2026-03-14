@@ -57,8 +57,37 @@ export class UsuarioRepositoryPrisma extends UsuarioRepository {
     };
   }
 
-  async findAllForAdmin(): Promise<AdminUserSummary[]> {
+  async findAllForAdmin(
+    termino?: string,
+    rolFiltro?: string,
+  ): Promise<AdminUserSummary[]> {
+    // 1. Creamos un molde estricto (Type) para que TypeScript no se queje
+    // y Prisma sepa exactamente qué le estamos mandando.
+    type FiltrosWhere = {
+      OR?: Array<
+        | { nombre: { contains: string; mode: 'insensitive' } }
+        | { apellidos: { contains: string; mode: 'insensitive' } }
+      >;
+      rol?: RolUsuario;
+    };
+
+    // 2. Usamos ese molde para construir la consulta sin usar "any"
+    const whereClause: FiltrosWhere = {};
+
+    if (termino) {
+      whereClause.OR = [
+        { nombre: { contains: termino, mode: 'insensitive' } },
+        { apellidos: { contains: termino, mode: 'insensitive' } },
+      ];
+    }
+
+    if (rolFiltro && rolFiltro !== 'todos') {
+      whereClause.rol = rolFiltro as RolUsuario;
+    }
+
+    // 3. Prisma ejecuta la consulta
     const usuarios = await this.prisma.usuario.findMany({
+      where: whereClause,
       select: {
         id_usuario: true,
         nombre: true,
@@ -76,6 +105,8 @@ export class UsuarioRepositoryPrisma extends UsuarioRepository {
       orderBy: { created_at: 'desc' },
     });
 
+    // 4. Mapeamos los resultados.
+    // ¡Nota que ya no dice "(u: any)"! Ahora TypeScript es feliz.
     return usuarios.map((u) => ({
       id: u.id_usuario,
       nombre: u.nombre,
