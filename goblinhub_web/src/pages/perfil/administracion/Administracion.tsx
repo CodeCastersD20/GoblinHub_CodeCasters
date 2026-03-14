@@ -1,9 +1,146 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./Administracion.css";
 import { useNavigate } from "react-router-dom";
+import { useLogs } from "../../../hooks/useLogs";
+import {
+  getDashboardMetrics,
+  type DashboardMetrics,
+} from "../../../services/reportes.service";
+import {
+  ArcElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LineElement,
+  LinearScale,
+  PointElement,
+  Tooltip,
+} from "chart.js";
+import { Doughnut, Line } from "react-chartjs-2";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Filler,
+);
 
 const Administracion: React.FC = () => {
   const navigate = useNavigate();
+  const { data, loading, error } = useLogs({ limit: 5, includeTotal: false });
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await getDashboardMetrics(6);
+        setMetrics(response.data);
+      } catch {
+        setMetrics(null);
+      }
+    };
+
+    void fetchMetrics();
+  }, []);
+
+  const formatDate = (value?: string) => {
+    if (!value) return "--";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "--";
+    return date.toLocaleString("es-CL", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+    });
+  };
+
+  const getNavigableCardProps = (path: string) => ({
+    className: "module-card",
+    role: "button" as const,
+    tabIndex: 0,
+    style: { cursor: "pointer" },
+    onClick: () => navigate(path),
+    onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        navigate(path);
+      }
+    },
+  });
+
+  const safeValue = (value?: number | null, suffix = "") => {
+    if (value === null || value === undefined) return "--";
+    return `${value}${suffix}`;
+  };
+
+  const userGrowthChartData = useMemo(() => {
+    const growth = metrics?.crecimientoUsuarios ?? [];
+    return {
+      labels: growth.map((item) => item.label),
+      datasets: [
+        {
+          label: "Nuevos usuarios",
+          data: growth.map((item) => item.value),
+          borderColor: "#5E2B8E",
+          backgroundColor: "rgba(94, 43, 142, 0.2)",
+          tension: 0.35,
+          fill: true,
+          borderWidth: 3,
+        },
+      ],
+    };
+  }, [metrics]);
+
+  const generalDistributionChartData = useMemo(() => {
+    const summary = metrics?.summary;
+    return {
+      labels: [
+        "Usuarios",
+        "Productos",
+        "Eventos",
+        "Participaciones",
+        "Novatos",
+      ],
+      datasets: [
+        {
+          data: [
+            summary?.totalUsuarios ?? 0,
+            summary?.totalProductos ?? 0,
+            summary?.eventosRealizados ?? 0,
+            summary?.totalAsistencias ?? 0,
+            summary?.totalNovatos ?? 0,
+          ],
+          backgroundColor: [
+            "#5E2B8E",
+            "#B8D92A",
+            "#FF6B35",
+            "#2563EB",
+            "#F59E0B",
+          ],
+          borderColor: "#ffffff",
+          borderWidth: 2,
+        },
+      ],
+    };
+  }, [metrics]);
+
+  const hasUserGrowthData = (metrics?.crecimientoUsuarios?.length ?? 0) > 0;
+  const hasGeneralDistributionData =
+    !!metrics &&
+    [
+      metrics.summary.totalUsuarios,
+      metrics.summary.totalProductos,
+      metrics.summary.eventosRealizados,
+      metrics.summary.totalAsistencias,
+      metrics.summary.totalNovatos,
+    ].some((value) => value > 0);
+
   return (
     <div className="base-welcome">
       <div className="container">
@@ -19,72 +156,82 @@ const Administracion: React.FC = () => {
             <div className="stat-header">
               <div>
                 <div className="stat-label">Total Usuarios</div>
-                <div className="stat-value">248</div>
+                <div className="stat-value">
+                  {safeValue(metrics?.summary.totalUsuarios)}
+                </div>
               </div>
               <div className="stat-icon">👥</div>
             </div>
-            <div className="stat-trend trend-up">↑ +23 este mes</div>
+            <div className="stat-trend trend-up">Dato en tiempo real</div>
           </div>
 
           <div className="stat-card">
             <div className="stat-header">
               <div>
                 <div className="stat-label">Eventos Activos</div>
-                <div className="stat-value">18</div>
+                <div className="stat-value">
+                  {safeValue(metrics?.summary.eventosProximos)}
+                </div>
               </div>
               <div className="stat-icon">📅</div>
             </div>
-            <div className="stat-trend trend-up">↑ +3 esta semana</div>
+            <div className="stat-trend trend-up">Dato en tiempo real</div>
           </div>
 
           <div className="stat-card">
             <div className="stat-header">
               <div>
                 <div className="stat-label">Participaciones</div>
-                <div className="stat-value">342</div>
+                <div className="stat-value">
+                  {safeValue(metrics?.summary.totalAsistencias)}
+                </div>
               </div>
               <div className="stat-icon">🎮</div>
             </div>
-            <div className="stat-trend trend-up">↑ +18% vs mes anterior</div>
+            <div className="stat-trend trend-up">Dato en tiempo real</div>
           </div>
 
           <div className="stat-card">
             <div className="stat-header">
               <div>
                 <div className="stat-label">Novatos Captados</div>
-                <div className="stat-value">34</div>
+                <div className="stat-value">
+                  {safeValue(metrics?.summary.totalNovatos)}
+                </div>
               </div>
               <div className="stat-icon">🌱</div>
             </div>
-            <div className="stat-trend trend-up">↑ Meta: 5/mes alcanzada</div>
+            <div className="stat-trend trend-up">Dato en tiempo real</div>
           </div>
 
           <div className="stat-card">
             <div className="stat-header">
               <div>
                 <div className="stat-label">Tasa Conversión</div>
-                <div className="stat-value">68%</div>
+                <div className="stat-value">
+                  {safeValue(metrics?.summary.tasaConversion, "%")}
+                </div>
               </div>
               <div className="stat-icon">📈</div>
             </div>
-            <div className="stat-trend trend-up">↑ +5% este mes</div>
+            <div className="stat-trend trend-up">Dato en tiempo real</div>
           </div>
 
           <div className="stat-card">
             <div className="stat-header">
               <div>
                 <div className="stat-label">Satisfacción</div>
-                <div className="stat-value">4.6</div>
+                <div className="stat-value">--</div>
               </div>
               <div className="stat-icon">⭐</div>
             </div>
-            <div className="stat-trend">De 5.0 estrellas</div>
+            <div className="stat-trend">Pendiente de integrar</div>
           </div>
         </div>
 
         <h2 className="section-title">🎛️ Módulos de Gestión</h2>
         <div className="modules-grid">
-          <div  className="module-card">
+          <div {...getNavigableCardProps("/usuariosAdmin")}>
             <div className="module-header">
               <div className="module-icon">👥</div>
               <h3 className="module-title">Usuarios</h3>
@@ -97,18 +244,22 @@ const Administracion: React.FC = () => {
               </p>
               <div className="module-stats">
                 <div className="module-stat">
-                  <div className="module-stat-value">248</div>
+                  <div className="module-stat-value">
+                    {safeValue(metrics?.summary.totalUsuarios)}
+                  </div>
                   <div className="module-stat-label">Total</div>
                 </div>
                 <div className="module-stat">
-                  <div className="module-stat-value">187</div>
+                  <div className="module-stat-value">
+                    {safeValue(metrics?.summary.usuariosActivos)}
+                  </div>
                   <div className="module-stat-label">Activos</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div  className="module-card">
+          <div {...getNavigableCardProps("/eventosAdmin")}>
             <div className="module-header">
               <div className="module-icon">📅</div>
               <h3 className="module-title">Eventos</h3>
@@ -121,18 +272,22 @@ const Administracion: React.FC = () => {
               </p>
               <div className="module-stats">
                 <div className="module-stat">
-                  <div className="module-stat-value">18</div>
+                  <div className="module-stat-value">
+                    {safeValue(metrics?.summary.eventosRealizados)}
+                  </div>
                   <div className="module-stat-label">Eventos</div>
                 </div>
                 <div className="module-stat">
-                  <div className="module-stat-value">6</div>
+                  <div className="module-stat-value">
+                    {safeValue(metrics?.summary.eventosProximos)}
+                  </div>
                   <div className="module-stat-label">Próximos</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div  className="module-card">
+          <div {...getNavigableCardProps("/admin/novatos")}>
             <div className="module-header">
               <div className="module-icon">🌱</div>
               <h3 className="module-title">Captación de Novatos</h3>
@@ -145,18 +300,22 @@ const Administracion: React.FC = () => {
               </p>
               <div className="module-stats">
                 <div className="module-stat">
-                  <div className="module-stat-value">34</div>
+                  <div className="module-stat-value">
+                    {safeValue(metrics?.summary.totalNovatos)}
+                  </div>
                   <div className="module-stat-label">Novatos</div>
                 </div>
                 <div className="module-stat">
-                  <div className="module-stat-value">68%</div>
+                  <div className="module-stat-value">
+                    {safeValue(metrics?.summary.tasaConversion, "%")}
+                  </div>
                   <div className="module-stat-label">Conversión</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div  className="module-card" onClick={() => navigate("/admin/reportes")} style={{ cursor: "pointer" }}>
+          <div {...getNavigableCardProps("/admin/reportes")}>
             <div className="module-header">
               <div className="module-icon">📊</div>
               <h3 className="module-title">Reportes & Analytics</h3>
@@ -169,18 +328,22 @@ const Administracion: React.FC = () => {
               </p>
               <div className="module-stats">
                 <div className="module-stat">
-                  <div className="module-stat-value">342</div>
+                  <div className="module-stat-value">
+                    {safeValue(metrics?.summary.totalAsistencias)}
+                  </div>
                   <div className="module-stat-label">Asistencias</div>
                 </div>
                 <div className="module-stat">
-                  <div className="module-stat-value">87%</div>
+                  <div className="module-stat-value">
+                    {safeValue(metrics?.summary.ocupacion, "%")}
+                  </div>
                   <div className="module-stat-label">Ocupación</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="module-card">
+          <div {...getNavigableCardProps("/productos")}>
             <div className="module-header">
               <div className="module-icon">📦</div>
               <h3 className="module-title">Productos</h3>
@@ -211,59 +374,90 @@ const Administracion: React.FC = () => {
             <div>
               <h3 className="title-metricas">Crecimiento de Usuarios</h3>
               <div className="chart-container">
-                <canvas id="usersChart"></canvas>
+                {!hasUserGrowthData ? (
+                  <p>--</p>
+                ) : (
+                  <Line
+                    data={userGrowthChartData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: { legend: { display: false } },
+                    }}
+                  />
+                )}
               </div>
             </div>
             <div>
-              <h3 className="distribucion-eventos">Distribución de Eventos</h3>
+              <h3 className="distribucion-eventos">Distribución General</h3>
               <div className="chart-container">
-                <canvas id="eventsChart"></canvas>
+                {!hasGeneralDistributionData ? (
+                  <p>--</p>
+                ) : (
+                  <Doughnut
+                    data={generalDistributionChartData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: { legend: { position: "bottom" } },
+                    }}
+                  />
+                )}
               </div>
             </div>
           </div>
         </div>
 
-          <div className="activity-section">
-            <h2 className="section-title">🔔 Actividad Reciente</h2>
-            <div className="activity-list">
-                <div className="activity-item">
-                    <div className="activity-icon">👤</div>
-                    <div className="activity-content">
-                        <div className="activity-text">Nuevo usuario registrado: Diego Morales</div>
-                        <div className="activity-time">Hace 15 minutos</div>
-                    </div>
+        <div className="activity-section">
+          <h2 className="section-title">🔔 Actividad Reciente</h2>
+          <div className="activity-list">
+            {loading && (
+              <div className="activity-item">
+                <div className="activity-icon">⏳</div>
+                <div className="activity-content">
+                  <div className="activity-text">Cargando actividad...</div>
+                  <div className="activity-time">--</div>
                 </div>
-                <div className="activity-item">
-                    <div className="activity-icon">🏆</div>
-                    <div className="activity-content">
-                        <div className="activity-text">Evento completado: Torneo Age of Sigmar</div>
-                        <div className="activity-time">Hace 2 horas</div>
-                    </div>
+              </div>
+            )}
+
+            {!loading && error && (
+              <div className="activity-item">
+                <div className="activity-icon">⚠️</div>
+                <div className="activity-content">
+                  <div className="activity-text">
+                    No se pudo cargar la actividad
+                  </div>
+                  <div className="activity-time">--</div>
                 </div>
-                <div className="activity-item">
-                    <div className="activity-icon">📝</div>
-                    <div className="activity-content">
-                        <div className="activity-text">Nueva encuesta recibida de Valentina Cruz</div>
-                        <div className="activity-time">Hace 3 horas</div>
-                    </div>
+              </div>
+            )}
+
+            {!loading && !error && (data?.data?.length ?? 0) === 0 && (
+              <div className="activity-item">
+                <div className="activity-icon">📭</div>
+                <div className="activity-content">
+                  <div className="activity-text">No hay actividad reciente</div>
+                  <div className="activity-time">--</div>
                 </div>
-                <div className="activity-item">
-                    <div className="activity-icon">🌱</div>
-                    <div className="activity-content">
-                        <div className="activity-text">3 novatos registrados en sesión de iniciación</div>
-                        <div className="activity-time">Ayer a las 16:30</div>
+              </div>
+            )}
+
+            {!loading &&
+              !error &&
+              data?.data?.map((log) => (
+                <div className="activity-item" key={log.id_log}>
+                  <div className="activity-icon">📝</div>
+                  <div className="activity-content">
+                    <div className="activity-text">{log.mensaje || "--"}</div>
+                    <div className="activity-time">
+                      {log.accion || "--"} | {formatDate(log.fecha_hora)}
                     </div>
+                  </div>
                 </div>
-                <div className="activity-item">
-                    <div className="activity-icon">📅</div>
-                    <div className="activity-content">
-                        <div className="activity-text">Evento creado: Taller de Pintura Avanzada</div>
-                        <div className="activity-time">Ayer a las 10:15</div>
-                    </div>
-                </div>
-            </div>
+              ))}
+          </div>
         </div>
-        
       </div>
     </div>
   );

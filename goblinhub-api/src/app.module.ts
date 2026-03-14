@@ -10,6 +10,9 @@ import { UploadModule } from './modules/upload/upload.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { LogsModule } from './modules/logs/logs.module';
+import { PrismaModule } from './connect/prisma.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ActivityLogInterceptor } from './modules/logs/infrastructure/interceptors/activity-log.interceptor';
 
 @Module({
   imports: [
@@ -30,12 +33,17 @@ import { LogsModule } from './modules/logs/logs.module';
     RewardModule,
     ProductoModule,
     UploadModule,
+    PrismaModule,
   ],
   controllers: [],
   providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ActivityLogInterceptor,
     },
   ], // Aplica el guard de throttling globalmente
 })

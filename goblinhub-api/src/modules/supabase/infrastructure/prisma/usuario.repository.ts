@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../connect/prisma.service';
 import {
+  AdminUserSummary,
+  AdminUserUpdateData,
   UsuarioRepository,
   UsuarioPerfil,
   UpdatePerfilData,
@@ -53,6 +55,69 @@ export class UsuarioRepositoryPrisma extends UsuarioRepository {
       bio: usuario.bio,
       foto_perfil_url: usuario.foto_perfil_url,
     };
+  }
+
+  async findAllForAdmin(): Promise<AdminUserSummary[]> {
+    const usuarios = await this.prisma.usuario.findMany({
+      select: {
+        id_usuario: true,
+        nombre: true,
+        apellidos: true,
+        nivel_experiencia: true,
+        rol: true,
+        activo: true,
+        foto_perfil_url: true,
+        created_at: true,
+        inscripciones: {
+          where: { deleted_at: null },
+          select: { id_inscripcion: true },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    return usuarios.map((u) => ({
+      id: u.id_usuario,
+      nombre: u.nombre,
+      apellidos: u.apellidos,
+      email: null,
+      nivel_experiencia: u.nivel_experiencia as NivelExperiencia,
+      rol: u.rol as RolUsuario,
+      activo: u.activo,
+      foto_perfil_url: u.foto_perfil_url,
+      created_at: u.created_at,
+      eventos_asistidos: u.inscripciones.length,
+    }));
+  }
+
+  async updateUserForAdmin(
+    id_usuario: string,
+    data: AdminUserUpdateData,
+  ): Promise<void> {
+    const payload: Record<string, unknown> = { ...data };
+
+    if (data.activo === true) {
+      payload.deleted_at = null;
+    }
+
+    if (data.activo === false && !('deleted_at' in payload)) {
+      payload.deleted_at = new Date();
+    }
+
+    await this.prisma.usuario.update({
+      where: { id_usuario },
+      data: payload,
+    });
+  }
+
+  async softDeleteForAdmin(id_usuario: string): Promise<void> {
+    await this.prisma.usuario.update({
+      where: { id_usuario },
+      data: {
+        activo: false,
+        deleted_at: new Date(),
+      },
+    });
   }
 
   async updateFotoPerfil(

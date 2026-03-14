@@ -33,6 +33,7 @@ export interface GetLogsParams {
   usuarioId?: string;
   desde?: string;
   hasta?: string;
+  includeTotal?: boolean;
 }
 
 export const getLogs = (params?: GetLogsParams) =>

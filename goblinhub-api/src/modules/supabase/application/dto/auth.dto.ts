@@ -6,8 +6,9 @@ import {
   IsEnum,
   MinLength,
   Matches,
+  IsBoolean,
 } from 'class-validator';
-import { NivelExperiencia } from '../../domain/enums/user.enum';
+import { NivelExperiencia, RolUsuario } from '../../domain/enums/user.enum';
 
 export class ValidateTokenDto {
   @IsString()
@@ -113,4 +114,26 @@ export class ResetPasswordDto {
       'The password must contain at least one uppercase letter, one lowercase letter, and one number.',
   })
   confirmPassword: string;
+}
+
+export class AdminUpdateUserDto {
+  @IsOptional()
+  @IsString()
+  nombre?: string;
+
+  @IsOptional()
+  @IsString()
+  apellidos?: string;
+
+  @IsOptional()
+  @IsEnum(NivelExperiencia)
+  nivel_experiencia?: NivelExperiencia;
+
+  @IsOptional()
+  @IsEnum(RolUsuario)
+  rol?: RolUsuario;
+
+  @IsOptional()
+  @IsBoolean()
+  activo?: boolean;
 }

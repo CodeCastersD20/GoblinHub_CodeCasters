@@ -13,6 +13,7 @@ import { UpdateFotoPerfilUseCase } from '../../application/use-case/update-foto-
 import { UpdatePerfilUseCase } from '../../application/use-case/update-perfil.use-case';
 import { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
 import { RolUsuario, NivelExperiencia } from '../../domain/enums/user.enum';
+import { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import { Session, User } from '@supabase/supabase-js';
 
 describe('SupabaseAuthController', () => {
@@ -28,6 +29,7 @@ describe('SupabaseAuthController', () => {
   let resetPasswordUseCase: jest.Mocked<ResetPasswordUseCase>;
   let updateFotoPerfilUseCase: jest.Mocked<UpdateFotoPerfilUseCase>;
   let updatePerfilUseCase: jest.Mocked<UpdatePerfilUseCase>;
+  let usuarioRepository: jest.Mocked<UsuarioRepository>;
 
   beforeEach(() => {
     validationService = {
@@ -75,6 +77,16 @@ describe('SupabaseAuthController', () => {
       execute: jest.fn(),
     } as unknown as jest.Mocked<UpdatePerfilUseCase>;
 
+    usuarioRepository = {
+      findRolById: jest.fn(),
+      findProfileById: jest.fn(),
+      findAllForAdmin: jest.fn(),
+      updateUserForAdmin: jest.fn(),
+      softDeleteForAdmin: jest.fn(),
+      updateFotoPerfil: jest.fn(),
+      updateProfile: jest.fn(),
+    } as unknown as jest.Mocked<UsuarioRepository>;
+
     controller = new SupabaseAuthController(
       validationService,
       refreshService,
@@ -87,6 +99,7 @@ describe('SupabaseAuthController', () => {
       resetPasswordUseCase,
       updateFotoPerfilUseCase,
       updatePerfilUseCase,
+      usuarioRepository,
     );
   });
 

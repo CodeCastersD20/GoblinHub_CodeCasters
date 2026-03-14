@@ -13,14 +13,14 @@ import PerfilPage from "./pages/perfil/PerfilPage";
 import ProductosDetalle from "./pages/products/ProductosDetalle/productsDetails";
 import ResetPassword from "./pages/resetPassword/ResetPassword";
 import ConfirmAccount from "./pages/confirmAccount/ConfirmAccount";
-import EventosAdmin from "./pages/perfil/administration/eventos/EventoAdmin";
-import AdminDashboard from "./pages/perfil/administration/Administration";
-import VerEventoPage from "./pages/perfil/administration/eventos/verEvento/VerEvento";
-import UsuariosAdmin from "./pages/perfil/administration/usuarios/UsuariosAdmin";
+import EventosAdmin from "./pages/perfil/administracion/eventos/EventoAdmin";
+import VerEventoPage from "./pages/perfil/administracion/eventos/verEvento/VerEvento";
+import UsuariosAdmin from "./pages/perfil/administracion/usuarios/UsuariosAdmin";
 import LogsAdmin from "./pages/admin/logs/LogsAdmin";
-//import ProductosAdmin from "./pages/perfil/administration/productos/productosAdmin";
+//import ProductosAdmin from "./pages/perfil/administracion/productos/productosAdmin";
 import Administracion from "./pages/perfil/administracion/Administracion";
 import Reportes from "./pages/perfil/administracion/reportes/Reportes";
+import CapacitacionNovatos from "./pages/perfil/administracion/novatos/CapacitacionNovatos";
 
 function App() {
   const location = useLocation();
@@ -54,15 +54,17 @@ function App() {
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/administration" element={<Administracion />} />
           <Route path="/admin/reportes" element={<Reportes />} />
+          <Route path="/admin/novatos" element={<CapacitacionNovatos />} />
         </Route>
 
         {/* ADMIN (Solo para rol 'admin') */}
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<Administracion />} />
           <Route path="/admin/logs" element={<LogsAdmin />} />
           <Route path="/eventosAdmin" element={<EventosAdmin />} />
           <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
           <Route path="/verEvento/:id" element={<VerEventoPage />} />
+          <Route path="/admin/novatos" element={<CapacitacionNovatos />} />
         </Route>
 
         {/* Cualquier ruta desconocida → inicio */}

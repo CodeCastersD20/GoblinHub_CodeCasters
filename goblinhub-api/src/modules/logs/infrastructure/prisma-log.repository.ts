@@ -16,6 +16,7 @@ export class PrismaLogRepository implements ILogRepository {
     const page = filters.page || 1;
     const limit = filters.limit || 50;
     const skip = (page - 1) * limit;
+    const includeTotal = filters.includeTotal ?? true;
 
     const whereCondition: Prisma.Logs_ActividadWhereInput = {};
 
@@ -46,20 +47,21 @@ export class PrismaLogRepository implements ILogRepository {
       }
     }
 
-    const [total, data] = await this.prisma.$transaction([
-      this.prisma.logs_Actividad.count({ where: whereCondition }),
-      this.prisma.logs_Actividad.findMany({
-        where: whereCondition,
-        skip,
-        take: limit,
-        orderBy: { fecha_hora: 'desc' },
-        include: {
-          usuario: {
-            select: { nombre: true, apellidos: true, rol: true },
-          },
+    const data = await this.prisma.logs_Actividad.findMany({
+      where: whereCondition,
+      skip,
+      take: limit,
+      orderBy: { fecha_hora: 'desc' },
+      include: {
+        usuario: {
+          select: { nombre: true, apellidos: true, rol: true },
         },
-      }),
-    ]);
+      },
+    });
+
+    const total = includeTotal
+      ? await this.prisma.logs_Actividad.count({ where: whereCondition })
+      : data.length;
 
     const mappedData: LogEntity[] = data.map((log) => ({
       id_log: log.id_log.toString(),
