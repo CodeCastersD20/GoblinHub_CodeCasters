@@ -15,6 +15,7 @@ import {
   Request,
   HttpStatus,
   Param,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -260,10 +261,19 @@ export class SupabaseAuthController {
   @UseGuards(SupabaseAuthGuard, RolesGuard)
   @Roles(RolUsuario.admin, RolUsuario.empleado)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Listar usuarios para panel administrativo' })
+  @ApiOperation({
+    summary: 'Listar usuarios para panel administrativo filtrados',
+  })
   @ApiResponse({ status: 200, description: 'Usuarios listados correctamente' })
-  async getAdminUsers() {
-    return await this.usuarioRepository.findAllForAdmin();
+  async getAdminUsers(
+    @Query('q') terminoBusqueda?: string, // Lo que el usuario escribe en el input
+    @Query('rol') rolFiltro?: string, // El valor del select (ej. 'admin', 'empleado', 'todos')
+  ) {
+    // Ahora le pasamos estos parámetros a tu repositorio para que haga la magia en la BD
+    return await this.usuarioRepository.findAllForAdmin(
+      terminoBusqueda,
+      rolFiltro,
+    );
   }
 
   @Patch('admin/users/:id')

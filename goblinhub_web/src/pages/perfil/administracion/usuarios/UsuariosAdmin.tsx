@@ -9,6 +9,7 @@ import {
   type AdminUserApi,
 } from "../../../../services/users-admin.service";
 import defaultAvatar from "../../../../assets/default_perfil.png";
+import { useDebounce } from "../../../../hooks/useDebounce";
 
 const mapUser = (user: AdminUserApi): Usuario => ({
   id: user.id,
@@ -30,15 +31,31 @@ function UsuariosAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    getAdminUsers()
-      .then((res: { data: AdminUserApi[] }) =>
-        setUsuarios(res.data.map(mapUser)),
-      )
-      .catch(() => setError("No se pudieron cargar los usuarios"))
-      .finally(() => setLoading(false));
-  }, []);
+  // --- NUEVOS ESTADOS DE FILTRO ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [rolFiltro, setRolFiltro] = useState("todos");
+  
+  // --- APLICACIÓN DEL DEBOUNCE ---
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
+  // --- EFECTO ACTUALIZADO PARA RECIBIR FILTROS ---
+// --- EFECTO ACTUALIZADO PARA RECIBIR FILTROS ---
+// --- EFECTO ACTUALIZADO PARA RECIBIR FILTROS ---
+useEffect(() => {
+    const buscarUsuarios = async () => {
+      setLoading(true); 
+      try {
+        const res = await getAdminUsers(debouncedSearch, rolFiltro);
+        setUsuarios(res.data.map(mapUser));
+      } catch { // <--- ¡AQUÍ EL CAMBIO! Quitamos el (err)
+        setError("No se pudieron cargar los usuarios");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    buscarUsuarios();
+  }, [debouncedSearch, rolFiltro]);
   const guardarUsuario = async (usuarioEditado: Usuario) => {
     try {
       await updateAdminUser(usuarioEditado.id, {
@@ -98,11 +115,32 @@ function UsuariosAdmin() {
     <div className="users-admin-container">
       <h1>Administración de Usuarios</h1>
 
+      {/* ---------- FILTROS DE BÚSQUEDA (REQ 13) ---------- */}
+      <div style={{ display: 'flex', gap: '10px', margin: '20px 0', alignItems: 'center' }}>
+        <input
+          type="text"
+          placeholder="Buscar por nombre o apellido..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ padding: '8px', flexGrow: 1, borderRadius: '4px', border: '1px solid #ccc' }}
+        />
+        
+        <select 
+          value={rolFiltro} 
+          onChange={(e) => setRolFiltro(e.target.value)}
+          style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+        >
+          <option value="todos">Todos los Roles</option>
+          <option value="admin">Administrador</option>
+          <option value="empleado">Empleado</option>
+          <option value="usuario">Usuario Regular</option>
+        </select>
+      </div>
+
       {loading && <p>Cargando usuarios...</p>}
       {error && <p>{error}</p>}
 
       {/* ---------- RESUMEN ---------- */}
-
       <div className="users-stats">
         <div className="stat-card">
           <h3>Total de usuarios</h3>
@@ -126,7 +164,6 @@ function UsuariosAdmin() {
       </div>
 
       {/* ---------- TABLA ---------- */}
-
       <table className="users-table">
         <thead>
           <tr>
@@ -189,7 +226,6 @@ function UsuariosAdmin() {
       </table>
 
       {/* ---------- MODAL ---------- */}
-
       {usuarioEditar && (
         <EditarUsuarioModal
           usuario={usuarioEditar}

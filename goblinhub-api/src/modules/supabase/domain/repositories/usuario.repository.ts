@@ -45,7 +45,10 @@ export interface AdminUserUpdateData {
 export abstract class UsuarioRepository {
   abstract findRolById(id_usuario: string): Promise<RolUsuario | null>;
   abstract findProfileById(id_usuario: string): Promise<UsuarioPerfil | null>;
-  abstract findAllForAdmin(): Promise<AdminUserSummary[]>;
+  abstract findAllForAdmin(
+    termino?: string,
+    rol?: string,
+  ): Promise<AdminUserSummary[]>;
   abstract updateUserForAdmin(
     id_usuario: string,
     data: AdminUserUpdateData,
