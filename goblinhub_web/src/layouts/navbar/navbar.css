@@ -1,11 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Nunito:wght@400;600;700&display=swap");
 
-/* ---------- Base REM ---------- */
-html{
+html {
   font-size: 62.5%;
 }
 
-/* ---------- Variables ---------- */
 :root {
   --nav-bg: #f5f0e8;
   --nav-border: #c084fc;
@@ -17,20 +15,17 @@ html{
 
   --nav-profile-bg: #ede9fe;
   --nav-profile-color: #6b21a8;
-  --nav-profile-hover-bg: #d8b4fe;
+  --nav-profile-hover-bg: #ddd6fe;
   --nav-profile-active-bg: #c084fc;
 
   --nav-dropdown-bg: #ffffff;
   --nav-dropdown-shadow: 0 0.8rem 3.2rem rgba(107, 33, 168, 0.15);
   --nav-dropdown-border: #e9d5ff;
   --nav-dropdown-hover: #f5f0e8;
-  --nav-dropdown-danger: #dc2626;
-  --nav-dropdown-danger-hover: #fef2f2;
 
   --nav-font: "Nunito", sans-serif;
 }
 
-/* ---------- Contenedor principal ---------- */
 .logo-container {
   display: flex;
   align-items: center;
@@ -43,10 +38,8 @@ html{
   position: sticky;
   top: 0;
   z-index: 100;
-  font-family: var(--nav-font);
 }
 
-/* ---------- Logo ---------- */
 .Logo {
   display: flex;
   align-items: center;
@@ -60,22 +53,24 @@ html{
   transition: transform 0.2s ease;
 }
 
-.goblin:hover {
+.nav-goblin:hover {
   transform: scale(1.06);
 }
 
-/* ---------- Botones de navegación ---------- */
 .nav-botones {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.6rem;
   flex: 1;
-  justify-content: center;
+}
+
+.nav-botones a {
+  text-decoration: none;
 }
 
 .nav-botones .custom-button,
 .nav-botones a .custom-button {
-  background-color: transparent;
   color: var(--nav-purple);
   font-family: var(--nav-font);
   font-weight: 700;
@@ -91,20 +86,17 @@ html{
 
 .nav-botones .custom-button:hover,
 .nav-botones a .custom-button:hover {
-  color: rgb(108, 188, 16)
-}
-
-.nav-botones a {
-  text-decoration: none;
+  color: #6cbc10;
 }
 
 .usuario-wrapper {
   position: relative;
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
 }
 
-/* ---------- Perfil ---------- */
-.nav-btn--login{
+.nav-btn--login {
   background-color: var(--nav-profile-bg);
   color: var(--nav-profile-color);
   font-family: var(--nav-font);
@@ -119,7 +111,7 @@ html{
     color 0.2s ease;
 }
 
-.nav-btn--login:hover{
+.nav-btn--login:hover {
   color: var(--nav-profile-bg);
   background-color: var(--nav-purple-hover);
 }
@@ -128,10 +120,9 @@ html{
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
   min-width: 4rem;
   height: 4rem;
-  padding: 0 1rem;
+  padding: 0;
   border-radius: 999rem;
   background-color: var(--nav-profile-bg);
   color: var(--nav-profile-color);
@@ -140,14 +131,6 @@ html{
     background-color 0.2s ease,
     transform 0.2s ease;
   border: 0.2rem solid var(--nav-border);
-}
-
-.usuario__nombre {
-  font-family: var(--nav-font);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--nav-purple);
-  white-space: nowrap;
 }
 
 .usuario:hover {
@@ -160,7 +143,13 @@ html{
   transform: scale(1.07);
 }
 
-/* ---------- Dropdown ---------- */
+.usuario-avatar {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 999rem;
+  object-fit: cover;
+}
+
 .usuario-dropdown {
   position: absolute;
   top: calc(100% + 1rem);
@@ -173,9 +162,22 @@ html{
   padding: 0.6rem;
   z-index: 200;
   animation: dropdownFadeIn 0.18s ease forwards;
+  transform-origin: top right;
 }
 
-/* ---------- Items ---------- */
+.usuario-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -0.7rem;
+  right: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  background-color: var(--nav-dropdown-bg);
+  border-left: 0.15rem solid var(--nav-dropdown-border);
+  border-top: 0.15rem solid var(--nav-dropdown-border);
+  transform: rotate(45deg);
+}
+
 .usuario-dropdown__item {
   display: flex;
   align-items: center;
@@ -190,13 +192,17 @@ html{
   font-weight: 600;
   color: var(--nav-purple);
   cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .usuario-dropdown__item:hover {
   background-color: var(--nav-dropdown-hover);
+  color: var(--nav-purple-hover);
 }
 
-/* ---------- Divider ---------- */
 .usuario-dropdown__divider {
   height: 0.1rem;
   background-color: var(--nav-dropdown-border);
@@ -208,35 +214,41 @@ html{
     opacity: 0;
     transform: scale(0.95) translateY(-0.6rem);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
 }
 
-/* ---------- Overlay ---------- */
+.hamburguesa {
+  display: none;
+}
+
+.ham-botones {
+  display: none;
+}
+
+.ham-cerrar {
+  display: none;
+}
+
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   z-index: 998;
 }
 
-/* ---------- Responsive ---------- */
-.ham-botones{
-  display: none;
-}
-
-.ham-cerrar{
-  display: none;
-}
-
-
-.hamburguesa{
-  display: none;
-}
-
 @media (max-width: 76.8rem) {
+  .logo-container {
+    padding: 0 1.6rem;
+    gap: 1rem;
+  }
+
+  .nav-botones {
+    display: none;
+  }
 
   .hamburguesa {
     display: block;
@@ -244,19 +256,7 @@ html{
     border: none;
     font-size: 3rem;
     color: var(--nav-purple);
-    order: 3;
-  }
-
-  .auth-desktop {
-    display: none;
-  }
-
-  .nav-botones {
-    display: none;
-  }
-
-  .usuario-wrapper {
-    order: 2;
+    cursor: pointer;
   }
 
   .ham-botones {
@@ -265,18 +265,12 @@ html{
     right: 0;
     height: 100vh;
     width: 25rem;
-
     background-image: linear-gradient(to bottom, #6b21a8, #9c6bea);
-    color: #fff;
-
     display: flex;
     flex-direction: column;
-
     padding: 8rem 2rem 2rem;
-
     transform: translateX(100%);
     transition: transform 0.3s ease-in-out;
-
     z-index: 999;
   }
 
@@ -284,38 +278,41 @@ html{
     transform: translateX(0);
   }
 
-}
+  .ham-botones a {
+    text-decoration: none;
+  }
 
-.ham-button {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  margin-top: 2rem;
-  background-color: transparent;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  font-size: 1.8rem;
-  padding: 1rem 2rem;
-  transition: background-color 0.2s ease;
-  display: flex;
-  gap: 2rem;
-  justify-content: center;
-  width: 100%;
-}
+  .ham-button {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.8rem;
+    background-color: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 1.8rem;
+    padding: 1rem 2rem;
+    transition: background-color 0.2s ease;
+  }
 
-.ham-button:hover {
-  background-color: var(--nav-purple-hover);
-}
+  .ham-button:hover {
+    background-color: var(--nav-purple-hover);
+  }
 
-.ham-cerrar {
-  display: block;
-  top: 2rem;
-  right: 2rem;
-  position: absolute;
-  cursor: pointer;
-  font-size: 2.4rem;
-  background: transparent;
-  border: none;
-  color: #fff;
+  .ham-cerrar {
+    display: block;
+    top: 2rem;
+    right: 2rem;
+    position: absolute;
+    cursor: pointer;
+    font-size: 2.4rem;
+    background: transparent;
+    border: none;
+    color: #fff;
+  }
+
+  .usuario-dropdown {
+    right: -3rem;
+  }
 }

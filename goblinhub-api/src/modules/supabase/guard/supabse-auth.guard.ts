@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   Logger,
 } from '@nestjs/common';
+import { PrismaService } from '../../../connect/prisma.service';
 import { SupabaseValidationTokenService } from '../application/use-case/validationT.use-case';
 import {
   SupabaseUser,
@@ -18,6 +19,7 @@ export class SupabaseAuthGuard implements CanActivate {
 
   constructor(
     private readonly validationTokenService: SupabaseValidationTokenService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -41,6 +43,15 @@ export class SupabaseAuthGuard implements CanActivate {
         await this.validationTokenService.validtoken(token);
 
       if (result.success && result.user) {
+        const profile = await this.prisma.usuario.findUnique({
+          where: { id_usuario: result.user.id },
+          select: { activo: true, deleted_at: true },
+        });
+
+        if (!profile || !profile.activo || profile.deleted_at) {
+          throw new UnauthorizedException('Usuario no encontrado');
+        }
+
         request.user = result.user as SupabaseUser;
         this.logger.log(
           `token validated successfully for user: ${

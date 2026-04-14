@@ -1,12 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'; // Importa Swagger
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import type { Express, Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
 
   const isProduction = process.env.NODE_ENV === 'production';
 
@@ -35,22 +36,26 @@ async function bootstrap() {
       },
 
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-
       strictTransportSecurity: {
         maxAge: 31536000, // 1 año (requerido para HSTS preload)
         includeSubDomains: true,
         preload: true,
       },
-
       frameguard: { action: 'deny' },
       noSniff: true,
     }),
   );
 
+  // --- CONFIGURACIÓN DE CORS ---
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') ?? [],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: [frontendUrl, 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'X-Requested-With',
+    ],
     credentials: true,
   });
 
@@ -62,7 +67,7 @@ async function bootstrap() {
     }),
   );
 
-  // --- CONFIGURACIÓN DE SWAGGER ---
+  // --- SWAGGER ---
   if (!isProduction) {
     const config = new DocumentBuilder()
       .setTitle('GoblinHub API')
@@ -71,7 +76,6 @@ async function bootstrap() {
       )
       .setVersion('1.0')
       .addBearerAuth(
-        // Habilita autenticación JWT en la UI
         {
           type: 'http',
           scheme: 'bearer',
@@ -80,16 +84,13 @@ async function bootstrap() {
           description: 'Introduce tu token JWT de Supabase',
           in: 'header',
         },
-        'access-token', // Nombre de referencia para los controladores
+        'access-token',
       )
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
-    // URL: http://localhost:3000/api/docs
     SwaggerModule.setup('api/docs', app, document, {
-      swaggerOptions: {
-        persistAuthorization: true, // Mantiene el token aunque recargues la página
-      },
+      swaggerOptions: { persistAuthorization: true },
     });
   }
 
@@ -129,8 +130,5 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
   console.log(`🚀 API corriendo en: http://localhost:3000`);
-  if (!isProduction) {
-    console.log(`📑 Swagger disponible en: http://localhost:3000/api/docs`);
-  }
 }
 void bootstrap();

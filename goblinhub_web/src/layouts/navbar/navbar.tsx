@@ -1,29 +1,51 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Button from "../../components/button/button";
-import AuthButton from "../../components/authButton/authButton";
-import { logout } from "../../services/auth.service";
+import { logout, getMe } from "../../services/auth.service";
+import defaultAvatar from "../../assets/default_perfil.png";
 import "./navbar.css";
-import { useLocation } from "react-router-dom";
+import type { MeResponseDto } from "../../types/auth.types";
 
 function Nav() {
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [usuarioAbierto, setUsuarioAbierto] = useState(false);
+  const [fotoPerfil, setFotoPerfil] = useState<string | null>(null);
+  const [user, setUser] = useState<MeResponseDto | null>(null);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Cerrar dropdown al hacer click fuera
+  const isLoggedIn = !!localStorage.getItem("token");
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      getMe()
+        .then((res) => {
+          setFotoPerfil(res.data.foto_perfil_url ?? null);
+          setUser(res.data);
+        })
+        .catch(() => {
+          setFotoPerfil(null);
+          setUser(null);
+        });
+    }
+  }, [isLoggedIn]);
+
+  // cerrar dropdown al hacer click fuera
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(e.target as Node)
       ) {
-        // dropdown removed
+        setUsuarioAbierto(false);
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
@@ -31,6 +53,7 @@ function Nav() {
 
   const handlePerfil = () => {
     navigate("/perfil");
+    setUsuarioAbierto(false);
   };
 
   const handleCerrarSesion = () => {
@@ -38,16 +61,16 @@ function Nav() {
     navigate("/login");
   };
 
-  const isLoggedIn = !!localStorage.getItem("token");
-
   return (
     <div className="logo-container">
       {/* Logo */}
+
       <div className="Logo">
         <img src={"/logo.png"} alt="goblin" className="nav-goblin" />
       </div>
 
       {/* Navegación desktop */}
+
       <div className="nav-botones">
         <Link to="/">
           <Button className="secondary">Inicio</Button>
@@ -64,7 +87,58 @@ function Nav() {
         <Link to="/eventos">
           <Button className="secondary">Eventos</Button>
         </Link>
+
+        {(user?.rol === "admin" || user?.rol === "empleado") && (
+          <Link to="/admin">
+            <Button className="secondary">Dashboard</Button>
+          </Link>
+        )}
       </div>
+
+      {/* BOTÓN USUARIO */}
+
+      <div className="usuario-wrapper" ref={dropdownRef}>
+        {isLoggedIn ? (
+          <>
+            <button
+              className={`usuario ${usuarioAbierto ? "usuario--active" : ""}`}
+              onClick={() => setUsuarioAbierto(!usuarioAbierto)}
+            >
+              <img
+                src={fotoPerfil ?? defaultAvatar}
+                alt="perfil"
+                className="usuario-avatar"
+              />
+            </button>
+
+            {usuarioAbierto && (
+              <div className="usuario-dropdown">
+                <button
+                  className="usuario-dropdown__item"
+                  onClick={handlePerfil}
+                >
+                  Mi perfil
+                </button>
+
+                <div className="usuario-dropdown__divider"></div>
+
+                <button
+                  className="usuario-dropdown__item"
+                  onClick={handleCerrarSesion}
+                >
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <Button className="nav-btn--login" onClick={() => navigate("/login")}>
+            Iniciar sesión
+          </Button>
+        )}
+      </div>
+
+      {/* BOTÓN HAMBURGUESA */}
 
       <button
         className="hamburguesa"
@@ -73,9 +147,11 @@ function Nav() {
         ☰
       </button>
 
+      {/* MENÚ MÓVIL */}
+
       <div className={`ham-botones ${menuAbierto ? "activo" : ""}`}>
         <button className="ham-cerrar" onClick={() => setMenuAbierto(false)}>
-          X
+          ✕
         </button>
 
         <Link to="/" onClick={() => setMenuAbierto(false)}>
@@ -94,34 +170,22 @@ function Nav() {
           <Button className="ham-button">Eventos</Button>
         </Link>
 
-        <AuthButton
-          variant="mobile"
-          isLoggedIn={isLoggedIn}
-          onPerfil={() => {
-            handlePerfil();
-            setMenuAbierto(false);
-          }}
-          onLogout={() => {
-            handleCerrarSesion();
-            setMenuAbierto(false);
-          }}
-        />
+        {isLoggedIn && (
+          <>
+            <Button className="ham-button" onClick={handlePerfil}>
+              Mi perfil
+            </Button>
+
+            <Button className="ham-button" onClick={handleCerrarSesion}>
+              Cerrar sesión
+            </Button>
+          </>
+        )}
       </div>
 
-      {/* Overlay */}
       {menuAbierto && (
         <div className="overlay" onClick={() => setMenuAbierto(false)} />
       )}
-
-      {/* AuthButton desktop */}
-      <div ref={dropdownRef} className="auth-desktop">
-        <AuthButton
-          isLoggedIn={isLoggedIn}
-          variant="desktop"
-          onPerfil={handlePerfil}
-          onLogout={handleCerrarSesion}
-        />
-      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Nav from "./layouts/navbar/navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -9,33 +9,66 @@ import CalendarioAventuras from "./pages/Events/main";
 import EventoDetalle from "./pages/Events/EventoDetalle/EventoDetalle";
 import Login from "./pages/login/Login";
 import RegisterFlow from "./pages/register/RegisterFlow";
-import AuthHome from "./pages/Home/Home";
 import PerfilPage from "./pages/perfil/PerfilPage";
 import ProductosDetalle from "./pages/products/ProductosDetalle/productsDetails";
 import ResetPassword from "./pages/resetPassword/ResetPassword";
+import ConfirmAccount from "./pages/confirmAccount/ConfirmAccount";
+import EventosAdmin from "./pages/perfil/administracion/eventos/EventoAdmin";
+import VerEventoPage from "./pages/perfil/administracion/eventos/verEvento/VerEvento";
+import UsuariosAdmin from "./pages/perfil/administracion/usuarios/UsuariosAdmin";
+import LogsAdmin from "./pages/admin/logs/LogsAdmin";
+//import ProductosAdmin from "./pages/perfil/administracion/productos/productosAdmin";
+import Administracion from "./pages/perfil/administracion/Administracion";
+import Reportes from "./pages/perfil/administracion/reportes/Reportes";
+import CapacitacionNovatos from "./pages/perfil/administracion/novatos/CapacitacionNovatos";
 
 function App() {
+  const location = useLocation();
+  const hideNav = ["/register", "/confirm-account", "/reset-password"].includes(
+    location.pathname,
+  );
+
   return (
     <>
-      <Nav />
+      {!hideNav && <Nav />}
 
       <Routes>
-        {/* Rutas públicas */}
-        <Route path="/productos/:id" element={<ProductosDetalle />} />
+        {/* PUBLICAS */}
+
         <Route path="/" element={<Home />} />
         <Route path="/productos" element={<Products />} />
+        <Route path="/productos/:id" element={<ProductosDetalle />} />
         <Route path="/contacto" element={<AboutUs />} />
         <Route path="/eventos" element={<CalendarioAventuras />} />
         <Route path="/eventos/:id" element={<EventoDetalle />} />
         <Route path="/register" element={<RegisterFlow />} />
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/confirm-account" element={<ConfirmAccount />} />
+        <Route path="/eventosAdmin" element={<EventosAdmin />} />
+        <Route path="/verEvento/:id" element={<VerEventoPage />} />
+        <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
 
-        {/* Rutas protegidas (requieren JWT) */}
+        {/* Ruta protegidas (requieren JWT) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/auth-home" element={<AuthHome />} />
           <Route path="/perfil" element={<PerfilPage />} />
+          <Route path="/administration" element={<Administracion />} />
+          <Route path="/admin/reportes" element={<Reportes />} />
+          <Route path="/admin/novatos" element={<CapacitacionNovatos />} />
         </Route>
+
+        {/* ADMIN (Solo para rol 'admin') */}
+        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+          <Route path="/admin" element={<Administracion />} />
+          <Route path="/admin/logs" element={<LogsAdmin />} />
+          <Route path="/eventosAdmin" element={<EventosAdmin />} />
+          <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
+          <Route path="/verEvento/:id" element={<VerEventoPage />} />
+          <Route path="/admin/novatos" element={<CapacitacionNovatos />} />
+        </Route>
+
+        {/* Cualquier ruta desconocida → inicio */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

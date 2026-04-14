@@ -1,107 +1,146 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./products.css";
-import images from "../../assets/images.jpg";
+// Ajusta la ruta de importación de tu servicio según tu estructura
+import { productsService } from "../../services/products.service"; 
+// Importas tu imagen por defecto por si algún producto no tiene imagen en la BD
+import defaultImage from "../../assets/images.jpg";
 
-interface Producto {
-  id: number;
+// Actualizamos la interfaz para que coincida con lo que devuelve tu backend
+export interface Producto {
+  id: string | number;
   nombre: string;
   precio: number;
-  imagen: string;
+  imagen_url?: string; // Suele llamarse así en BD, ajusta si es diferente
+  imagen?: string;
   popular?: boolean;
   nuevo?: boolean;
   categoria: string;
   descripcion: string;
 }
 
+const CATEGORIAS = [
+  "Wargames", 
+  "Juegos de rol", 
+  "Juegos de mesa", 
+  "Pinturas", 
+  "Accesorios"
+];
+
 function ProductsPage() {
-  const [productos] = useState<Producto[]>([
-    {
-      id: 1,
-      nombre: "Space Marine Battle Sector",
-      precio: 1200,
-      imagen: images,
-      popular: true,
-      categoria: "Wargames",
-      descripcion: "Juego de estrategia basado en el universo de Warhammer 40K.",
-    },
-    {
-      id: 2,
-      nombre: "Tyranid Prime",
-      precio: 800,
-      imagen: "https://via.placeholder.com/400x300",
-      categoria: "Wargames",
-      descripcion: "Miniatura del comandante Tyranid para Warhammer 40K.",
-    },
-    {
-      id: 3,
-      nombre: "Roboute Guilliman",
-      precio: 3500,
-      imagen: "https://via.placeholder.com/400x300",
-      nuevo: true,
-      categoria: "Wargames",
-      descripcion: "Primarca de los Ultramarines para Warhammer 40K.",
-    },
-    {
-      id: 4,
-      nombre: "Rey Silente",
-      precio: 1200,
-      imagen: "https://via.placeholder.com/400x300",
-      popular: true,
-      categoria: "Wargames",
-      descripcion: "Gran señor de los necrones, dinastía Szarekhan.",
-    },
-  ]);
+  // 1. Nuevos Estados (Req: Carga, Error y Datos reales)
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
+
+  // 2. Efecto para consumir la API
+  useEffect(() => {
+    const fetchProductos = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        let data;
+        // Si hay una categoría seleccionada, llamamos al endpoint de filtro
+        if (categoriaActiva) {
+          data = await productsService.getProductsByCategory(categoriaActiva);
+        } else {
+          // Si no, traemos todo el catálogo
+          data = await productsService.getAllProducts();
+        }
+        setProductos(data);
+      } catch (err) {
+        console.error("Error al cargar productos:", err);
+        setError("No pudimos conectar con la base de datos de la Guarida. Intenta nuevamente.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProductos();
+  }, [categoriaActiva]); // Se vuelve a ejecutar si cambias de categoría
 
   return (
     <div className="product-page">
       <h1 className="products-title">Nuestro inventario</h1>
       <h2 className="products-subtitle">
-        Explora nuestra selección de wargames, juegos de rol, juegos de mesa y accesorios. 
-        Control de stock en tiempo real.
+        Explora nuestra selección de wargames, juegos de rol, juegos de mesa y
+        accesorios. Control de stock en tiempo real.
       </h2>
 
+      {/* --- BOTONES DE FILTRO --- */}
       <div className="list-category">
-        <button className="category-button">Wargames</button>
-        <button className="category-button">Juegos de rol</button>
-        <button className="category-button">Juegos de mesa</button>
-        <button className="category-button">Pinturas</button>
-        <button className="category-button">Accesorios</button>
-      </div>
+        <button 
+          className={`category-button ${!categoriaActiva ? 'active' : ''}`}
+          onClick={() => setCategoriaActiva(null)}
+          style={{ backgroundColor: !categoriaActiva ? '#4a148c' : '', color: !categoriaActiva ? 'white' : '' }}
+        >
+          Todos
+        </button>
 
-      <div className="products-grid">
-        {productos.map((producto) => (
-          <Link
-            to={`/productos/${producto.id}`}
-            key={producto.id}
-            className="product-card"
+        {CATEGORIAS.map((cat) => (
+          <button 
+            key={cat}
+            className={`category-button ${categoriaActiva === cat ? 'active' : ''}`}
+            onClick={() => setCategoriaActiva(cat)}
+            // Un pequeño estilo en línea rápido para indicar cuál está activo, 
+            // aunque lo ideal es que lo manejes en tu products.css con la clase .active
+            style={{ backgroundColor: categoriaActiva === cat ? '#4a148c' : '', color: categoriaActiva === cat ? 'white' : '' }}
           >
-            {producto.popular && (
-              <p className="product-popular">Popular</p>
-            )}
-
-            {producto.nuevo && (
-              <p className="product-nuevo">Nuevo</p>
-            )}
-
-            <div className="product-image">
-              <img src={producto.imagen} alt={producto.nombre} />
-            </div>
-
-            <p className="product-category">{producto.categoria}</p>
-
-            <h3 className="product-name">{producto.nombre}</h3>
-
-            <p className="product-description">
-              {producto.descripcion}
-            </p>
-
-            <p className="product-price">
-              ${producto.precio}
-            </p>
-          </Link>
+            {cat}
+          </button>
         ))}
       </div>
+
+      {/* --- ESTADOS DE CARGA Y ERROR --- */}
+      {loading && (
+        <div className="loading-container" style={{ textAlign: 'center', padding: '40px' }}>
+          <p className="animate-pulse text-xl">Cargando inventario de la guarida...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="error-container" style={{ textAlign: 'center', color: 'red', padding: '20px' }}>
+          <p>{error}</p>
+        </div>
+      )}
+
+      {/* --- GRID DE PRODUCTOS --- */}
+      {!loading && !error && (
+        <div className="products-grid">
+          {productos.length > 0 ? (
+            productos.map((producto) => (
+              <Link
+                to={`/productos/${producto.id}`}
+                key={producto.id}
+                className="product-card"
+              >
+                {producto.popular && <p className="product-popular">Popular</p>}
+                {producto.nuevo && <p className="product-nuevo">Nuevo</p>}
+
+                <div className="product-image">
+                  {/* Usamos la imagen de la BD o la imagen por defecto si viene vacía */}
+                  <img 
+                    src={producto.imagen_url || producto.imagen || defaultImage} 
+                    alt={producto.nombre} 
+                    onError={(e) => { e.currentTarget.src = defaultImage }} // Fallback si la URL está rota
+                  />
+                </div>
+
+                <p className="product-category">{producto.categoria}</p>
+                <h3 className="product-name">{producto.nombre}</h3>
+                <p className="product-description">{producto.descripcion}</p>
+                <p className="product-price">${producto.precio}</p>
+              </Link>
+            ))
+          ) : (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
+              <p>No se encontraron productos en esta categoría.</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

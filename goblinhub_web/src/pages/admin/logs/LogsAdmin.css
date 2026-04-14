@@ -1,0 +1,401 @@
+/* LogsAdmin.css - Estilos modernos para la página de administración de logs */
+
+.logs-admin-container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+        Ubuntu, Cantarell, sans-serif;
+}
+
+/* Header */
+.logs-admin-header {
+    margin-bottom: 2rem;
+}
+
+.logs-admin-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.logs-admin-subtitle {
+    font-size: 0.95rem;
+    color: #6b7280;
+    margin: 0.5rem 0 0 0;
+}
+
+/* Filtros */
+.logs-admin-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.filter-input {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    color: #1f2937;
+    transition: all 0.2s ease;
+}
+
+.filter-input:hover {
+    border-color: #9ca3af;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-hint {
+    font-size: 0.75rem;
+    color: #f59e0b;
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+/* Estados */
+.logs-admin-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    color: #6b7280;
+}
+
+.loader {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.logs-admin-error {
+    padding: 1.5rem;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.error-title {
+    font-weight: 600;
+    color: #991b1b;
+    margin: 0 0 0.5rem 0;
+}
+
+.error-message {
+    color: #7f1d1d;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Tabla */
+.logs-admin-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 2rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.logs-admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.table-header-row {
+    background: #f3f4f6;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.table-header-cell {
+    padding: 1rem;
+    text-align: left;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.table-body-row {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s ease;
+}
+
+.table-body-row:hover {
+    background: #f9fafb;
+}
+
+.table-cell {
+    padding: 1rem;
+    font-size: 0.875rem;
+    color: #1f2937;
+}
+
+.table-cell.font-mono {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+}
+
+.table-cell.text-sm {
+    font-size: 0.8rem;
+}
+
+.table-cell.text-gray-700 {
+    color: #374151;
+}
+
+.user-name {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.text-gray-400 {
+    color: #9ca3af;
+}
+
+/* Badge para tipo */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Botón expandir */
+.expand-button {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.25rem 0.5rem;
+    transition: color 0.2s ease;
+}
+
+.expand-button:hover {
+    color: #1d4ed8;
+}
+
+/* Fila expandida */
+.table-expanded-row {
+    background: #f0f9ff;
+}
+
+.table-expanded-cell {
+    padding: 0 !important;
+}
+
+.expanded-content {
+    padding: 1rem;
+}
+
+.expanded-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 0.75rem 0;
+}
+
+.code-block {
+    background: #1f2937;
+    color: #f3f4f6;
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    margin: 0;
+    font-family: 'Courier New', monospace;
+}
+
+/* Paginación */
+.logs-admin-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 1.5rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.pagination-info {
+    font-size: 0.875rem;
+    color: #1f2937;
+}
+
+.pagination-info p {
+    margin: 0;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pagination-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    color: #1f2937;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.pagination-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info-compact {
+    font-size: 0.875rem;
+    color: #1f2937;
+}
+
+.pagination-limit {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pagination-limit label {
+    font-size: 0.875rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+/* Estado vacío */
+.logs-admin-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    color: #9ca3af;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.empty-text {
+    font-size: 1rem;
+    color: #6b7280;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .logs-admin-container {
+        margin: 1rem auto;
+        padding: 0 0.5rem;
+    }
+
+    .logs-admin-title {
+        font-size: 1.5rem;
+    }
+
+    .logs-admin-filters {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+
+    .table-header-cell,
+    .table-cell {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .logs-admin-pagination {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .pagination-controls {
+        justify-content: space-between;
+    }
+
+    .logs-admin-table-wrapper {
+        border-radius: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .logs-admin-title {
+        font-size: 1.25rem;
+    }
+
+    .table-header-cell,
+    .table-cell {
+        padding: 0.5rem;
+        font-size: 0.7rem;
+    }
+
+    .badge {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.65rem;
+    }
+
+    .code-block {
+        font-size: 0.65rem;
+    }
+
+    .pagination-info {
+        font-size: 0.8rem;
+    }
+
+    .expand-button {
+        font-size: 0.8rem;
+    }
+}

@@ -1,0 +1,174 @@
+/* OVERLAY */
+
+.user-edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  z-index: 1100;
+}
+
+/* MODAL */
+
+.user-edit-modal {
+  background: #f5f0e8;
+  border: 0.2rem solid rgb(76, 9, 137);
+  border-radius: 1rem;
+  padding: 2.2rem;
+  width: min(92vw, 68rem);
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.3);
+}
+
+/* BOTÓN CERRAR */
+
+.user-edit-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #4c0989;
+}
+
+.user-edit-close:hover {
+  transform: scale(1.06);
+}
+
+/* TÍTULO */
+
+.user-edit-modal h2 {
+  font-size: 2rem;
+  margin-bottom: 1.6rem;
+  color: #4c0989;
+}
+
+/* FORM */
+
+.user-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.user-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.user-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.user-edit-field--full {
+  grid-column: 1 / -1;
+}
+
+.user-edit-form label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #4c0989;
+}
+
+.user-edit-form input,
+.user-edit-form select {
+  padding: 0.62rem 0.72rem;
+  border-radius: 0.5rem;
+  border: 0.2rem solid rgb(76, 9, 137);
+  font-size: 1.2rem;
+  background: #fff;
+}
+
+/* BOTONES */
+
+.user-edit-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
+
+/* GUARDAR */
+
+.save-btn {
+  background: white;
+
+  border: 0.2rem solid rgb(76, 9, 137);
+
+  border-radius: 1.5rem;
+
+  padding: 0.4rem 1rem;
+
+  font-weight: 600;
+
+  color: rgb(76, 9, 137);
+
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+}
+
+.save-btn:hover {
+  background: rgb(76, 9, 137);
+
+  color: white;
+
+  transform: translateY(-2px);
+}
+
+/* CANCELAR */
+
+.cancel-btn {
+  background: white;
+
+  border: 0.2rem solid #dc2626;
+
+  border-radius: 1.5rem;
+
+  padding: 0.4rem 1rem;
+
+  font-weight: 600;
+
+  color: #dc2626;
+
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+}
+
+.cancel-btn:hover {
+  background: #dc2626;
+
+  color: white;
+
+  transform: translateY(-2px);
+}
+
+@media (max-width: 720px) {
+  .user-edit-modal {
+    padding: 1.4rem;
+  }
+
+  .user-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-edit-buttons {
+    flex-direction: column-reverse;
+  }
+
+  .save-btn,
+  .cancel-btn {
+    width: 100%;
+  }
+}

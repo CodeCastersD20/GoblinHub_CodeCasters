@@ -120,4 +120,33 @@ describe('CreateRewardUseCase', () => {
       expect((e as HttpException).getStatus()).toBe(418);
     }
   });
+
+  it('debe crear recompensa usando defaults cuando descripcion y activa son undefined', async () => {
+    userRepo.findRolById.mockResolvedValue(RolUsuario.admin);
+    rewardRepo.findByName.mockResolvedValue(null);
+    rewardRepo.create.mockResolvedValue(mockCreatedReward);
+
+    const dtoSinOpcionales: CreateRecompensaDto = {
+      nombre: 'Poción de Vida Extra',
+      descripcion: undefined,
+      costo_puntos: 100,
+      tipo: TipoRecompensa.DESCUENTO,
+      valor_descuento: 0,
+      activa: undefined,
+    };
+
+    const result = await useCase.createReward(dtoSinOpcionales, 'admin-uuid');
+    expect(result).toBe(mockCreatedReward);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(rewardRepo.create).toHaveBeenCalled();
+  });
+
+  it('debe lanzar HttpException 500 con String() si el error no es instancia de Error', async () => {
+    userRepo.findRolById.mockResolvedValue(RolUsuario.admin);
+    rewardRepo.findByName.mockRejectedValue('string-error-no-Error-instance');
+
+    await expect(useCase.createReward(mockDto, 'admin-uuid')).rejects.toThrow(
+      HttpException,
+    );
+  });
 });

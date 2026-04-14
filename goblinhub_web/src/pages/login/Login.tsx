@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
 import {
   login,
   forgotPassword as sendForgotPassword,
+  getMe,
 } from "../../services/auth.service";
 
 const Login: React.FC = () => {
@@ -17,7 +18,47 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleForgotPassword = async () => {
+  // ✅ useCallback garantiza que handleLogin siempre tenga email y password actualizados
+  const handleLogin = useCallback(async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const { data } = await login(email, password);
+      localStorage.setItem("token", data.access_token);
+      if (data.refresh_token) {
+        localStorage.setItem("refresh_token", data.refresh_token);
+      }
+
+      const signInRole =
+        typeof data.rol === "string" ? data.rol.toLowerCase() : null;
+
+      if (signInRole) {
+        localStorage.setItem("rol", signInRole);
+      } else {
+        try {
+          const meResponse = await getMe();
+          const meRole = meResponse.data?.rol;
+          if (typeof meRole === "string") {
+            localStorage.setItem("rol", meRole.toLowerCase());
+          }
+        } catch {
+          localStorage.removeItem("rol");
+        }
+      }
+
+      navigate("/");
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data?.message ?? "Correo o contraseña incorrectos")
+        : "Correo o contraseña incorrectos";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [email, password, navigate]); // 👈 se recrea solo cuando cambian estos valores
+
+  // ✅ useCallback con lógica real de develop
+  const handleForgotPassword = useCallback(async () => {
     setError("");
     setLoading(true);
     try {
@@ -31,24 +72,21 @@ const Login: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [forgotEmail]);
 
-  const handleLogin = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      const { data } = await login(email, password);
-      localStorage.setItem("token", data.access_token);
-      navigate("/auth-home");
-    } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data?.message ?? "Correo o contraseña incorrectos")
-        : "Correo o contraseña incorrectos";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        if (forgotPassword) {
+          handleForgotPassword();
+        } else {
+          handleLogin();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [forgotPassword, handleLogin, handleForgotPassword]);
 
   return (
     <div className="base-login">
@@ -62,7 +100,6 @@ const Login: React.FC = () => {
       </div>
 
       {!forgotPassword ? (
-        // ——— VISTA LOGIN ———
         <div className="form-login">
           <label className="inicio-sesion">Iniciar sesión</label>
           <input
@@ -78,17 +115,16 @@ const Login: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && <span className="error-msg">{error}</span>}
-          <span className="contraseña" onClick={() => setForgotPassword(true)}>
+          <a className="contraseña" onClick={() => setForgotPassword(true)}>
             ¿Olvidaste tu contraseña?
-          </span>
+          </a>
           <button className="entrar" onClick={handleLogin} disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? "Login..." : "Login"}
           </button>
-          <p>¿No tienes una cuenta?</p>
+          <label className="cuenta">¿No tienes una cuenta?</label>
           <a href="/register">Regístrate aquí</a>
         </div>
       ) : (
-        // ——— VISTA RECUPERAR CONTRASEÑA ———
         <div className="form-login">
           <label className="inicio-sesion">Recuperar Contraseña</label>
           {forgotSent ? (
@@ -109,9 +145,9 @@ const Login: React.FC = () => {
                 onChange={(e) => setForgotEmail(e.target.value)}
               />
               {error && <span className="error-msg">{error}</span>}
-              <div className="botones">
+              <div className="botones-login">
                 <button
-                  className="entrar"
+                  className="enviar"
                   onClick={handleForgotPassword}
                   disabled={loading}
                 >

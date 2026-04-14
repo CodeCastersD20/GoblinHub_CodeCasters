@@ -1,120 +1,187 @@
 .base-login {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  flex: 1;
 }
 
 .goblin-login {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 200px;
-    background-color: ghostwhite;
-    border-radius: 10px;
-    box-shadow: 10px 10px rgb(76, 9, 137);
-    animation: flotando 5s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60%;
+  height: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+  background-color: #ede7db;
+  border-radius: 10px;
+  box-shadow: 10px 10px rgb(76, 9, 137);
+  animation: flotando 5s ease-in-out infinite;
+  border: 2px solid rgb(76, 9, 137);
 }
-
 
 @keyframes flotando {
-    0%   { transform: translateY(0px);    box-shadow: 10px 10px rgb(76, 9, 137); }
-    50%  { transform: translateY(-15px);  box-shadow: 15px 25px rgb(76, 9, 137); }
-    100% { transform: translateY(0px);    box-shadow: 10px 10px rgb(76, 9, 137); }
+  0% {
+    transform: translateY(0px);
+    box-shadow: 10px 10px rgb(76, 9, 137);
+  }
+  50% {
+    transform: translateY(-15px);
+    box-shadow: 15px 25px rgb(76, 9, 137);
+  }
+  100% {
+    transform: translateY(0px);
+    box-shadow: 10px 10px rgb(76, 9, 137);
+  }
 }
 
-
 .logo-login {
-    display: flex;
-    justify-content: center; 
-    align-items: center;
-    background-color: rgb(235, 200, 219);
-    height: 100%;
-    max-width: 70vw;
-    flex: 1;
-    flex-direction: column;
-    position: relative; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f0e8;
+  height: 100%;
+  width: 70%;
+  flex-wrap: wrap;
+  flex-direction: column;
+  position: relative;
 }
 
 .volver {
-    position: absolute; 
-    top: 15px;
-    left: 15px;
-    color: rgb(76, 9, 137);
-    text-decoration: none;
-    font-size: 18px;
-    cursor: pointer;
-    margin: 15px;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  color: rgb(76, 9, 137);
+  text-decoration: none;
+  font-size: 18px;
+  cursor: pointer;
+  margin: 15px;
 }
 
 .form-login {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: rgb(76, 9, 137);
+  width: 40%;
+  height: 100%;
+}
+
+.inicio-sesion {
+  font-size: 4rem;
+  color: white;
+  margin: 20px;
+  text-align: center;
+}
+
+input {
+  margin: 10px;
+  height: 5%;
+  width: 80%;
+}
+
+.contraseña,
+a {
+  color: rgb(235, 200, 219);
+  text-decoration: none;
+  font-size: 1.5rem;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.cuenta {
+  color: white;
+  font-size: 2.5rem;
+  margin: 10px;
+  text-align: center;
+}
+
+.entrar {
+  color: white;
+  background-color: rgb(108, 188, 16);
+  margin: 10px;
+  font-size: 3rem;
+  height: 3.8rem;
+  width: 40%;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.instrucciones {
+  color: rgba(255, 255, 255, 0.682);
+  font-size: 1.5rem;
+  margin: 10px;
+  text-align: center;
+}
+
+.error-msg {
+  color: #ff0000;
+  font-size: 2rem;
+  margin: 5px 10px;
+  text-align: center;
+}
+
+.botones-login{
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    background-color: rgb(76, 9, 137);
-    max-width: 30vw;
-    height: 100%;
-    flex: 1;
+    flex-direction: row;
 }
 
-.inicio-sesion{
-    font-size: 40px;
-    color: white;
-    margin: 20px;
+.enviar{
+  color: white;
+  background-color: rgb(108, 188, 16);
+  margin: 10px;
+  font-size: 3rem;
+  height: 3.8rem;
+  width: auto;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
 }
 
-input{
-    margin: 15px;
-    height: 30px;
-    width: 80%;
+.cancelar {
+  color: white;
+  background-color: rgba(184, 16, 16);
+  margin: 10px;
+  font-size: 3rem;
+  height: 3.8rem;
+  padding: 5px;
+  border: none;
+  border-radius: 5px;
 }
 
-.contraseña, a{
-    color: rgb(235, 200, 219);
-    text-decoration: none;
-    margin: 10px;
-}
+@media (max-width: 768px) {
+  .base-login {
+    flex-direction: column;
+  }
 
-p{
-    color: white;
-    font-size: 20px;
-    margin: 10px;
-}
+  .goblin-login {
+    max-height: 10rem;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
 
-.entrar{
-    color: white;
-    background-color: rgb(108, 188, 16);
-    margin: 10px;
-    font-size: 20px;
-    height: 40px;
-    width: 40%;
-    border: none;
-    border-radius: 5px;
-}
+  .logo-login {
+    height: 40%;
+    width: 100%;
+  }
 
-.instrucciones{
-    color: rgba(255, 255, 255, 0.682);
-    font-size: 18px;
-    margin: 10px;
-    text-align: start;
-}
+  .botones{
+    flex-direction: row;
+  }
 
-.botones{
-    display: flex;
-    justify-content: space-between;
-    width: 80%;
-}
-
-.cancelar{
-    color: white;
-    background-color: rgba(184, 16, 16);
-    margin: 10px;
-    font-size: 20px;
-    height: 40px;
-    border: none;
-    border-radius: 5px;
+  .form-login {
+    height: 70%;
+    width: 100%;
+    justify-content: start;
+    padding-top: 2rem;
+  }
 }

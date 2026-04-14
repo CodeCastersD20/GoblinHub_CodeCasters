@@ -1,7 +1,7 @@
 import { UpdateRewardUseCase } from './update-reward.use-case';
 import { RewardRepository } from '../../domain/repositories/reward.repository';
 import { UsuarioRepository } from '../../../supabase/domain/repositories/usuario.repository';
-import { HttpException } from '@nestjs/common';
+import { ForbiddenException, HttpException } from '@nestjs/common';
 import { Recompensa } from '../../domain/entities/reward.entity';
 import { TipoRecompensa } from '../../domain/enums/reward.enum';
 import { UpdateRecompensaDto } from '../dtos/update-reward.dto';
@@ -104,6 +104,34 @@ describe('UpdateRewardUseCase', () => {
 
     await expect(useCase.updateReward(1, {}, adminUserId)).rejects.toThrow(
       errorHttp,
+    );
+  });
+
+  it('debe lanzar ForbiddenException si el rol del usuario es inválido (ni admin ni empleado)', async () => {
+    usuarioRepo.findRolById.mockResolvedValue(null);
+    rewardRepo.findById.mockResolvedValue(mockExistingReward);
+
+    await expect(useCase.updateReward(1, {}, 'user-uuid')).rejects.toThrow(
+      ForbiddenException,
+    );
+  });
+
+  it('debe lanzar ForbiddenException si un empleado intenta editar una recompensa que no creó', async () => {
+    usuarioRepo.findRolById.mockResolvedValue(RolUsuario.empleado);
+    const rewardByOther = new Recompensa(
+      1,
+      'Cupón de Descuento',
+      '10% de descuento en la tienda',
+      50,
+      TipoRecompensa.DESCUENTO,
+      10,
+      true,
+    );
+    // id_creador is undefined by default → !== 'empleado-uuid'
+    rewardRepo.findById.mockResolvedValue(rewardByOther);
+
+    await expect(useCase.updateReward(1, {}, 'empleado-uuid')).rejects.toThrow(
+      ForbiddenException,
     );
   });
 });

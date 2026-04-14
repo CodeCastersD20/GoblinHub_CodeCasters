@@ -17,7 +17,7 @@ function RegisterHeader({ faseActual }: RegisterHeaderProps) {
     <>
       <div className="encabezado">
         <img src={logo} alt="goblin" className="goblin" />
-        <h1 className="title">Únete a la Comunidad</h1>
+        <label className="title">Únete a la Comunidad</label>
         <p className="subtitle">Tu aventura comienza aquí</p>
       </div>
       <div className="fases">

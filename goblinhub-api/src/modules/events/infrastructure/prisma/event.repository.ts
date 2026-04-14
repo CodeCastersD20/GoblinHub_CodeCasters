@@ -11,6 +11,40 @@ export class EventRepositoryPrisma extends EventRepository {
     super();
   }
 
+  private toDate(value: string): Date {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new Error(`Invalid date value: ${value}`);
+    }
+    return parsed;
+  }
+
+  private toTime(value: string): Date {
+    const trimmed = value.trim();
+
+    if (trimmed.includes('T')) {
+      const parsed = new Date(trimmed);
+      if (!Number.isNaN(parsed.getTime())) return parsed;
+    }
+
+    const timeMatch = trimmed.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+    if (timeMatch) {
+      const hh = Number(timeMatch[1]);
+      const mm = Number(timeMatch[2]);
+      const ss = Number(timeMatch[3] ?? '0');
+
+      const isValidHour = hh >= 0 && hh <= 23;
+      const isValidMinute = mm >= 0 && mm <= 59;
+      const isValidSecond = ss >= 0 && ss <= 59;
+
+      if (isValidHour && isValidMinute && isValidSecond) {
+        return new Date(Date.UTC(1970, 0, 1, hh, mm, ss));
+      }
+    }
+
+    throw new Error(`Invalid time value: ${value}`);
+  }
+
   // --- Método auxiliar: evita repetir la construcción de la entidad ---
   private mapToDomain(e: PrismaEvento): Event {
     return new Event(
@@ -39,9 +73,9 @@ export class EventRepositoryPrisma extends EventRepository {
         titulo: event.titulo,
         descripcion: event.descripcion,
         tipo_evento: EventMapper.tipoToPrisma(event.tipo_evento),
-        fecha: new Date(event.fecha),
-        hora_inicio: new Date(event.hora_inicio),
-        hora_fin: event.hora_fin ? new Date(event.hora_fin) : undefined,
+        fecha: this.toDate(event.fecha),
+        hora_inicio: this.toTime(event.hora_inicio),
+        hora_fin: event.hora_fin ? this.toTime(event.hora_fin) : undefined,
         lugar: event.lugar,
         costo: event.costo,
         cupo_maximo: event.cupo_maximo,
@@ -109,9 +143,9 @@ export class EventRepositoryPrisma extends EventRepository {
         titulo: event.titulo,
         descripcion: event.descripcion,
         tipo_evento: EventMapper.tipoToPrisma(event.tipo_evento),
-        fecha: new Date(event.fecha),
-        hora_inicio: new Date(event.hora_inicio),
-        hora_fin: event.hora_fin ? new Date(event.hora_fin) : undefined,
+        fecha: this.toDate(event.fecha),
+        hora_inicio: this.toTime(event.hora_inicio),
+        hora_fin: event.hora_fin ? this.toTime(event.hora_fin) : undefined,
         lugar: event.lugar,
         costo: event.costo,
         cupo_maximo: event.cupo_maximo,
