@@ -15,6 +15,7 @@ import { UpdateFotoPerfilUseCase } from './application/use-case/update-foto-perf
 import { UpdatePerfilUseCase } from './application/use-case/update-perfil.use-case';
 import { SupabaseAuthGuard } from './guard/supabse-auth.guard';
 import { RolesGuard } from './guard/roles.guard';
+import { RefreshTokenThrottlerGuard } from './guard/refresh-token-throttler.guard';
 import { UsuarioRepository } from './domain/repositories/usuario.repository';
 import { UsuarioRepositoryPrisma } from './infrastructure/prisma/usuario.repository';
 
@@ -35,6 +36,7 @@ import { UsuarioRepositoryPrisma } from './infrastructure/prisma/usuario.reposit
     UpdatePerfilUseCase,
     SupabaseAuthGuard,
     RolesGuard,
+    RefreshTokenThrottlerGuard,
     {
       provide: UsuarioRepository,
       useClass: UsuarioRepositoryPrisma,
