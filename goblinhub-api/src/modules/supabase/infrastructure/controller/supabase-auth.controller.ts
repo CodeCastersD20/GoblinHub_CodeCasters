@@ -43,6 +43,7 @@ import {
   SignInTestuserDto,
 } from '../../application/dto/auth.dto';
 import { SupabaseAuthGuard } from '../../guard/supabse-auth.guard';
+import { RefreshTokenThrottlerGuard } from '../../guard/refresh-token-throttler.guard';
 import type { AuthenticatedRequest } from '../../interfaces/types/authenticated-request.interface';
 import { ForgotPasswordUseCase } from '../../application/use-case/forgot-password.use-case';
 import { ResetPasswordUseCase } from '../../application/use-case/reset-password.use-case';
@@ -93,6 +94,8 @@ export class SupabaseAuthController {
     return await this.registerUserService.register(registerUserDto);
   }
 
+  @UseGuards(RefreshTokenThrottlerGuard)
+  @Throttle({ default: { limit: 8, ttl: 60000 } })
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
   /* istanbul ignore next */
