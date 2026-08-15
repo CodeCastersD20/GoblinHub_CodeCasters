@@ -5,9 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import {
+  spawnPostgresClient,
+  withTemporaryPassfile,
+} from './database-credentials';
+import { validateManifest, writeManifest } from './backup-manifest';
 
 @Injectable()
 export class BackupService {
@@ -31,9 +35,11 @@ export class BackupService {
     path: string;
     sizeKb: number;
   }> {
-    const databaseUrl = this.configService.get<string>('DATABASE_URL');
+    const databaseUrl = this.configService.get<string>('BACKUP_DATABASE_URL');
     if (!databaseUrl) {
-      throw new InternalServerErrorException('DATABASE_URL is not configured');
+      throw new InternalServerErrorException(
+        'BACKUP_DATABASE_URL is not configured',
+      );
     }
 
     const timestamp = this.getTimestamp();
@@ -42,14 +48,27 @@ export class BackupService {
 
     this.logger.log(`Starting database backup → ${filename}`);
 
-    await this.runCommand('pg_dump', [
-      `--dbname=${databaseUrl}`,
-      '--no-password',
-      '--format=plain',
-      '--no-owner',
-      '--no-acl',
-      `--file=${filepath}`,
-    ]);
+    try {
+      await withTemporaryPassfile(databaseUrl, (safeUrl, env) =>
+        this.runCommand(
+          'pg_dump',
+          [
+            `--dbname=${safeUrl}`,
+            '--no-password',
+            '--format=plain',
+            '--no-owner',
+            '--no-acl',
+            '--schema=public',
+            `--file=${filepath}`,
+          ],
+          env,
+        ),
+      );
+      await writeManifest(filepath, filename);
+    } catch (error) {
+      await fs.promises.rm(filepath, { force: true });
+      throw error;
+    }
 
     const stats = fs.statSync(filepath);
     const sizeKb = Math.round(stats.size / 1024);
@@ -63,9 +82,11 @@ export class BackupService {
   // ──────────────────────────────────────────────
 
   async restoreBackup(filename: string): Promise<{ message: string }> {
-    const databaseUrl = this.configService.get<string>('DATABASE_URL');
+    const databaseUrl = this.configService.get<string>('RESTORE_DATABASE_URL');
     if (!databaseUrl) {
-      throw new InternalServerErrorException('DATABASE_URL is not configured');
+      throw new InternalServerErrorException(
+        'RESTORE_DATABASE_URL is not configured',
+      );
     }
 
     // Validar que el nombre no contiene path traversal
@@ -76,14 +97,29 @@ export class BackupService {
       throw new NotFoundException(`Backup file '${safeFilename}' not found`);
     }
 
+    try {
+      await validateManifest(filepath, safeFilename);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'invalid backup';
+      throw new InternalServerErrorException(
+        `Backup cannot be restored safely: ${message}`,
+      );
+    }
+
     this.logger.warn(`Starting database restore from: ${safeFilename}`);
 
-    await this.runCommand('psql', [
-      `--dbname=${databaseUrl}`,
-      '--no-password',
-      `--file=${filepath}`,
-      '--single-transaction',
-    ]);
+    await withTemporaryPassfile(databaseUrl, (safeUrl, env) =>
+      this.runCommand(
+        'psql',
+        [
+          `--dbname=${safeUrl}`,
+          '--no-password',
+          `--file=${filepath}`,
+          '--single-transaction',
+        ],
+        env,
+      ),
+    );
 
     this.logger.log(`Restore completed from: ${safeFilename}`);
     return { message: `Database restored successfully from '${safeFilename}'` };
@@ -132,38 +168,19 @@ export class BackupService {
     );
   }
 
-  private runCommand(command: string, args: string[]): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const proc = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-
-      let stderr = '';
-      proc.stderr.on('data', (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      proc.on('close', (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          this.logger.error(
-            `Command '${command}' failed (exit ${code}): ${stderr}`,
-          );
-          reject(
-            new InternalServerErrorException(
-              `'${command}' exited with code ${code}. Check server logs for details.`,
-            ),
-          );
-        }
-      });
-
-      proc.on('error', (err) => {
-        this.logger.error(`Failed to start '${command}': ${err.message}`);
-        reject(
-          new InternalServerErrorException(
-            `Could not start '${command}'. Make sure postgresql-client is installed.`,
-          ),
-        );
-      });
-    });
+  private async runCommand(
+    command: string,
+    args: string[],
+    env: NodeJS.ProcessEnv,
+  ): Promise<void> {
+    try {
+      await spawnPostgresClient(command, args, env);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown error';
+      this.logger.error(`PostgreSQL client '${command}' failed: ${message}`);
+      throw new InternalServerErrorException(
+        `'${command}' failed. Check server logs for details.`,
+      );
+    }
   }
 }
