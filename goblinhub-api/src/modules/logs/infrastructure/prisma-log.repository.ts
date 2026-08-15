@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/connect/prisma.service';
 import {
