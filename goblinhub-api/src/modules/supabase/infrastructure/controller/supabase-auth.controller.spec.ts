@@ -85,7 +85,7 @@ describe('SupabaseAuthController', () => {
       softDeleteForAdmin: jest.fn(),
       updateFotoPerfil: jest.fn(),
       updateProfile: jest.fn(),
-    } as unknown as jest.Mocked<UsuarioRepository>;
+    };
 
     controller = new SupabaseAuthController(
       validationService,

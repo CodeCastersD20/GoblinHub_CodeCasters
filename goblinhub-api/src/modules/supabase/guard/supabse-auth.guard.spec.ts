@@ -14,7 +14,7 @@ const mockSupabaseUser: User = {
   user_metadata: {},
   identities: [],
   created_at: '2026-01-01T00:00:00Z',
-} as User;
+};
 
 describe('SupabaseAuthGuard', () => {
   let guard: SupabaseAuthGuard;

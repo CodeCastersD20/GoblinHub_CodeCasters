@@ -124,7 +124,7 @@ export class PrismaLogRepository implements ILogRepository {
     await this.prisma.logs_Actividad.create({
       data: {
         // En lugar de usar el Enum de Prisma o 'any', lo parseamos con la magia de TypeScript
-        tipo: log.tipo as unknown as Prisma.Logs_ActividadCreateInput['tipo'],
+        tipo: log.tipo,
         accion: log.accion,
         mensaje: log.mensaje,
         id_usuario: log.id_usuario,
