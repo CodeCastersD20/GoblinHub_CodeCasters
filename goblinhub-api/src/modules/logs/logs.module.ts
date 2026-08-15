@@ -5,7 +5,7 @@ import { GetDashboardMetricsUseCase } from './application/use-case/get-dashboard
 import { PrismaLogRepository } from './infrastructure/prisma-log.repository';
 import { LOG_REPOSITORY } from './domain/repositories/log.repository';
 
-import { PrismaModule } from 'src/connect/prisma.module';
+import { PrismaModule } from '../../connect/prisma.module';
 
 import { SupabaseAuthModule } from '../supabase/supabase-auth.module';
 

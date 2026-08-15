@@ -8,6 +8,16 @@ import { UpdateFotoPerfilUseCase } from './update-foto-perfil.use-case';
 import { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import { SupabaseClient } from '@supabase/supabase-js';
 
+jest.mock('ioredis', () => {
+  return {
+    Redis: jest.fn().mockImplementation(() => ({
+      get: jest.fn().mockResolvedValue(null),
+      setex: jest.fn().mockResolvedValue('OK'),
+      del: jest.fn().mockResolvedValue(1),
+    })),
+  };
+});
+
 // Mock sharp at module level so compress never touches real image processing
 jest.mock('sharp', () => {
   const chain = {
@@ -19,19 +29,21 @@ jest.mock('sharp', () => {
 
 const mockBuffer = Buffer.from('fake-image-data');
 
-const buildFile = (mimetype = 'image/jpeg', size = 1024): Express.Multer.File =>
-  ({
-    mimetype,
-    size,
-    buffer: mockBuffer,
-    originalname: 'foto.jpg',
-    fieldname: 'file',
-    encoding: '7bit',
-    destination: '',
-    filename: '',
-    path: '',
-    stream: null as unknown as import('stream').Readable,
-  }) as Express.Multer.File;
+const buildFile = (
+  mimetype = 'image/jpeg',
+  size = 1024,
+): Express.Multer.File => ({
+  mimetype,
+  size,
+  buffer: mockBuffer,
+  originalname: 'foto.jpg',
+  fieldname: 'file',
+  encoding: '7bit',
+  destination: '',
+  filename: '',
+  path: '',
+  stream: null as unknown as import('stream').Readable,
+});
 
 describe('UpdateFotoPerfilUseCase', () => {
   let useCase: UpdateFotoPerfilUseCase;
@@ -95,7 +107,7 @@ describe('UpdateFotoPerfilUseCase', () => {
 
     it('debe subir una imagen jpeg y retornar la URL pública', async () => {
       usuarioRepository.findProfileById.mockResolvedValue(mockPerfil as any);
-      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined as any);
+      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined);
 
       const result = await useCase.update('user-1', buildFile('image/jpeg'));
       expect(typeof result).toBe('string');
@@ -105,7 +117,7 @@ describe('UpdateFotoPerfilUseCase', () => {
 
     it('debe subir un gif sin comprimir y retornar la URL pública', async () => {
       usuarioRepository.findProfileById.mockResolvedValue(mockPerfil as any);
-      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined as any);
+      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined);
 
       const result = await useCase.update('user-1', buildFile('image/gif'));
       expect(typeof result).toBe('string');
@@ -117,7 +129,7 @@ describe('UpdateFotoPerfilUseCase', () => {
         foto_perfil_url: `${process.env.SUPABASE_URL ?? ''}/storage/v1/object/public/images/profiles/user-1/old.webp`,
       };
       usuarioRepository.findProfileById.mockResolvedValue(perfilConFoto as any);
-      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined as any);
+      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined);
 
       const removeMock = jest.fn().mockResolvedValue({ error: null });
       mockStorage.from.mockReturnValue({
@@ -158,7 +170,7 @@ describe('UpdateFotoPerfilUseCase', () => {
       usuarioRepository.findProfileById.mockResolvedValue(
         perfilConFotoExterna as any,
       );
-      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined as any);
+      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined);
 
       const removeMock = jest.fn();
       mockStorage.from.mockReturnValue({
@@ -190,7 +202,7 @@ describe('UpdateFotoPerfilUseCase', () => {
         foto_perfil_url: `${process.env.SUPABASE_URL ?? ''}/storage/v1/object/public/images/profiles/user-1/foto.webp`,
       };
       usuarioRepository.findProfileById.mockResolvedValue(perfilConFoto as any);
-      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined as any);
+      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined);
 
       const removeMock = jest.fn().mockResolvedValue({ error: null });
       mockStorage.from.mockReturnValue({ remove: removeMock });
@@ -224,7 +236,7 @@ describe('UpdateFotoPerfilUseCase', () => {
 
     it('debe salir sin error si el usuario no tiene foto asignada', async () => {
       usuarioRepository.findProfileById.mockResolvedValue(mockPerfil as any);
-      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined as any);
+      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined);
 
       await expect(useCase.delete('user-1')).resolves.toBeUndefined();
       // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -242,7 +254,7 @@ describe('UpdateFotoPerfilUseCase', () => {
       usuarioRepository.findProfileById.mockResolvedValue(
         perfilConFotoExterna as any,
       );
-      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined as any);
+      usuarioRepository.updateFotoPerfil.mockResolvedValue(undefined);
 
       const removeMock = jest.fn();
       mockStorage.from.mockReturnValue({ remove: removeMock });

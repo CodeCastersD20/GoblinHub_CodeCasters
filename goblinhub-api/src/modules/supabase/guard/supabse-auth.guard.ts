@@ -12,15 +12,22 @@ import {
   AuthenticatedRequest,
 } from '../interfaces/types/authenticated-request.interface';
 import { ValidationResult } from '../interfaces/types/validation-result.interface';
+import { Redis } from 'ioredis';
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
   private readonly logger = new Logger(SupabaseAuthGuard.name);
+  private readonly redisClient: Redis;
 
   constructor(
     private readonly validationTokenService: SupabaseValidationTokenService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) {
+    // Inicializar cliente Redis. Se recomienda extraer la URL a variables de entorno en un entorno productivo.
+    this.redisClient = new Redis(
+      process.env.REDIS_URL || 'redis://localhost:6379',
+    );
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
@@ -43,13 +50,41 @@ export class SupabaseAuthGuard implements CanActivate {
         await this.validationTokenService.validtoken(token);
 
       if (result.success && result.user) {
-        const profile = await this.prisma.usuario.findUnique({
-          where: { id_usuario: result.user.id },
-          select: { activo: true, deleted_at: true },
-        });
+        const userId = result.user.id;
+        const cacheKey = `user:${userId}:profile`;
+
+        // 1. Intentar obtener de la caché (Redis)
+        const cachedProfile = await this.redisClient.get(cacheKey);
+
+        let profile: {
+          activo: boolean;
+          deleted_at: Date | string | null;
+        } | null = null;
+
+        if (cachedProfile) {
+          profile = JSON.parse(cachedProfile) as {
+            activo: boolean;
+            deleted_at: Date | string | null;
+          };
+        } else {
+          // 2. Cache Miss: Buscar en la base de datos
+          profile = await this.prisma.usuario.findUnique({
+            where: { id_usuario: userId },
+            select: { activo: true, deleted_at: true },
+          });
+
+          if (profile) {
+            // Guardar en Redis con TTL de 15 minutos (900 segundos)
+            await this.redisClient.setex(
+              cacheKey,
+              900,
+              JSON.stringify(profile),
+            );
+          }
+        }
 
         if (!profile || !profile.activo || profile.deleted_at) {
-          throw new UnauthorizedException('Usuario no encontrado');
+          throw new UnauthorizedException('Usuario no encontrado o inactivo');
         }
 
         request.user = result.user as SupabaseUser;
@@ -84,7 +119,7 @@ export class SupabaseAuthGuard implements CanActivate {
       error &&
       typeof error == 'object' &&
       'message' in error &&
-      typeof (error as { message: unknown }).message === 'string'
+      typeof error.message === 'string'
     ) {
       return (error as { message: string }).message;
     }

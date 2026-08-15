@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import { NivelExperiencia } from '../../domain/enums/user.enum';
+import { Redis } from 'ioredis';
 
 export interface UpdatePerfilDto {
   nombre?: string;
@@ -13,8 +14,14 @@ export interface UpdatePerfilDto {
 
 @Injectable()
 export class UpdatePerfilUseCase {
+  private readonly redisClient: Redis;
+
   /* istanbul ignore next */
-  constructor(private readonly usuarioRepository: UsuarioRepository) {}
+  constructor(private readonly usuarioRepository: UsuarioRepository) {
+    this.redisClient = new Redis(
+      process.env.REDIS_URL || 'redis://localhost:6379',
+    );
+  }
 
   async execute(id_usuario: string, dto: UpdatePerfilDto): Promise<void> {
     const perfil = await this.usuarioRepository.findProfileById(id_usuario);
@@ -32,5 +39,9 @@ export class UpdatePerfilUseCase {
       }),
       ...(dto.bio !== undefined && { bio: dto.bio }),
     });
+
+    // Invalidar caché del perfil del usuario para mantener consistencia
+    const cacheKey = `user:${id_usuario}:profile`;
+    await this.redisClient.del(cacheKey);
   }
 }

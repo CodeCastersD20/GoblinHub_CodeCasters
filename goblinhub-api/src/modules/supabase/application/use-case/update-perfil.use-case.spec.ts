@@ -4,6 +4,16 @@ import { UpdatePerfilUseCase, UpdatePerfilDto } from './update-perfil.use-case';
 import { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import { NivelExperiencia } from '../../domain/enums/user.enum';
 
+jest.mock('ioredis', () => {
+  return {
+    Redis: jest.fn().mockImplementation(() => ({
+      get: jest.fn().mockResolvedValue(null),
+      setex: jest.fn().mockResolvedValue('OK'),
+      del: jest.fn().mockResolvedValue(1),
+    })),
+  };
+});
+
 describe('UpdatePerfilUseCase', () => {
   let useCase: UpdatePerfilUseCase;
   let usuarioRepository: jest.Mocked<UsuarioRepository>;
@@ -36,7 +46,7 @@ describe('UpdatePerfilUseCase', () => {
 
   it('debe actualizar el perfil correctamente con todos los campos', async () => {
     usuarioRepository.findProfileById.mockResolvedValue(mockPerfil as any);
-    usuarioRepository.updateProfile.mockResolvedValue(undefined as any);
+    usuarioRepository.updateProfile.mockResolvedValue(undefined);
 
     const dto: UpdatePerfilDto = {
       nombre: 'Carlos',
@@ -73,7 +83,7 @@ describe('UpdatePerfilUseCase', () => {
 
   it('debe ignorar campos no enviados (actualización parcial)', async () => {
     usuarioRepository.findProfileById.mockResolvedValue(mockPerfil as any);
-    usuarioRepository.updateProfile.mockResolvedValue(undefined as any);
+    usuarioRepository.updateProfile.mockResolvedValue(undefined);
 
     const dto: UpdatePerfilDto = { nombre: 'Nuevo Nombre' };
 
@@ -87,7 +97,7 @@ describe('UpdatePerfilUseCase', () => {
 
   it('debe permitir enviar telefono y bio como null', async () => {
     usuarioRepository.findProfileById.mockResolvedValue(mockPerfil as any);
-    usuarioRepository.updateProfile.mockResolvedValue(undefined as any);
+    usuarioRepository.updateProfile.mockResolvedValue(undefined);
 
     const dto: UpdatePerfilDto = { telefono: null, bio: null };
 
@@ -102,7 +112,7 @@ describe('UpdatePerfilUseCase', () => {
 
   it('debe llamar a updateProfile con dto vacío si no se envía nada', async () => {
     usuarioRepository.findProfileById.mockResolvedValue(mockPerfil as any);
-    usuarioRepository.updateProfile.mockResolvedValue(undefined as any);
+    usuarioRepository.updateProfile.mockResolvedValue(undefined);
 
     await useCase.execute('user-1', {});
 

@@ -34,7 +34,7 @@ describe('SupabaseAuthController', () => {
   beforeEach(() => {
     validationService = {
       validtoken: jest.fn(),
-    } as unknown as jest.Mocked<SupabaseValidationTokenService>;
+    };
 
     refreshService = {
       refreshToken: jest.fn(),
@@ -85,7 +85,7 @@ describe('SupabaseAuthController', () => {
       softDeleteForAdmin: jest.fn(),
       updateFotoPerfil: jest.fn(),
       updateProfile: jest.fn(),
-    } as unknown as jest.Mocked<UsuarioRepository>;
+    };
 
     controller = new SupabaseAuthController(
       validationService,

@@ -1,28 +1,60 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import * as jwt from 'jsonwebtoken';
+import { User } from '@supabase/supabase-js';
+
+interface DecodedToken extends jwt.JwtPayload {
+  sub?: string;
+  email?: string;
+  role?: string;
+  aud?: string;
+  app_metadata?: Record<string, unknown>;
+  user_metadata?: Record<string, unknown>;
+}
 
 @Injectable()
 export class SupabaseValidationTokenService {
   /* istanbul ignore next */
-  constructor(
-    @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
-  ) {}
+  constructor() {}
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async validtoken(token: string) {
     try {
-      const { data: user, error } = await this.supabase.auth.getUser(token);
+      // Usamos el JWT Secret provisto por Supabase en el panel de API Settings
+      const secret = process.env.SUPABASE_JWT_SECRET;
 
-      if (error || !user || !user.user) {
+      if (!secret) {
+        throw new Error(
+          'SUPABASE_JWT_SECRET no esta definido en las variables de entorno.',
+        );
+      }
+
+      // Validación local sincrónica (evita la llamada HTTP a Supabase)
+      const decoded = jwt.verify(token, secret) as DecodedToken;
+
+      if (!decoded || !decoded.sub) {
         throw new UnauthorizedException(`Failed to validate token`);
       }
 
+      // Reconstruimos el objeto user a partir del token para mantener la firma de la interfaz
+      const user = {
+        id: decoded.sub,
+        email: decoded.email ?? '',
+        role: decoded.role ?? 'authenticated',
+        aud: decoded.aud ?? 'authenticated',
+        app_metadata: decoded.app_metadata || {},
+        user_metadata: decoded.user_metadata || {},
+        created_at: new Date(
+          decoded.iat ? decoded.iat * 1000 : Date.now(),
+        ).toISOString(),
+      } as User;
+
       return {
         success: true,
-        user: user.user,
-        message: 'Token is valid',
+        user: user,
+        message: 'Token is valid (local)',
       };
     } catch {
-      throw new UnauthorizedException('Failed to validate token');
+      throw new UnauthorizedException('Failed to validate token locally');
     }
   }
 }
