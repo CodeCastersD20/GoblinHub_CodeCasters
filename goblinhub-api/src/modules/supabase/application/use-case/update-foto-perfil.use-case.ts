@@ -9,6 +9,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import sharp from 'sharp';
 import { UsuarioRepository } from '../../domain/repositories/usuario.repository';
+import { Redis } from 'ioredis';
 
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
@@ -21,12 +22,16 @@ const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? 'images';
 
 @Injectable()
 export class UpdateFotoPerfilUseCase {
+  private readonly redisClient: Redis;
+
   /* istanbul ignore next */
   constructor(
     @Inject('SUPABASE_ADMIN_CLIENT')
     private readonly supabaseAdmin: SupabaseClient,
     private readonly usuarioRepository: UsuarioRepository,
-  ) {}
+  ) {
+    this.redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+  }
 
   private async compressToWebP(
     buffer: Buffer,
@@ -92,6 +97,9 @@ export class UpdateFotoPerfilUseCase {
     // Persistir la URL en la BD
     await this.usuarioRepository.updateFotoPerfil(id_usuario, publicUrl);
 
+    // Invalidar caché
+    await this.redisClient.del(`user:${id_usuario}:profile`);
+
     return publicUrl;
   }
 
@@ -116,5 +124,8 @@ export class UpdateFotoPerfilUseCase {
     }
 
     await this.usuarioRepository.updateFotoPerfil(id_usuario, null);
+    
+    // Invalidar caché
+    await this.redisClient.del(`user:${id_usuario}:profile`);
   }
 }
