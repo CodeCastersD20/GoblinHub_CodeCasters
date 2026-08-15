@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "./EditarUsuario.css";
 
 export interface Usuario {
@@ -23,10 +23,12 @@ interface Props {
 
 function EditarUsuarioModal({ usuario, onClose, onGuardar }: Props) {
   const [formData, setFormData] = useState<Usuario | null>(usuario);
+  const [prevUsuario, setPrevUsuario] = useState(usuario);
 
-  useEffect(() => {
+  if (usuario !== prevUsuario) {
+    setPrevUsuario(usuario);
     setFormData(usuario);
-  }, [usuario]);
+  }
 
   if (!usuario || !formData) return null;
 
