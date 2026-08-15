@@ -1,40 +1,41 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { SupabaseValidationTokenService } from './validationT.use-case';
-import { SupabaseClient } from '@supabase/supabase-js';
+import * as jwt from 'jsonwebtoken';
+
+jest.mock('jsonwebtoken');
 
 describe('SupabaseValidationTokenService', () => {
   let service: SupabaseValidationTokenService;
-  let supabase: jest.Mocked<SupabaseClient>;
 
   beforeEach(() => {
-    supabase = {
-      auth: {
-        getUser: jest.fn(),
-      },
-    } as unknown as jest.Mocked<SupabaseClient>;
+    process.env.SUPABASE_JWT_SECRET = 'test-secret';
+    service = new SupabaseValidationTokenService();
+  });
 
-    service = new SupabaseValidationTokenService(supabase);
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('debe retornar éxito y usuario si el token es válido', async () => {
-    const mockUser = { id: 'user-1', email: 'test@email.com' };
+    const mockDecoded = {
+      sub: 'user-1',
+      email: 'test@email.com',
+      role: 'authenticated',
+      iat: 1620000000,
+    };
 
-    supabase.auth.getUser = jest.fn().mockResolvedValue({
-      data: { user: mockUser },
-      error: null,
-    });
+    (jwt.verify as jest.Mock).mockReturnValue(mockDecoded);
 
     const result = await service.validtoken('valid-token');
 
     expect(result.success).toBe(true);
-    expect(result.user).toEqual(mockUser);
-    expect(result.message).toBe('Token is valid');
+    expect(result.user.id).toBe('user-1');
+    expect(result.message).toBe('Token is valid (local)');
   });
 
-  it('debe lanzar UnauthorizedException si supabase retorna error', async () => {
-    supabase.auth.getUser = jest.fn().mockResolvedValue({
-      data: { user: null },
-      error: { message: 'Token expired' },
+  it('debe lanzar UnauthorizedException si jwt.verify falla', async () => {
+    (jwt.verify as jest.Mock).mockImplementation(() => {
+      throw new Error('Token expired');
     });
 
     await expect(service.validtoken('expired-token')).rejects.toThrow(
@@ -42,23 +43,10 @@ describe('SupabaseValidationTokenService', () => {
     );
   });
 
-  it('debe lanzar UnauthorizedException si no hay usuario', async () => {
-    supabase.auth.getUser = jest.fn().mockResolvedValue({
-      data: { user: null },
-      error: null,
-    });
+  it('debe lanzar UnauthorizedException si el token decodificado no tiene sub', async () => {
+    (jwt.verify as jest.Mock).mockReturnValue({ email: 'test@email.com' });
 
-    await expect(service.validtoken('no-user-token')).rejects.toThrow(
-      UnauthorizedException,
-    );
-  });
-
-  it('debe lanzar UnauthorizedException si ocurre una excepción', async () => {
-    supabase.auth.getUser = jest
-      .fn()
-      .mockRejectedValue(new Error('Network error'));
-
-    await expect(service.validtoken('any-token')).rejects.toThrow(
+    await expect(service.validtoken('invalid-token')).rejects.toThrow(
       UnauthorizedException,
     );
   });
