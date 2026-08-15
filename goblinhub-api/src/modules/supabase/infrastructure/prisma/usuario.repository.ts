@@ -53,7 +53,7 @@ export class UsuarioRepositoryPrisma extends UsuarioRepository {
       nivel_experiencia: usuario.nivel_experiencia as NivelExperiencia,
       puntos_fidelidad: usuario.puntos_fidelidad,
       bio: usuario.bio,
-      foto_perfil_url: usuario.foto_perfil_url,
+      foto_perfil_url: usuario.foto_perfil_url as string | null,
     };
   }
 
@@ -115,9 +115,11 @@ export class UsuarioRepositoryPrisma extends UsuarioRepository {
       nivel_experiencia: u.nivel_experiencia as NivelExperiencia,
       rol: u.rol as RolUsuario,
       activo: u.activo,
-      foto_perfil_url: u.foto_perfil_url,
+      foto_perfil_url: u.foto_perfil_url as string | null,
       created_at: u.created_at,
-      eventos_asistidos: u.inscripciones.length,
+      eventos_asistidos: Array.isArray(u.inscripciones as unknown[])
+        ? (u.inscripciones as unknown[]).length
+        : 0,
     }));
   }
 

@@ -18,7 +18,9 @@ export class UpdatePerfilUseCase {
 
   /* istanbul ignore next */
   constructor(private readonly usuarioRepository: UsuarioRepository) {
-    this.redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    this.redisClient = new Redis(
+      process.env.REDIS_URL || 'redis://localhost:6379',
+    );
   }
 
   async execute(id_usuario: string, dto: UpdatePerfilDto): Promise<void> {

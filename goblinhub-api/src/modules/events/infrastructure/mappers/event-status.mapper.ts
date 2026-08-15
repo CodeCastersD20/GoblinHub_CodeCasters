@@ -10,7 +10,7 @@ import {
 export class EventMapper {
   // Mapeo para TipoEvento
   static tipoToPrisma(tipo: DomainEventType): PrismaTipoEvento {
-    return tipo as PrismaTipoEvento;
+    return tipo;
   }
 
   static tipoToDomain(tipo: PrismaTipoEvento): DomainEventType {
@@ -19,7 +19,7 @@ export class EventMapper {
 
   // Mapeo para EstadoEvento
   static estadoToPrisma(estado: DomainEventStatus): PrismaEstadoEvento {
-    return estado as PrismaEstadoEvento;
+    return estado;
   }
 
   static estadoToDomain(estado: PrismaEstadoEvento): DomainEventStatus {

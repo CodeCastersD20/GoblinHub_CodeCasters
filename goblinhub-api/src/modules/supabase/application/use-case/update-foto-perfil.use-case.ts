@@ -30,7 +30,9 @@ export class UpdateFotoPerfilUseCase {
     private readonly supabaseAdmin: SupabaseClient,
     private readonly usuarioRepository: UsuarioRepository,
   ) {
-    this.redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    this.redisClient = new Redis(
+      process.env.REDIS_URL || 'redis://localhost:6379',
+    );
   }
 
   private async compressToWebP(
@@ -124,7 +126,7 @@ export class UpdateFotoPerfilUseCase {
     }
 
     await this.usuarioRepository.updateFotoPerfil(id_usuario, null);
-    
+
     // Invalidar caché
     await this.redisClient.del(`user:${id_usuario}:profile`);
   }

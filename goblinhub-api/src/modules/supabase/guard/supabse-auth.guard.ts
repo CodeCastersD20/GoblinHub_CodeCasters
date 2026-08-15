@@ -24,7 +24,9 @@ export class SupabaseAuthGuard implements CanActivate {
     private readonly prisma: PrismaService,
   ) {
     // Inicializar cliente Redis. Se recomienda extraer la URL a variables de entorno en un entorno productivo.
-    this.redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    this.redisClient = new Redis(
+      process.env.REDIS_URL || 'redis://localhost:6379',
+    );
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -53,10 +55,17 @@ export class SupabaseAuthGuard implements CanActivate {
 
         // 1. Intentar obtener de la caché (Redis)
         const cachedProfile = await this.redisClient.get(cacheKey);
-        
-        let profile;
+
+        let profile: {
+          activo: boolean;
+          deleted_at: Date | string | null;
+        } | null = null;
+
         if (cachedProfile) {
-          profile = JSON.parse(cachedProfile);
+          profile = JSON.parse(cachedProfile) as {
+            activo: boolean;
+            deleted_at: Date | string | null;
+          };
         } else {
           // 2. Cache Miss: Buscar en la base de datos
           profile = await this.prisma.usuario.findUnique({
@@ -66,7 +75,11 @@ export class SupabaseAuthGuard implements CanActivate {
 
           if (profile) {
             // Guardar en Redis con TTL de 15 minutos (900 segundos)
-            await this.redisClient.setex(cacheKey, 900, JSON.stringify(profile));
+            await this.redisClient.setex(
+              cacheKey,
+              900,
+              JSON.stringify(profile),
+            );
           }
         }
 
@@ -106,7 +119,7 @@ export class SupabaseAuthGuard implements CanActivate {
       error &&
       typeof error == 'object' &&
       'message' in error &&
-      typeof (error as { message: unknown }).message === 'string'
+      typeof error.message === 'string'
     ) {
       return (error as { message: string }).message;
     }
