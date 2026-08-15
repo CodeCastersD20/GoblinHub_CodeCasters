@@ -8,6 +8,16 @@ import { UpdateFotoPerfilUseCase } from './update-foto-perfil.use-case';
 import { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import { SupabaseClient } from '@supabase/supabase-js';
 
+jest.mock('ioredis', () => {
+  return {
+    Redis: jest.fn().mockImplementation(() => ({
+      get: jest.fn().mockResolvedValue(null),
+      setex: jest.fn().mockResolvedValue('OK'),
+      del: jest.fn().mockResolvedValue(1),
+    })),
+  };
+});
+
 // Mock sharp at module level so compress never touches real image processing
 jest.mock('sharp', () => {
   const chain = {

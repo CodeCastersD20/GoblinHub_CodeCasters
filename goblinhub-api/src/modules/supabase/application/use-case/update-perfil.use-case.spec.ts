@@ -4,6 +4,16 @@ import { UpdatePerfilUseCase, UpdatePerfilDto } from './update-perfil.use-case';
 import { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import { NivelExperiencia } from '../../domain/enums/user.enum';
 
+jest.mock('ioredis', () => {
+  return {
+    Redis: jest.fn().mockImplementation(() => ({
+      get: jest.fn().mockResolvedValue(null),
+      setex: jest.fn().mockResolvedValue('OK'),
+      del: jest.fn().mockResolvedValue(1),
+    })),
+  };
+});
+
 describe('UpdatePerfilUseCase', () => {
   let useCase: UpdatePerfilUseCase;
   let usuarioRepository: jest.Mocked<UsuarioRepository>;

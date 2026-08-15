@@ -5,6 +5,16 @@ import { SupabaseValidationTokenService } from '../application/use-case/validati
 import { User } from '@supabase/supabase-js';
 import { PrismaService } from '../../../connect/prisma.service';
 
+jest.mock('ioredis', () => {
+  return {
+    Redis: jest.fn().mockImplementation(() => ({
+      get: jest.fn().mockResolvedValue(null),
+      setex: jest.fn().mockResolvedValue('OK'),
+      del: jest.fn().mockResolvedValue(1),
+    })),
+  };
+});
+
 const mockSupabaseUser: User = {
   id: 'user-1',
   email: 'test@email.com',
