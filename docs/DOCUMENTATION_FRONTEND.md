@@ -27,11 +27,13 @@ GoblinHub Web es el frontend de la plataforma GoblinHub. Es una SPA (Single Page
 **Funcionalidades principales**:
 
 - Landing page con mapa, próximos eventos y tabla de líderes de puntos de fidelidad.
+- Landing page con mapa, próximo evento y bloque visual de campeones destacados.
 - Catálogo de productos con filtros por categoría.
-- Calendario de eventos con inscripción online.
+- Calendario de eventos con navegación a detalle e intención de inscripción desde la UI.
 - Sistema de autenticación completo (registro, login, recuperación de contraseña, confirmación de cuenta).
 - Perfil de usuario con edición de datos y foto.
-- Panel de administración para gestión de eventos (roles admin/empleado).
+- Panel de administración para gestión operativa y analítica (roles admin/empleado).
+- Panel administrativo ampliado con usuarios, reportes analíticos, logs del sistema y módulo de novatos.
 
 ---
 
@@ -74,7 +76,14 @@ src/
 │
 ├── services/
 │   ├── auth.service.ts       # Llamadas a /auth/*
-│   └── events.service.ts     # Llamadas a /events/*
+│   ├── events.service.ts     # Llamadas a /events/* y CRUD administrativo de eventos
+│   ├── logs.service.ts       # Consulta de logs administrativos
+│   ├── reportes.service.ts   # Métricas agregadas para dashboard
+│   └── users-admin.service.ts# Gestión administrativa de usuarios
+│
+├── hooks/
+│   ├── useDebounce.ts        # Debounce reutilizable para inputs reactivos
+│   └── useLogs.ts            # Hook de fetch con estados para logs
 │
 ├── test/
 │   └── setup.ts              # Configuración de Vitest + Testing Library
@@ -82,6 +91,17 @@ src/
 └── types/
     └── auth.types.ts         # Interfaces TypeScript de auth y usuario
 ```
+
+### Estructura administrativa real
+
+Dentro de `pages/` existen además módulos administrativos no reflejados en la versión inicial de esta documentación:
+
+- `pages/admin/logs/` → visor de logs del sistema
+- `pages/perfil/administracion/eventos/` → CRUD de eventos
+- `pages/perfil/administracion/usuarios/` → administración y búsqueda de usuarios
+- `pages/perfil/administracion/reportes/` → dashboard analítico con gráficas
+- `pages/perfil/administracion/novatos/` → módulo de capacitación de novatos
+- `pages/perfil/administracion/Administracion.tsx` → dashboard principal del panel
 
 ---
 
@@ -103,18 +123,37 @@ Las rutas se definen centralizadamente en `App.tsx` usando React Router v7.
 | `/register`        | Register       | Registro multi-fase              |
 | `/reset-password`  | ResetPassword  | Cambio de contraseña con token   |
 | `/confirm-account` | ConfirmAccount | Confirmación de cuenta nueva     |
+| `/eventosAdmin`    | EventsAdmin    | Vista administrativa de eventos  |
+| `/verEvento/:id`   | VerEvento      | Vista administrativa de detalle  |
+| `/usuariosAdmin`   | UsuariosAdmin  | Administración de usuarios       |
 
 ### Rutas protegidas (requieren JWT)
 
 Están envueltas en `<ProtectedRoute>`, que verifica el token antes de renderizar:
 
-| Ruta             | Componente     | Roles                         |
-| ---------------- | -------------- | ----------------------------- |
-| `/perfil`        | PerfilPage     | Cualquier usuario autenticado |
-| `/admin`         | Administration | admin, empleado               |
-| `/eventosAdmin`  | EventsAdmin    | admin, empleado               |
-| `/verEvento/:id` | VerEvento      | admin, empleado               |
-| `/usuariosAdmin` | UsuariosAdmin  | admin, empleado               |
+| Ruta              | Componente          | Roles                         |
+| ----------------- | ------------------- | ----------------------------- |
+| `/perfil`         | PerfilPage          | Cualquier usuario autenticado |
+| `/administration` | Administration      | Cualquier usuario autenticado |
+| `/admin/reportes` | Reportes            | Cualquier usuario autenticado |
+| `/admin/novatos`  | CapacitacionNovatos | Cualquier usuario autenticado |
+
+### Rutas protegidas con restricción de rol
+
+Están envueltas en `<ProtectedRoute allowedRoles={...}>`:
+
+| Ruta             | Componente          | Roles |
+| ---------------- | ------------------- | ----- |
+| `/admin`         | Administration      | admin |
+| `/admin/logs`    | LogsAdmin           | admin |
+| `/eventosAdmin`  | EventsAdmin         | admin |
+| `/verEvento/:id` | VerEvento           | admin |
+| `/usuariosAdmin` | UsuariosAdmin       | admin |
+| `/admin/novatos` | CapacitacionNovatos | admin |
+
+### Observación técnica sobre el enrutado actual
+
+En `App.tsx` algunas rutas administrativas (`/eventosAdmin`, `/verEvento/:id`, `/usuariosAdmin`) aparecen declaradas tanto fuera como dentro de bloques protegidos. La intención funcional del proyecto es claramente administrativa, pero la implementación actual convive con esas definiciones duplicadas y conviene normalizarla en una futura refactorización de rutas.
 
 ### Flujo de navegación post-login
 
@@ -167,8 +206,19 @@ resetPassword(accessToken: string, newPassword: string, confirmPassword: string)
 uploadFotoPerfil(file: File): Promise<{ foto_perfil_url: string }>
 
 // Actualizar datos del perfil
-updatePerfil(data: UpdatePerfilDto): Promise<MeResponseDto>
+updatePerfil(data: UpdatePerfilDto): Promise<{ message: string }>
 ```
+
+### Detalles reales del flujo de login
+
+Después de `login()`, la aplicación:
+
+1. guarda `token` y `refresh_token` en `localStorage`
+2. intenta obtener `rol` desde la propia respuesta de login si estuviera presente
+3. si no viene `rol`, llama a `getMe()` para hidratarlo
+4. finalmente navega a `/`
+
+Esto evita depender únicamente del login para resolver el rol usado por `ProtectedRoute`.
 
 ### ProtectedRoute
 
@@ -177,6 +227,8 @@ updatePerfil(data: UpdatePerfilDto): Promise<MeResponseDto>
 ```
 
 Comprueba la existencia de `token` en `localStorage` antes de renderizar la ruta. Si no existe, redirige a `/login`. Para rutas con restricción de rol (admin/empleado), también verifica el campo `rol` en localStorage.
+
+Internamente normaliza los roles a minúsculas antes de compararlos, de modo que diferencias de casing no rompan el guard.
 
 ```tsx
 // Uso en App.tsx
@@ -208,6 +260,12 @@ Response <── [Interceptor de response] <────────────
     reintenta request       redirige a /login
 ```
 
+      ### Comportamientos adicionales del interceptor
+
+      - Si el backend responde `401` con un mensaje que incluye `usuario no encontrado`, el frontend invalida sesión inmediatamente sin intentar refresh.
+      - Si durante el refresh no existe `rol` en `localStorage`, intenta hidratarlo con una llamada adicional a `/auth/me` usando el nuevo access token.
+      - Si no hay `refresh_token`, el frontend limpia sesión y redirige directamente a `/login`.
+
 ---
 
 ## 5. Servicios y API
@@ -233,8 +291,52 @@ const response = await api.get("/eventos");
 // Obtener todos los eventos
 getEvents(): Promise<ApiEvent[]>
 
+// Obtener detalle de evento
+getEventById(id: string): Promise<ApiEvent>
+
+// Crear evento
+createEvent(payload: EventUpsertDto): Promise<ApiEvent>
+
+// Editar evento
+updateEvent(id: string, payload: EventUpsertDto): Promise<ApiEvent>
+
+// Eliminar evento
+deleteEvent(id: string): Promise<ApiEvent>
+
 // Inscribirse a un evento
 inscribirse(eventoId: string, data?: InscripcionDto): Promise<void>
+```
+
+> Nota: el servicio frontend ya expone `inscribirse(...)`, aunque el backend actual todavía no implementa ese endpoint. La interfaz del frontend ya quedó preparada para ese flujo.
+
+### logs.service.ts
+
+```typescript
+// Listado paginado de logs
+getLogs(params?: GetLogsParams): Promise<PaginatedLogs>
+
+// Obtener detalle de un log
+getLogById(id: string): Promise<LogEntity>
+```
+
+### reportes.service.ts
+
+```typescript
+// Obtener métricas agregadas del dashboard
+getDashboardMetrics(months?: number): Promise<DashboardMetrics>
+```
+
+### users-admin.service.ts
+
+```typescript
+// Listado administrativo de usuarios con filtros
+getAdminUsers(q?: string, rol?: string): Promise<AdminUserApi[]>
+
+// Actualización administrativa
+updateAdminUser(id: string, data: AdminUserUpdateDto): Promise<{ message: string }>
+
+// Desactivación administrativa
+deleteAdminUser(id: string): Promise<{ message: string }>
 ```
 
 ### Tipos principales (auth.types.ts)
@@ -278,6 +380,31 @@ interface ApiEvent {
   costo?: number;
   sistema_juego?: string;
 }
+
+interface DashboardMetrics {
+  summary: {
+    totalUsuarios: number;
+    totalProductos: number;
+    usuariosActivos: number;
+    eventosRealizados: number;
+    eventosProximos: number;
+    totalAsistencias: number;
+    totalNovatos: number;
+    tasaConversion: number | null;
+    ocupacion: number | null;
+  };
+}
+
+interface AdminUserApi {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  email: string | null;
+  rol: "admin" | "empleado" | "jugador";
+  activo: boolean;
+  created_at: string;
+  eventos_asistidos: number;
+}
 ```
 
 ---
@@ -299,10 +426,14 @@ Secciones de la landing:
 
 1. **Hero**: banner principal con CTA de registro.
 2. **Próximo evento**: tarjeta del siguiente evento programado.
-3. **Catálogo destacado**: productos con badge "Popular" o "Nuevo".
-4. **Mapa**: integración con `@react-google-maps/api` mostrando la ubicación de **La Guarida del Goblin**.
-5. **Top jugadores**: ranking de usuarios por puntos de fidelidad.
-6. **Features**: tarjetas con propuesta de valor de GoblinHub.
+3. **Features**: tarjetas visuales por categoría.
+4. **Últimos campeones**: bloque visual estático con ganadores destacados.
+5. **Mapa**: integración con `@react-google-maps/api` mostrando la ubicación de **La Guarida del Goblin**.
+
+Además:
+
+- Si falta `VITE_GOOGLE_MAPS_API_KEY`, la sección muestra un fallback de “Mapa no disponible”.
+- El próximo evento se carga desde `/events` y se selecciona en cliente el siguiente evento futuro.
 
 ### Register — Flujo Multi-Fase (`pages/register/`)
 
@@ -320,6 +451,17 @@ Fase 3: Resumen y confirmación
 ```
 
 El estado entre fases se mantiene en un componente padre con `useState`.
+
+### Observación sobre el payload real del registro
+
+Aunque la UI recoge más información en las fases 2 y 3, el payload enviado hoy a `/auth/signup` se limita a:
+
+- datos personales
+- teléfono
+- fecha de nacimiento
+- `nivel_experiencia`
+
+Los intereses y disponibilidades todavía no se persisten en el backend desde este flujo.
 
 ### Login (`pages/login/`)
 
@@ -339,6 +481,8 @@ Supabase Auth redirige al usuario a `/reset-password#access_token=<token>`. El c
 
 Pantalla de feedback cuando Supabase redirige al usuario tras confirmar su email. Muestra un mensaje de éxito y un botón para ir a login.
 
+En `development`, el componente permite visualizar el diseño aun sin hash válido, usando `import.meta.env.DEV` como bypass local.
+
 ### Products (`pages/products/`)
 
 - **Grid** de productos con filtro por categoría (tabs horizontales).
@@ -348,9 +492,13 @@ Pantalla de feedback cuando Supabase redirige al usuario tras confirmar su email
 
 ### Events (`pages/Events/`)
 
-- **Listado** de eventos con filtros por tipo y estado.
+- **Listado** de eventos obtenidos desde `/events`.
 - **Tarjetas** con información básica: título, fecha, lugar, cupo disponible.
-- **Botón de inscripción** (requiere estar autenticado).
+- **Botón de inscripción** que redirige a login si no hay sesión y, si la hay, navega al detalle del evento.
+
+### EventoDetalle (`pages/Events/EventoDetalle/`)
+
+La ruta de detalle existe y recibe el `id` desde la URL, pero actualmente su implementación es mínima: muestra un encabezado simple con el identificador del evento y un link de regreso. Es un placeholder funcional pendiente de enriquecerse.
 
 ### AboutUs (`pages/aboutUs/`)
 
@@ -363,15 +511,50 @@ Pantalla de feedback cuando Supabase redirige al usuario tras confirmar su email
 - Muestra datos del usuario (nombre, email, rol, puntos, nivel).
 - **Foto de perfil**: preview con opción de subir nueva imagen.
 - **Formulario de edición**: actualizar nombre, apellidos, bio, teléfono, nivel.
-- **Historial de inscripciones** a eventos.
+- **Secciones visuales** para intereses, logros, actividad y configuración, algunas todavía como estructura UI más que como integración completa.
 
-### Administration (`pages/perfil/administration/`)
+Además, la página está dividida visualmente en secciones (`personal`, `interests`, `achievements`, `activity`, `settings`), aunque varias de ellas todavía actúan más como estructura visual que como integración completa con backend.
+
+### Administration (`pages/perfil/administracion/Administracion.tsx`)
 
 Panel exclusivo para admin/empleado:
 
-- **Gestión de eventos**: crear, editar, cancelar eventos.
-- **Formulario de creación** con todos los campos del DTO.
-- **Lista de eventos** con acciones por fila.
+- **Dashboard principal** con KPIs, gráficas y acceso a módulos.
+- **Consumo de logs recientes** mediante `useLogs({ limit: 5 })`.
+- **Consumo de métricas** mediante `getDashboardMetrics(6)`.
+- **Tarjetas navegables** hacia usuarios, eventos, reportes, logs y novatos.
+
+### EventosAdmin (`pages/perfil/administracion/eventos/`)
+
+- Lista eventos existentes consumiendo `getEvents()`.
+- Permite crear y editar mediante modal reutilizando `EventoNuevo`.
+- Permite eliminar eventos mediante `deleteEvent()`.
+- Navega al detalle administrativo con `/verEvento/:id`.
+
+### UsuariosAdmin (`pages/perfil/administracion/usuarios/`)
+
+- Lista usuarios administrativos desde `/auth/admin/users`.
+- Tiene edición, desactivación y reactivación lógica de usuarios.
+- Incorpora estadísticas locales de usuarios activos, baneados y nuevos.
+- Implementa búsqueda con **debounce** usando `useDebounce(searchTerm, 500)`.
+- Permite filtrar por rol antes de llamar al backend.
+
+### Reportes (`pages/perfil/administracion/reportes/`)
+
+- Muestra un dashboard analítico con `chart.js` y `react-chartjs-2`.
+- Consume métricas agregadas desde `/logs/dashboard/metrics`.
+- Combina filtros de fecha y tipo de log con `useLogs()`.
+- Renderiza gráficas de crecimiento, distribución por nivel, eventos por tipo y asistencia.
+
+### LogsAdmin (`pages/admin/logs/`)
+
+- Vista simplificada para administración de logs.
+- Filtra por tipo (`success`, `info`, `warning`, `error`).
+- Consume `useLogs()` y renderiza una tabla básica con fecha, acción y mensaje.
+
+### CapacitacionNovatos (`pages/perfil/administracion/novatos/`)
+
+La ruta y el módulo ya existen, pero su implementación actual sigue siendo mínima y actúa como placeholder.
 
 ---
 
@@ -383,8 +566,14 @@ La aplicación **no usa Redux ni Context API global** deliberadamente. El estado
 | --------------------- | -------------------------------- | ----------------------------------- |
 | `useState` local      | Dentro de cada componente/página | Formularios, modales, toggles       |
 | `localStorage`        | `auth.service.ts` / `api.ts`     | Tokens de sesión, rol               |
+| Custom hooks          | `useLogs`, `useDebounce`         | Fetch reutilizable y debounce       |
 | Props / lifting state | Componentes padre → hijo         | Datos compartidos entre 2-3 niveles |
 | URL state             | React Router params/hash         | IDs de recursos, tokens de reset    |
+
+### Hooks reutilizables actuales
+
+- `useLogs(params)` encapsula `loading`, `error` y `data` para la consulta paginada de logs.
+- `useDebounce(value, delay)` estabiliza entradas reactivas; hoy se usa en la administración de usuarios para retrasar búsquedas por `500 ms`.
 
 **Por qué no hay estado global?** La app es relativamente simple y el over-engineering de una store global (Redux, Zustand) añadiría complejidad sin beneficio real. Si la app crece, el siguiente paso natural sería añadir React Query para sincronización servidor-cliente.
 
@@ -409,6 +598,10 @@ El token se guarda en `localStorage`, lo que lo hace accesible a JavaScript. La 
 - No insertar HTML no saneado en el DOM.
 - No evaluar (`eval`) datos del servidor.
 - CORS configurado correctamente en el backend.
+
+### Observación técnica de seguridad actual
+
+La estrategia de protección de rutas está bien definida a nivel de `ProtectedRoute`, pero el archivo `App.tsx` todavía mantiene algunas rutas administrativas duplicadas fuera del bloque protegido. Documentarlo es importante porque la intención del sistema es RBAC, pero la tabla de rutas debe leerse junto con esa limitación de implementación actual.
 
 ---
 
@@ -442,6 +635,19 @@ test('renders button with text', () => {
 - Extiende `expect` con matchers de `@testing-library/jest-dom` (`.toBeInTheDocument()`, etc.)
 - Usa `jsdom` como entorno de DOM virtual
 
+Actualmente existen tests unitarios para:
+
+- `ProtectedRoute`
+- botón reutilizable
+- login
+- register flow
+- reset password
+- confirm account
+- about us
+- listado y detalle de productos
+- listado y detalle de eventos
+- perfil de usuario
+
 ### Tests E2E con Playwright
 
 ```bash
@@ -457,13 +663,20 @@ npm run test:e2e:report
 
 Los specs cubiertos:
 
-| Spec                   | Qué prueba                       |
-| ---------------------- | -------------------------------- |
-| `e2e/home.spec.ts`     | Landing page carga correctamente |
-| `e2e/contacto.spec.ts` | Página de contacto/about us      |
-| `e2e/example.spec.ts`  | Test de ejemplo/smoke test       |
+| Spec                     | Qué prueba                                 |
+| ------------------------ | ------------------------------------------ |
+| `e2e/home.spec.ts`       | Landing page carga correctamente           |
+| `e2e/contacto.spec.ts`   | Página de contacto/about us                |
+| `e2e/example.spec.ts`    | Test de ejemplo/smoke test                 |
+| `e2e/rbac-admin.spec.ts` | Redirección y control de acceso a `/admin` |
 
 La configuración de Playwright (`playwright.config.ts`) levanta automáticamente el servidor de Vite antes de correr los tests.
+
+Además:
+
+- usa `baseURL: http://localhost:5173`
+- genera reporte HTML
+- reutiliza servidor existente fuera de CI
 
 ---
 
@@ -509,6 +722,9 @@ npm run test:e2e
 
 # Tests E2E con UI
 npm run test:e2e:ui
+
+# Ver reporte HTML de Playwright
+npm run test:e2e:report
 
 # Pipeline completo (lint + type-check + tests + build)
 npm run web

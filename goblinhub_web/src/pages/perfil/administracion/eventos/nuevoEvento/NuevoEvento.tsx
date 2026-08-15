@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./NuevoEvento.css";
 import {
@@ -58,14 +58,17 @@ function EventoNuevo({ evento, onSuccess }: EventoNuevoProps) {
 
   /* ---------- CARGAR EVENTO SI ES EDICIÓN ---------- */
 
-  useEffect(() => {
+  const [prevEvento, setPrevEvento] = useState(evento);
+
+  if (evento !== prevEvento) {
+    setPrevEvento(evento);
     if (evento) {
       setForm((prev) => ({
         ...prev,
         ...evento,
       }));
     }
-  }, [evento]);
+  }
 
   /* ---------- HANDLE CHANGE ---------- */
 
