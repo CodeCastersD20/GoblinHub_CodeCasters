@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -117,6 +118,7 @@ model Usuario {
   logs_actividad     Logs_Actividad[]
   canjes             Canje[]
 
+  @@index([id_usuario_creador], map: "idx_usuarios_creador", where: { deleted_at: null })
   @@map("usuarios")
 }
 
@@ -146,6 +148,7 @@ model Usuario_Interes {
   usuario            Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   interes            Interes   @relation(fields: [id_interes], references: [id_interes], onDelete: Cascade)
 
+  @@index([id_interes], map: "idx_usuario_intereses_interes", where: { deleted_at: null })
   @@id([id_usuario, id_interes])
   @@map("usuario_intereses")
 }
@@ -162,8 +165,9 @@ model Disponibilidad {
 
   usuario           Usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
 
+  @@index([id_usuario], map: "idx_disponibilidades_usuario", where: { deleted_at: null })
   @@map("disponibilidades")
-}
+  }
 
 model Evento {
   id_evento            String       @id @default(uuid()) @db.Uuid
@@ -191,6 +195,7 @@ model Evento {
   creador              Usuario      @relation("EventoCreador", fields: [id_creador], references: [id_usuario])
   inscripciones        Inscripcion[]
 
+@@index([id_creador], map: "idx_eventos_creador", where: { deleted_at: null })
   @@map("eventos")
 }
 
@@ -212,8 +217,11 @@ model Inscripcion {
   evento            Evento    @relation(fields: [id_evento], references: [id_evento], onDelete: Cascade)
   usuario           Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
 
+@@index([id_evento], map: "idx_inscripciones_evento", where: { deleted_at: null })
+  @@index([id_usuario], map: "idx_inscripciones_usuario", where: { deleted_at: null })
   @@unique([id_evento, id_usuario])
   @@map("inscripciones")
+
 }
 
 model Producto {
@@ -276,6 +284,7 @@ model Logs_Actividad {
 
   usuario     Usuario?  @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
 
+@@index([id_usuario], map: "idx_logs_usuario", where: { deleted_at: null })
   @@map("logs_actividad")
 }
 
@@ -312,5 +321,7 @@ model Canje {
   usuario       Usuario    @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   recompensa    Recompensa @relation(fields: [id_recompensa], references: [id_recompensa], onDelete: Cascade)
 
+  @@index([id_usuario], map: "idx_canjes_usuario", where: { deleted_at: null })
+  @@index([id_recompensa], map: "idx_canjes_recompensa", where: { deleted_at: null })
   @@map("canjes")
 }
