@@ -23,10 +23,7 @@ export class SupabaseAuthGuard implements CanActivate {
     private readonly validationTokenService: SupabaseValidationTokenService,
     private readonly prisma: PrismaService,
   ) {
-    // Inicializar cliente Redis. Se recomienda extraer la URL a variables de entorno en un entorno productivo.
-    this.redisClient = new Redis(
-      process.env.REDIS_URL || 'redis://localhost:6379',
-    );
+    this.redisClient = new Redis(process.env.REDIS_URL as string);
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
