@@ -30,9 +30,7 @@ export class UpdateFotoPerfilUseCase {
     private readonly supabaseAdmin: SupabaseClient,
     private readonly usuarioRepository: UsuarioRepository,
   ) {
-    this.redisClient = new Redis(
-      process.env.REDIS_URL || 'redis://localhost:6379',
-    );
+    this.redisClient = new Redis(process.env.REDIS_URL as string);
   }
 
   private async compressToWebP(
