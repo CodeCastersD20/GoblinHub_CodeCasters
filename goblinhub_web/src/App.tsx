@@ -60,8 +60,7 @@ function App() {
 
       <Suspense fallback={<div>Cargando...</div>}>
         <Routes>
-          {/* PUBLICAS */}
-
+          {/* PÚBLICAS */}
           <Route path="/" element={<Home />} />
           <Route path="/productos" element={<Products />} />
           <Route path="/productos/:id" element={<ProductosDetalle />} />
@@ -72,11 +71,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/confirm-account" element={<ConfirmAccount />} />
-          <Route path="/eventosAdmin" element={<EventosAdmin />} />
-          <Route path="/verEvento/:id" element={<VerEventoPage />} />
-          <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
 
-          {/* Ruta protegidas (requieren JWT) */}
+          {/* Rutas protegidas (requieren sesión, cualquier rol) */}
           <Route element={<ProtectedRoute />}>
             <Route path="/perfil" element={<PerfilPage />} />
             <Route path="/administration" element={<Administracion />} />
@@ -84,14 +80,13 @@ function App() {
             <Route path="/admin/novatos" element={<CapacitacionNovatos />} />
           </Route>
 
-          {/* ADMIN (Solo para rol 'admin') */}
+          {/* ADMIN (solo rol 'admin') — todo bajo /admin/* */}
           <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
             <Route path="/admin" element={<Administracion />} />
             <Route path="/admin/logs" element={<LogsAdmin />} />
-            <Route path="/eventosAdmin" element={<EventosAdmin />} />
-            <Route path="/usuariosAdmin" element={<UsuariosAdmin />} />
-            <Route path="/verEvento/:id" element={<VerEventoPage />} />
-            <Route path="/admin/novatos" element={<CapacitacionNovatos />} />
+            <Route path="/admin/eventos" element={<EventosAdmin />} />
+            <Route path="/admin/eventos/:id" element={<VerEventoPage />} />
+            <Route path="/admin/usuarios" element={<UsuariosAdmin />} />
           </Route>
 
           {/* Cualquier ruta desconocida → inicio */}
