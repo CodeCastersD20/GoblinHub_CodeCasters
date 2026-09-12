@@ -23,7 +23,9 @@ describe('backup manifest', () => {
   it('accepts a compatible unmodified backup', async () => {
     await writeManifest(backup, filename);
     await expect(validateManifest(backup, filename)).resolves.toBeUndefined();
-    expect(fs.statSync(manifestPathFor(backup)).mode & 0o777).toBe(0o600);
+    if (process.platform !== 'win32') {
+      expect(fs.statSync(manifestPathFor(backup)).mode & 0o777).toBe(0o600);
+    }
   });
 
   it('rejects historical backups without a manifest', async () => {

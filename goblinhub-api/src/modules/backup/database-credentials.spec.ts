@@ -33,8 +33,10 @@ describe('secure PostgreSQL credentials', () => {
         expect(env.DATABASE_URL).toBeUndefined();
         expect(env.RESTORE_DATABASE_URL).toBeUndefined();
         expect(env.PGPASSWORD).toBeUndefined();
-        expect(fs.statSync(passfile).mode & 0o777).toBe(0o600);
-        expect(fs.statSync(path.dirname(passfile)).mode & 0o777).toBe(0o700);
+        if (process.platform !== 'win32') {
+          expect(fs.statSync(passfile).mode & 0o777).toBe(0o600);
+          expect(fs.statSync(path.dirname(passfile)).mode & 0o777).toBe(0o700);
+        }
         return Promise.reject(new Error('expected failure'));
       }),
     ).rejects.toThrow('expected failure');
