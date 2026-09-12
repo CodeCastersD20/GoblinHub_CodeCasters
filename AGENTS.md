@@ -28,14 +28,21 @@ Todo cambio en este repositorio DEBE seguir este flujo:
    `/.github/pull_request_template.md` (o `/.github/PULL_REQUEST_TEMPLATE/`),
    completando resumen, tipo de cambio, archivos afectados, cómo probarlo y el
    checklist.
+   - Etiquetar el PR con la(s) misma(s) etiqueta(s) de la issue, añadiendo la de
+     tipo: p. ej. docs → `documentation` + `Feature`.
 5. **Vincular rama y PR a la issue**: el PR DEBE incluir la cláusula de cierre,
    p. ej. `Closes #<id>` (keyword en inglés para cierre automático), y la issue
    DEBE actualizarse indicando la rama y el PR asociados.
+6. **Solicitar revisión**: tras crear el PR, DEBE solicitarse la revisión del
+   equipo (request review). No se mergea sin aprobación.
 
 ## Reglas de ramas y PRs
 
 - La rama raíz de integración es `develop`; `main` recibe solo merges revisados.
-- Todo PR requiere revisión del equipo antes del merge (ver constitución).
+- Todo PR requiere revisión del equipo antes del merge: `REVIEW_REQUIRED` hasta
+  que un revisor apruebe.
+- Las etiquetas del PR DEBEN reflejar el tipo de cambio y replicar las de la
+  issue vinculada.
 - Los archivos de configuración de GitHub (`.github/workflows/*.yml`, plantillas)
   se modifican SOLO por PRs revisados.
 - No hacer push directo a `develop` ni `main`.
