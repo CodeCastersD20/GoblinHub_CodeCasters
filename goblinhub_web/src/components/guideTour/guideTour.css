@@ -1,0 +1,38 @@
+.guide-tour-launcher {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background-color: #6b21a8;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(107, 33, 168, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.guide-tour-launcher:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(107, 33, 168, 0.6);
+}
+
+.guide-tour-launcher:focus-visible {
+  outline: 3px solid #c084fc;
+  outline-offset: 2px;
+}
+
+.gh-tour-popover {
+  --driver-button-bg: #6b21a8;
+  --driver-button-bg-active: #4a148c;
+}
+
+.gh-tour-popover h1,
+.gh-tour-popover .driver-popover-title {
+  font-weight: 700;
+}
