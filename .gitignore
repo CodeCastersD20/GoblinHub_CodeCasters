@@ -1,4 +1,5 @@
 node_modules/
+.opencode/
 package-lock.json
 package.json
 algo.md
