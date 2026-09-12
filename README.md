@@ -224,6 +224,7 @@ npm run web          # Pipeline completo (lint + type-check + tests + build)
 - **Eventos y torneos** — Creación, inscripción online, cupos, estados automáticos (programado → en curso → finalizado).
 - **Sistema de puntos** — Los jugadores acumulan puntos al participar en eventos y los canjean por recompensas.
 - **Auth completa** — Registro multi-fase, confirmación por email, recuperación de contraseña, renovación automática de JWT.
+- **Tour guiado** — Asistente paso a paso (driver.js) para el primer uso de la plataforma y botón de ayuda reutilizable.
 - **Gestión de media** — Subida de imágenes con compresión automática a WebP via Supabase Storage.
 - **Panel de administración** — CRUD de eventos, productos y recompensas para roles admin/empleado.
 - **Backups** — Generación y restauración de backups de BD bajo demanda (solo admins).
