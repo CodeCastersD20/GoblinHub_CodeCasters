@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Nav from "./layouts/navbar/navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import GuideTour from "./components/guideTour/guideTour";
 import Home from "./pages/Home";
 
 // Páginas públicas (lazy)
@@ -57,6 +58,8 @@ function App() {
   return (
     <>
       {!hideNav && <Nav />}
+
+      <GuideTour />
 
       <Suspense fallback={<div>Cargando...</div>}>
         <Routes>
