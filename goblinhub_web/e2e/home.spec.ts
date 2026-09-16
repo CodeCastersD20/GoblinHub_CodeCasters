@@ -12,7 +12,7 @@ test.describe("Página de Inicio pública (/)", () => {
 
   test("muestra el logo y el nombre GoblinHub", async ({ page }) => {
     await expect(page.locator(".lp-hero__logo")).toBeVisible();
-    await expect(page.getByText("GoblinHub")).toBeVisible();
+    await expect(page.getByText("GoblinHub", { exact: true })).toBeVisible();
   });
 
   test("muestra el botón de ver inventario", async ({ page }) => {
