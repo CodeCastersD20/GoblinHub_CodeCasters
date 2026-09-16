@@ -51,7 +51,8 @@ src/
 ├── components/               # Componentes reutilizables y transversales
 │   ├── ProtectedRoute.tsx    # Guard de rutas privadas
 │   ├── authButton/           # Botón de login/logout contextual
-│   └── button/               # Botón genérico con variantes
+│   ├── button/               # Botón genérico con variantes
+│   └── guideTour/            # Tour guiado de bienvenida (driver.js)
 │
 ├── features/                 # Features autocontenidas (patrón feature-sliced)
 │   └── landing/
@@ -419,6 +420,28 @@ La barra de navegación es **contextual**:
 - **Autenticado**: muestra avatar del usuario, nombre, puntos de fidelidad y un dropdown con "Mi perfil" y "Cerrar sesión".
 
 Llama a `getMe()` al montar para obtener los datos del usuario actual.
+
+### GuideTour — Tour guiado de bienvenida (`components/guideTour/`)
+
+Tour interactivo impulsado por **driver.js** que orienta al usuario en su primer
+uso de la plataforma:
+
+- **Auto-arranque**: en la primera visita al Home (`/`) se inicia automáticamente
+  tras 600 ms y se guarda la marca `gh_guided_tour_done` en `localStorage` al
+  cerrarse; no vuelve a aparecer sola.
+- **Arranque manual**: un botón flotante con `?` (abajo a la derecha) permite
+  repetir el tour en cualquier momento.
+- **Tours por página** (`getStepsForPath`): pasos específicos para `inicio`,
+  `productos` y `eventos`, más un tour "general" (logo y navegación) como
+  respaldo en el resto de rutas.
+- **Oculto** en `/login`, `/register`, `/reset-password` y `/confirm-account`.
+- Los pasos usan selectores CSS estables y `skipMissingElement: true` para no
+  fallar si un elemento no está presente (p. ej. botón "Inscribirse" sin
+  eventos).
+
+Customización: el popover se estiliza con la clase `gh-tour-popover` y los
+botones con variables CSS de driver.js (`--driver-button-bg`), alineadas con la
+paleta morada de la marca (`#6b21a8`).
 
 ### Home — Landing Page (`pages/Home.tsx`)
 
