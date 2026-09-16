@@ -3,3 +3,9 @@ package-lock.json
 package.json
 algo.md
 docs/auditoria
+
+# Terraform (infraestructura como código)
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/crash.log

@@ -1,0 +1,10 @@
+# GoblinHub devcontainer shell helpers
+export PS1="\[\033[01;35m\]goblin\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "
+alias api="npm run start:dev --prefix goblinhub-api"
+alias web="npm run dev --prefix goblinhub_web"
+alias lint-api="npm run lint --prefix goblinhub-api"
+alias lint-web="npm run lint --prefix goblinhub_web"
+alias test-api="npm run test --prefix goblinhub-api"
+alias test-web="npm test --prefix goblinhub_web"
+alias e2e="npm run test:e2e --prefix goblinhub_web"
+alias gprisma="npx --prefix goblinhub-api prisma"
