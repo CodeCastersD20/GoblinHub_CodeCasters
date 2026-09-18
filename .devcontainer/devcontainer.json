@@ -1,0 +1,31 @@
+// Entorno de desarrollo reproducible para GoblinHub (GitHub Codespaces).
+// Stack: Node.js 20 (backend NestJS + frontend React/Vite) + clientes de BD.
+// Requisito de la Actividad 1.1 — liga de apoyo c) "Software como infraestructura".
+{
+  "name": "GoblinHub (CodeCasters)",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Prisma.prisma",
+        "ms-vscode-remote.remote-containers"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "files.eol": "\n"
+      }
+    }
+  },
+  "forwardPorts": [3000, 5173],
+  "portsAttributes": {
+    "3000": { "label": "GoblinHub API", "onAutoForward": "notify" },
+    "5173": { "label": "GoblinHub Web (Vite)", "onAutoForward": "openBrowser" }
+  },
+  "postCreateCommand": "npm install --prefix goblinhub-api && npm install --prefix goblinhub_web",
+  "remoteUser": "node"
+}
