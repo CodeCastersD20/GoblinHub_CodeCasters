@@ -1,0 +1,43 @@
+name: GoblinHub K6 Load Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'K6_BASE_URL: URL base de la API bajo prueba'
+        required: false
+        default: 'http://localhost:3000'
+      k6_token:
+        description: 'K6_TOKEN: access_token (solo requerido para sjdf_prueba.js)'
+        required: false
+        default: ''
+
+jobs:
+  k6-load:
+    name: K6 - ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: AESR
+            script: aesr_prueba.js
+          - label: EDAA
+            script: edaa_prueba.js
+          - label: JAMT
+            script: jamt_prueba.js
+          - label: SJDF
+            script: sjdf_prueba.js
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run K6 (${{ matrix.script }})
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: k6/scripts/${{ matrix.script }}
+          flags: --summary-trend-stats="avg,p(95)"
+        env:
+          K6_BASE_URL: ${{ inputs.base_url }}
+          K6_TOKEN: ${{ inputs.k6_token }}
