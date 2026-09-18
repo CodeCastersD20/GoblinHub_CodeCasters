@@ -4,8 +4,9 @@
 > comunidad de videojuegos.
 > **Repositorio:** <https://github.com/CodeCastersD20/GoblinHub_CodeCasters>
 >
-> Documento maestro de la Actividad 1.2 (borrador inicial, completado por el
-> equipo a partir de las issues #177–#188).
+> Documento maestro de la Actividad 1.2. El documento se elabora por la
+> coordinación (agente/PR #189) directamente, sin issue; las tareas del equipo
+> están trazadas en las issues #178–#188.
 
 ---
 
@@ -126,7 +127,7 @@ duplicados en markdown.
 
 | Integrante | GitHub | Issues |
 |---|---|---|
-| Sadrach Juan Diego Garcia Flores | @Sadrach34 | #177 (documento), #180 (K6), #185 (Sonar) |
+| Sadrach Juan Diego Garcia Flores | @Sadrach34 | #180 (K6), #185 (Sonar) — además coordina el documento maestro (PR #189) |
 | Erick Daniel Arvayo Aviles | @Ddarielz | #178 (pipeline), #181 (K6), #186 (Sonar) |
 | Jesús Adriana Martínez Trillas | @Alfion72 | #182 (K6), #184 (Sonar install), #187 (Sonar) |
 | Adrián Eduardo Santos Rosales | @AdrianS-127 | #179 (plan K6), #183 (K6), #188 (Sonar) |
