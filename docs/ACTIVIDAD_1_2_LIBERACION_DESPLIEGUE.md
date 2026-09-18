@@ -76,16 +76,20 @@ Node/Python/herramientas. Basado en la Sección 1 de la **Actividad 1.1**.
 
 ## 6. Herramienta de liberación continua vinculada con el entorno de despliegue
 
-*Issue #178 (responsable: @Ddarielz).* Vincular GitHub Actions como herramienta
-de **liberación continua** con el entorno de despliegue (Render). Entregables
-en el repo:
+*Issue #178 (responsable: @Ddarielz).* **Render** es la herramienta de
+despliegue continuo (auto-deploy desde el repo / Deploy Hooks). Por eso el
+pipeline de **liberación continua** (GitHub Actions) lo **complementa**: prepara
+la liberación y **dispara y verifica** el despliegue de Render. Entregables:
 
 - `scripts/` con el flujo de trabajo (pipeline):
-  - `scripts/release/` — **generación del entorno de liberación**.
+  - `scripts/release/` — **generación del entorno de liberación** (build,
+    artefactos/imagen, tag de release).
   - `scripts/test/` — **ejecución de pruebas en el entorno de liberación**.
-  - `scripts/deploy/` — **generación del despliegue**.
-- Workflow de GitHub Actions que orqueste: build → entorno de liberación →
-  pruebas → despliegue → healthcheck.
+  - `scripts/deploy/` — **generación del despliegue**: disparar el
+    **Deploy Hook de Render** (`curl <hook_url>`) y verificar `/health`
+    post-despliegue.
+- Workflow de GitHub Actions de **liberación continua**: build → tag/release →
+  pruebas en el entorno de liberación → Deploy Hook de Render → healthcheck.
 
 ## 7. Pruebas de carga con K6 (métricas y SLA p95 < 5 s)
 
