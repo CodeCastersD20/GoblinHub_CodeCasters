@@ -113,13 +113,13 @@ en CI/CD (husky pre-commit o GitHub Actions) y screenshot por integrante.
 | # | Tarea | Responsable | Artículo |
 |---|---|---|---|
 | #184 | Instalación de SonarQube en stack local (PR de implementación) | @Alfion72 | `sonarqube/` (docker-compose + pasos + `sonar-project.properties`) |
-| #185 | Escaneo del PR de la 1ª unidad | @Sadrach34 | `sonarqube/RESULTADOS_SADRACH.md` |
-| #186 | Escaneo del PR de la 1ª unidad | @Ddarielz | `sonarqube/RESULTADOS_ERICK.md` |
-| #187 | Escaneo del PR de la 1ª unidad | @Alfion72 | `sonarqube/RESULTADOS_ADRIANA.md` |
-| #188 | Escaneo del PR de la 1ª unidad | @AdrianS-127 | `sonarqube/RESULTADOS_ADRIAN.md` |
+| #185 | Escaneo del PR asignado | @Sadrach34 | `sonarqube/RESULTADOS_SADRACH.md` |
+| #186 | Escaneo del PR asignado | @Ddarielz | `sonarqube/RESULTADOS_ERICK.md` |
+| #187 | Escaneo del PR asignado | @Alfion72 | `sonarqube/RESULTADOS_ADRIANA.md` |
+| #188 | Escaneo del PR asignado | @AdrianS-127 | `sonarqube/RESULTADOS_ADRIAN.md` |
 
-Cada integrante ejecuta `sonar-scanner` contra el stack local sobre su PR de la
-1ª unidad y evidencia bugs, vulnerabilidades, code smells, cobertura y
+Cada integrante ejecuta `sonar-scanner` contra el stack local sobre su PR
+asignado y evidencia bugs, vulnerabilidades, code smells, cobertura y
 duplicados en markdown.
 
 ## 9. Reparto de tareas por integrante (issues)
