@@ -131,3 +131,28 @@ duplicados en markdown.
 | Erick Daniel Arvayo Aviles | @Ddarielz | #178 (pipeline), #181 (K6), #186 (Sonar) |
 | Jesús Adriana Martínez Trillas | @Alfion72 | #182 (K6), #184 (Sonar install), #187 (Sonar) |
 | Adrián Eduardo Santos Rosales | @AdrianS-127 | #179 (plan K6), #183 (K6), #188 (Sonar) |
+## 10. Trazabilidad de requisitos de la Actividad 1.2
+
+| # | Requisito de la actividad | Entrega | Issue / PR |
+|---|---|---|---|
+| 1 | Documento: justificación del pipeline de liberación y despliegue continuo | Sección 1 | PR #189 (coordinación) |
+| 2 | Entorno requerido para la liberación y el despliegue continuo | Sección 2 | PR #189 |
+| 3 | Niveles de servicio acordados (SLA) | Sección 3 (p95 < 5 s) | #180–#183 |
+| 4 | Métricas para el monitoreo de la aplicación | Sección 4 | #180–#183, #185–#188 |
+| 5 | Parámetros de configuración de las herramientas utilizadas | Sección 5 | PR #189 |
+| 6 | Configurar y vincular herramienta de liberación continua con entorno de despliegue | Deploy Hook de Render | #178 |
+| 7 | Scripts del flujo de trabajo (pipeline) | `scripts/` | #178 |
+| 8 | Scripts para la generación del entorno de liberación | `scripts/release/` | #178 |
+| 9 | Scripts para la ejecución de pruebas en el entorno de liberación | `scripts/test/` | #178 |
+| 10 | Scripts para la generación del despliegue | `scripts/deploy/` | #178 |
+| 11 | Pruebas de carga (K6; alternativas JMeter / Apache Benchmark `ab`) | `k6/` | #179 |
+| 12 | PR de implementación del plan K6 (comandos de instalación + endpoints) | `k6/PLAN_K6.md` | #179 |
+| 13 | Una prueba por integrante, script `iniciales_prueba.js`, ≥ 1 endpoint, > 5 VUs, máx. métricas | `k6/scripts/*_prueba.js` | #180–#183 |
+| 14 | Commit de resultados en markdown + PR de ejecución de pruebas | `k6/RESULTADOS_*.md` | #180–#183 |
+| 15 | Uso en CI/CD (husky pre-commit o GitHub Actions) + screenshot por integrante (opcional) | docs del plan / Actions | #180–#183 |
+| 16 | Implementar SonarQube en stack local (PR con pasos markdown, spec.planning) | `sonarqube/` (docker-compose, `sonar-project.properties`) | #184 |
+| 17 | Evidenciar resultados: escaneo de su PR por cada integrante | `sonarqube/RESULTADOS_*.md` | #185–#188 |
+
+**Cierre:** cuando las issues #178–#188 estén completas (PRs aprobados y
+mergeados en `develop`), la coordinación consolida sus resultados y los
+screenshots en este documento y genera el `.docx` final.
