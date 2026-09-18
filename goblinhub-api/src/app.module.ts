@@ -18,10 +18,10 @@ import { ActivityLogInterceptor } from './modules/logs/infrastructure/intercepto
   imports: [
     ThrottlerModule.forRoot([
       {
-        ttl: 60000,
-        limit: 10,
+        ttl: Number(process.env.THROTTLE_TTL ?? 60000),
+        limit: Number(process.env.THROTTLE_LIMIT ?? 10),
       },
-    ]), // Limita a 10 solicitudes por minuto
+    ]), // Limita a 10 solicitudes por minuto/IP por defecto; configurable por env
     ConfigModule.forRoot({
       isGlobal: true,
     }),
