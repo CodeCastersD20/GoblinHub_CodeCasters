@@ -16,12 +16,12 @@ export const options = {
 const BASE_URL = __ENV.K6_BASE_URL || 'http://localhost:3000';
 
 export default function () {
-  const response = http.get(`${BASE_URL}/events`, {
-    tags: { name: 'GET /events' },
+  const response = http.get(`${BASE_URL}/productos`, {
+    tags: { name: 'GET /productos' },
   });
 
   check(response, {
-    '[AESR] GET /events responde 200': (r) => r.status === 200,
+    '[AESR] GET /productos responde 200': (r) => r.status === 200,
   });
 
   sleep(1);
