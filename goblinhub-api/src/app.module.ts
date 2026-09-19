@@ -10,6 +10,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { LogsModule } from './modules/logs/logs.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { PrismaModule } from './connect/prisma.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ActivityLogInterceptor } from './modules/logs/infrastructure/interceptors/activity-log.interceptor';
@@ -33,6 +34,7 @@ import { ActivityLogInterceptor } from './modules/logs/infrastructure/intercepto
     RewardModule,
     ProductoModule,
     UploadModule,
+    ReportsModule,
     PrismaModule,
   ],
   controllers: [],
