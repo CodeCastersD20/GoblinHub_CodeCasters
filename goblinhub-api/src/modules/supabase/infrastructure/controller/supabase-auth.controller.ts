@@ -75,7 +75,12 @@ export class SupabaseAuthController {
   ) {}
 
   /** Endpoint de login limpio — solo devuelve access_token y refresh_token */
-  @Throttle({ default: { limit: 5, ttl: 90000 } })
+  @Throttle({
+    default: {
+      limit: Number(process.env.AUTH_SIGNIN_THROTTLE_LIMIT ?? 5),
+      ttl: Number(process.env.AUTH_SIGNIN_THROTTLE_TTL ?? 90000),
+    },
+  })
   @Post('signin')
   @HttpCode(HttpStatus.OK)
   /* istanbul ignore next */

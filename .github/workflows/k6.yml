@@ -28,6 +28,8 @@ jobs:
             script: jamt_prueba.js
           - label: SJDF
             script: sjdf_prueba.js
+          - label: AS
+            script: as_prueba.js
 
     steps:
       - name: Checkout code
