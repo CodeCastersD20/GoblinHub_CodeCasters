@@ -9,3 +9,6 @@ infra/terraform/.terraform/
 infra/terraform/*.tfstate
 infra/terraform/*.tfstate.*
 infra/terraform/crash.log
+# SonarQube (scannerwork local)
+/.scannerwork/
+sonarqube/.scannerwork/
