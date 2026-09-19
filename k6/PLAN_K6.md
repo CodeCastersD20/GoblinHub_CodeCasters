@@ -38,7 +38,7 @@ Se evaluaron tres herramientas:
 | Adrian Eduardo Santos Rosales | `aesr_prueba.js` |
 | Erick Daniel Arvayo Aviles | `edaa_prueba.js` |
 | Jesus Adrian Martinez Trillas | `jamt_prueba.js` |
-| Sadrach Juan Diego Garcia Flores | `sjdf_prueba.js` |
+| Sadrach Juan Diego Garcia Flores | `sjdf_prueba.js` (GET /auth/me), `as_prueba.js` (POST /auth/signin bad path) |
 
 ## 4.4 Instalación de K6
 
@@ -93,6 +93,7 @@ k6 run k6/scripts/aesr_prueba.js
 k6 run k6/scripts/edaa_prueba.js
 k6 run k6/scripts/jamt_prueba.js
 k6 run k6/scripts/sjdf_prueba.js
+k6 run k6/scripts/as_prueba.js
 ```
 
 ### Variables de entorno
@@ -130,6 +131,7 @@ k6 run k6/scripts/sjdf_prueba.js
 | Erick Daniel Arvayo Aviles | `edaa_prueba.js` | `/productos` | GET | No |
 | Jesus Adrian Martinez Trillas | `jamt_prueba.js` | `/rewards` | GET | No |
 | Sadrach Juan Diego Garcia Flores | `sjdf_prueba.js` | `/auth/me` | GET | Sí (Bearer JWT) |
+| Sadrach Juan Diego Garcia Flores | `as_prueba.js` | `/auth/signin` (bad path) | POST | No |
 
 Se seleccionaron endpoints de lectura frecuentes que:
 
@@ -161,8 +163,11 @@ La respuesta es `{ "access_token": "…", "refresh_token": "…" }`. Se exporta 
 export K6_TOKEN=<access_token>
 ```
 
-> Nota: las rutas de `auth` conservan su propio throttling específico (`signin`: 5 req / 90 s), por lo
-> que la obtención del token es una única llamada previa a la prueba, no parte de la carga.
+> Nota: las rutas de `auth` conservan su propio throttling específico (`signin`: 5 req / 90 s por
+> default), por lo que la obtención del token es una única llamada previa a la prueba, no parte de la
+> carga. Para la prueba de carga de `POST /auth/signin` (bad path, `as_prueba.js`) ese límite se hace
+> configurable por entorno: `AUTH_SIGNIN_THROTTLE_LIMIT` / `AUTH_SIGNIN_THROTTLE_TTL` (relajar p. ej.
+> `AUTH_SIGNIN_THROTTLE_LIMIT=10000` solo en ambiente de pruebas).
 
 ## 4.8 Datos de prueba
 
@@ -183,9 +188,12 @@ Precondición documentada: la BD debe tener datos (ver sección 4.5).
 Todos los scripts comparten una misma estructura (adaptada al endpoint de cada integrante):
 
 - `options` con `stages` (carga > 5 VUs) y `thresholds`.
-- `check()` sobre el código de estado esperado (`200`).
+- `check()` sobre el código de estado esperado (`200`); `as_prueba.js` espera `400` (bad path).
 - `sleep(1)` entre iteraciones para no generar una carga innecesariamente agresiva.
 - Lectura de `K6_BASE_URL` desde el entorno.
+
+> `as_prueba.js` (bad path) no define threshold sobre `http_req_failed` porque todas las respuestas
+> esperadas son `4xx`; su gate único es el SLA `p(95)<5000`.
 
 Configuración de carga (por script):
 
@@ -212,7 +220,7 @@ http_req_duration: ['p(95)<5000'],
 ## 4.10 CI/CD
 
 Workflow manual (opcional, no bloquea commits/PRs): [`.github/workflows/k6.yml`](../.github/workflows/k6.yml).
-Se dispara con `workflow_dispatch` y ejecuta los 4 scripts vía matrix. Las cargas de K6 no se añaden a
+Se dispara con `workflow_dispatch` y ejecuta los 5 scripts vía matrix. Las cargas de K6 no se añaden a
 Husky/pre-commit (no existe Husky en el repo y añadir carga pesada al desarrollo lo ralentizaría sin beneficio).
 
 ## 4.11 Throttling global de la API
