@@ -9,6 +9,7 @@ infra/terraform/.terraform/
 infra/terraform/*.tfstate
 infra/terraform/*.tfstate.*
 infra/terraform/crash.log
-# SonarQube (scannerwork local)
+# SonarQube (scannerwork local + credenciales del stack Docker)
 /.scannerwork/
 sonarqube/.scannerwork/
+sonarqube/.env

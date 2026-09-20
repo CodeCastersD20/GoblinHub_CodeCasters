@@ -1,80 +1,120 @@
-# SonarQube — Stack local (sin Docker)
+# SonarQube — Stack local (Docker Compose + PostgreSQL)
 
-Guía del stack **SonarQube local sin Docker** usado para el análisis de calidad
-asignado a Sadrach. Complementa la issue [#184](https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/184)
-(instalación del stack) y la [#185](https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/185)
-(escaneo del PR asignado).
+Guía del stack local de **SonarQube** para el análisis de calidad de código del
+proyecto GoblinHub. Complementa la issue [#184](https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/184)
+(instalación del stack) y las issues de escaneo del PR asignado
+([#185](https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/185),
+[#188](https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/188)).
 
 ## Componentes
 
-| Componente | Versión | Ruta de descarga |
-| --- | --- | --- |
-| SonarQube Community LTS | 9.9.5.90363 | `https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.9.5.90363.zip` |
-| sonar-scanner-cli | 6.2.1.4610 (linux-x64) | `https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.2.1.4610-linux-x64.zip` |
-| JDK 17 (Temurin, portable) | 17.0.20.1 | `https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.20.1%2B1/OpenJDK17U-jdk_x64_linux_hotspot_17.0.20.1_1.tar.gz` |
+| Componente | Versión / Imagen |
+| --- | --- |
+| SonarQube Community LTS | `sonarqube:lts-community` (SonarQube 9.9) |
+| Base de datos | `postgres:15` |
+| sonar-scanner-cli | 6.x (por SO; v7+ no es compatible con SonarQube 9.9) |
 
-> Nota descarga: `binaries.sonarsource.com` bloquea `HEAD`/listing, usa
-> `curl -A "Mozilla/5.0" -LO <url>` (GET directo).
+## Requisitos previos
+
+- Docker Engine 20.10+ y Docker Compose v2 (en Windows: Docker Desktop con WSL2).
+- `sonar-scanner-cli` 6.x descargado y disponible en `PATH`. Descargas:
+  `https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.2.1.4610-windows-x64.zip`
+  (sustituir `windows-x64` por `linux-x64` / `macosx-x64` según el SO).
 
 ## Puesta en marcha
 
 ```bash
-# 1. JDK 17 portable (SonarQube 9.9 NO funciona con Java 26 del sistema)
-export SONAR_JAVA_PATH=/ruta/jdk17/bin/java   # <- clave: sin esto usa /usr/bin/java y ES muere
+# 1. Preparar credenciales de la BD (usuario/contraseña locales del stack)
+cp sonarqube/.env.example sonarqube/.env   # Windows PowerShell: Copy-Item sonarqube/.env.example sonarqube/.env
 
-# 2. Arrancar el servidor (H2 embebido por defecto en Community LTS, puerto 9000)
-cd sonarqube-9.9.5.90363
-bin/linux-x86-64/sonar.sh start
-# Log: logs/sonar.log ; esperar "SonarQube is operational"
+# 2. Levantar el stack (SonarQube + PostgreSQL)
+docker compose -f sonarqube/docker-compose.yml up -d
 
-# 3. Verificar status
+# 3. Esperar a que SonarQube esté operativo (el primer arranque tarda unos minutos)
 curl -s http://localhost:9000/api/system/status   # -> {"status":"UP"}
-
-# 4. Credenciales iniciales: admin / admin
 ```
 
-## Crear token y proyecto (API)
+Acceder a <http://localhost:9000> con las credenciales iniciales `admin` / `admin`
+y cambiar la contraseña en el primer acceso.
+
+## Configurar el proyecto y el token
 
 ```bash
-# Token
-curl -u admin:admin -X POST http://localhost:9000/api/user_tokens/generate \
-  -d "name=goblinhub-sadrach-scan"          # -> { "token": "squ_..." }
-
 # Proyecto
 curl -u admin:admin -X POST http://localhost:9000/api/projects/create \
   -d "name=GoblinHub&project=goblinhub"
+
+# Token (solo se muestra una vez; guárdalo)
+curl -u admin:admin -X POST http://localhost:9000/api/user_tokens/generate \
+  -d "name=goblinhub-<tu-alias>-scan"          # -> { "token": "squ_..." }
 ```
 
-## Ejecutar el escaneo
+## Generar la cobertura (opcional, para el Quality Gate con `coverage`)
 
 ```bash
-# 0. (opcional) Cobertura real desde el API
 cd goblinhub-api
-npx jest --coverage --coverageReporters=lcov --coverageDirectory=/tmp/sonar/lcov
+npx jest --coverage --coverageReporters=lcov
+# Genera goblinhub-api/coverage/lcov.info (ruta ya declarada en sonar-project.properties)
+```
 
-# 1. Config en el repo (sources = todo, exclusions de node_modules/dist/specs/...)
-#    sonarqube/sonar-project.properties (declara la ruta del lcov.info)
+## Ejecutar el escaneo (cada integrante sobre su PR asignado)
 
-# 2. Escanear
+Desde la **raíz del repo**, sobre la rama/commit a analizar:
+
+```bash
+# Linux / macOS
+export TOKEN="squ_..."
 sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.login="$TOKEN" \
   -Dproject.settings=sonarqube/sonar-project.properties
+```
 
-# 3. Consultar métricas
+```powershell
+# Windows (PowerShell)
+$env:TOKEN = "squ_..."
+sonar-scanner "-Dsonar.host.url=http://localhost:9000" "-Dsonar.login=$env:TOKEN" `
+  "-Dproject.settings=sonarqube/sonar-project.properties"
+```
+
+> Si el repo se trabaja como worktree o el módulo SCM da error, añadir
+> `-Dsonar.scm.disabled=true`.
+
+La configuración del análisis (proyecto, sources, exclusions y ruta de cobertura)
+vive en [`sonarqube/sonar-project.properties`](./sonar-project.properties).
+
+## Consultar métricas
+
+```bash
 curl -u admin:admin "http://localhost:9000/api/measures/component?component=goblinhub&metricKeys=bugs,vulnerabilities,security_hotspots,code_smells,coverage,alert_status"
 ```
 
 ## Solución de problemas frecuentes
 
-- **Elasticsearch cae al arrancar** → ES requiere el mismo JDK 17: verifica que
-  `SONAR_JAVA_PATH` apunte a `jdk17/bin/java` antes de `sonar.sh start`
-  (el script usa `SONAR_JAVA_PATH`, no respeta `JAVA_HOME`).
-- **`Unable to open Git repository` en worktrees** → el módulo SCM/JGit falla con
-  worktrees fuera del repo; escanea desde la copia del repo (rama/commit a analizar)
-  o desactiva SCM con `-Dsonar.scm.disabled=true`.
-- **Puerto ocupado** → `conf/sonar.properties`: `sonar.web.port=9000`.
-- **Java 26 o superior** → no soportado por SonarQube 9.9; usa JDK 17 portable.
+- **SonarQube no arranca / Elasticsearch cae** → asigna al menos 2 GB de memoria
+  a Docker (Docker Desktop → Settings → Resources) y vuelve a levantar el stack.
+- **Puerto 9000 ocupado** → cambia el mapeo `9000:9000` en `docker-compose.yml` o
+  detén el proceso que use el puerto.
+- **El compose falla por credenciales** → verifica que `sonarqube/.env` existe
+  (copiado de `.env.example`) antes de `up -d`.
+- **`Not authorized` en el escaneo** → el token debe pasarse en `-Dsonar.login=`
+  (equivalente a autenticarse como usuario); `sonar-scanner` 6.x no autentica con
+  `-Dsonar.token=`.
+- **Persistencia de datos** → proyecto, token y métricas persisten en los volúmenes
+  de Docker; `docker compose -f sonarqube/docker-compose.yml down -v` los elimina,
+  por lo que habría que recrear proyecto y token.
 
-## Métricas de referencia
+## Anexo: fallback sin Docker (zip + H2)
 
-Resultado del escaneo del PR #192: ver [`RESULTADOS_SADRACH.md`](./RESULTADOS_SADRACH.md)
-(Quality Gate OK, 0 bugs, 0 vulns, coverage 87.4%).
+Para entornos sin Docker, se puede usar SonarQube Community LTS descargado como
+zip con H2 embebido: requiere **JDK 17** en `SONAR_JAVA_PATH` (el 9.9 no funciona
+con Java 21+) y `sonar-scanner-cli`. Pasos resumidos:
+
+```bash
+# JDK 17 portable y ejecutable de SonarQube descargados
+export SONAR_JAVA_PATH=/ruta/jdk17/bin/java
+cd sonarqube-9.9.5.90363 && bin/linux-x86-64/sonar.sh start   # esperar "SonarQube is operational"
+curl -s http://localhost:9000/api/system/status               # -> UP
+```
+
+El resto (crear proyecto/token, generar cobertura y escanear) es idéntico a las
+secciones anteriores. La configuración del stack no dockerizado documentada
+originalmente para la issue #184 se mantiene aquí como referencia.
