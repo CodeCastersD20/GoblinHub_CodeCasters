@@ -9,7 +9,8 @@
 > Se elabora por coordinación (issue [#177], PR [#189]) y consolida la
 > evidencia de las issues **cerradas** del flujo de liberación, pruebas de
 > carga (K6) y análisis de calidad (SonarQube) de los integrantes
-> **Sadrach34** y **AdrianS-127**: issues #179, #180, #183, #185 y #188.
+> **Sadrach34**, **AdrianS-127** y **Alfion72**: issues #179, #180, #182, #183,
+> #184, #185 y #188 (con #187 pendiente).
 
 ---
 
@@ -21,6 +22,7 @@ Presentan:
 
 - **Sadrach Juan Diego Garcia Flores (Sadrach34)**
 - **Adrian Eduardo Santos Rosales (AdrianS-127)**
+- **Jesus Adriana Martinez Trillas (Alfion72)**
 
 ---
 
@@ -30,8 +32,8 @@ Presentan:
 |---|---|---|---|
 | **Pipeline de liberación y CD (coordinación)** | Justificación del flujo de trabajo (workflow) de liberación y despliegue continuo, entorno requerido, SLA y métricas de monitoreo | [#177] | [PR #189] |
 | **Plan de pruebas de carga K6** | Instalación de K6 + selección de endpoints + scripts `iniciales_prueba.js` con > 5 VUs y SLA `p95 < 5 s` | [#179] | [PR #191] |
-| **Ejecución de prueba de carga K6 (por integrante)** | Escaneo/ejecución real: `POST /api/auth/login` (bad path) y `GET /productos`, resultados en markdown + PR de ejecución | [#180], [#183] | [PR #193], [PR #192] |
-| **Análisis estático SonarQube** | Instalación del stack local (sin Docker) + escaneo del PR asignado de cada integrante con evidencia en markdown | [#185], [#188] | [PR #194], [PR #196] |
+| **Ejecución de prueba de carga K6 (por integrante)** | Ejecución real: `POST /api/auth/login` (bad path), `GET /productos` y `GET /` (inicio), resultados en markdown + PR de ejecución | [#180], [#182], [#183] | [PR #193], [PR #197], [PR #192] |
+| **Análisis estático SonarQube** | Instalación del stack local (Docker Compose + PostgreSQL) + escaneo del PR asignado de cada integrante con evidencia en markdown | [#184], [#185], [#188] | [PR #198], [PR #194], [PR #196] |
 
 Capturas de los PRs: [Anexo A](#anexo-a-capturas-de-los-pull-requests).
 
@@ -80,7 +82,7 @@ escaneos (#185/#188) y el diseño de los scripts de release/despliegue (issue
 | Contenedores | Docker (Dockerfile multi-stage `node:20-alpine`) + devcontainer/Codespaces | Entorno reproducible |
 | Hosting / despliegue | Render (auto-deploy + Deploy Hooks) | Despliegue continuo con HTTPS automático |
 | Pruebas de carga | K6 (issue #179, PR #191) | SLA `p95 < 5 s` |
-| Análisis estático | SonarQube 9.9.5 LTS (stack local sin Docker) | Calidad de código (Quality Gate) |
+| Análisis estático | SonarQube 9.9 LTS (stack local, Docker Compose + PostgreSQL, #184) | Calidad de código (Quality Gate) |
 | Base de datos | PostgreSQL (Supabase) + Prisma | Persistencia |
 | Caché de roles | Redis | Validación de roles en endpoints autenticados |
 
@@ -101,9 +103,9 @@ niveles de servicio pactados por el equipo:
 
 | SLA | Criterio | Evidencia |
 |---|---|---|
-| **Tiempo de respuesta bajo carga** | `p95 < 5 s` en endpoints de uso frecuente | K6: [#179] plan, [#180]/[#183] ejecuciones |
+| **Tiempo de respuesta bajo carga** | `p95 < 5 s` en endpoints de uso frecuente | K6: [#179] plan, [#180]/[#182]/[#183] ejecuciones |
 | **Disponibilidad del pipeline** | No se libera/despliega con pruebas fallidas | Puertas de CI (api.yml, web.yml, playwright.yml) |
-| **Calidad de código** | Quality Gate SonarQube `OK`, sin bugs ni vulnerabilidades nuevas | [#185], [#188] |
+| **Calidad de código** | Quality Gate SonarQube `OK`, sin bugs ni vulnerabilidades nuevas | [#184], [#185], [#188] |
 | **Rollback** | Volver a la versión anterior si falla el healthcheck | `HEALTHCHECK` /health + Render |
 | **Healthcheck** | API lista en `< 30 s` post-despliegue | Dockerfile multi-stage + Render |
 
@@ -113,7 +115,9 @@ Resultados verificados en esta actividad:
   ([k6/RESULTADOS_SADRACH.md]).
 - K6 `GET /productos`: **p95 = 51.59 ms** → SLA cumplido
   ([k6/RESULTADOS_AESR.md]).
-- SonarQube (ambos escaneos): **Quality Gate OK**, 0 bugs, 0 vulnerabilidades,
+- K6 `GET /` (inicio): **p95 = 3.08 ms** → SLA cumplido
+  ([k6/RESULTADOS_ADRIANA.md]).
+- SonarQube (escaneos cerrados): **Quality Gate OK**, 0 bugs, 0 vulnerabilidades,
   cobertura **87.4%**, ratings **A/A/A** ([sonarqube/RESULTADOS_SADRACH.md],
   [sonarqube/RESULTADOS_ADRIAN.md]).
 
@@ -176,15 +180,18 @@ AUTH_SIGNIN_THROTTLE_LIMIT=10000
 AUTH_SIGNIN_THROTTLE_TTL=60000
 ```
 
-## 5.3 SonarQube (stack local sin Docker)
+## 5.3 SonarQube (stack local — Docker Compose + PostgreSQL)
 
-Guía completa en [sonarqube/README.md]:
+El stack local se instaló oficialmente con **Docker Compose + PostgreSQL**
+(issue #184, PR #198): imágenes `sonarqube:lts-community` (SonarQube 9.9) y
+`postgres:15`, con `sonar-scanner` 6.x (v7+ no es compatible con SonarQube 9.9).
+Guía completa en [sonarqube/README.md] (incluye `docker-compose.yml`,
+[sonarqube/.env.example]).
 
-| Componente | Versión |
-|---|---|
-| SonarQube Community LTS | 9.9.5.90363 (H2 embebido) |
-| sonar-scanner-cli | 6.2.1.4610 (linux-x64) |
-| JDK (portable) | OpenJDK 17.0.20.1 (Temurin) |
+> Histórico: los primeros escaneos (#185, #188) usaron una variante **sin
+> Docker** (Community LTS 9.9.5 + JDK 17 portable + H2 embebido); la instalación
+> oficial mediante Compose la aportó @Alfion72 en la #184/PR #198 y es la
+> recomendada para los escaneos pendientes.
 
 Configuración del proyecto ([sonarqube/sonar-project.properties]):
 
@@ -250,8 +257,9 @@ configuración de carga común. Incluye además el ajuste de throttling
 ## 7.2 Ejecuciones por integrante (issues cerradas)
 
 | Issue | Integrante | Script (`iniciales_prueba.js`) | Endpoint | VUs | p95 | Resultado | PR |
-|---|---|---|---|---|---|---|---|
+|---|---|---|---|---|---|---|---|---|
 | [#180] | @AdrianS-127 | `k6/scripts/aesr_prueba.js` | `GET /productos` | 10 | **51.59 ms** | Cumple SLA | [PR #193] |
+| [#182] | @Alfion72 | `k6/scripts/am_prueba.js` | `GET /` (inicio) | 10 | **3.08 ms** | Cumple SLA | [PR #197] |
 | [#183] | @Sadrach34 | `k6/scripts/as_prueba.js` | `POST /api/auth/login` (bad path) | 10 | **109.52 ms** | Cumple SLA | [PR #192] |
 
 ### 7.2.1 [#183] — Sadrach: POST /api/auth/login (bad path)
@@ -302,12 +310,36 @@ configuración de carga común. Incluye además el ajuste de throttling
 > respondió `429` (97.81 % fallos); tras `THROTTLE_LIMIT=10000` la prueba
 > terminó con **0 % errores** y p95 **51.59 ms**, ~95× por debajo del SLA.
 
-### 7.2.3 Issues de ejecución pendientes (resto del equipo)
+### 7.2.3 [#182] — Adriana: GET / (página de inicio)
+
+- **Entorno:** API `http://localhost:3000`, k6 v2.2.0.
+- **Carga:** 10 VUs — 30 s ramp-up → 60 s sostenido → 30 s ramp-down.
+- **Detalle:** se usa `redirects: 0` porque `GET /` del backend responde `302`
+  (redirect a `http://localhost:5173`); se mide la latencia del propio redirect
+  sin seguir al frontend.
+- **Resultados** (detalle en [k6/RESULTADOS_ADRIANA.md]):
+
+| Métrica | Valor |
+|---|---|
+| `http_reqs` | 918 (7.61/s) |
+| `http_req_duration` avg/min/med | 2.24 / 0 / 1.30 ms |
+| `http_req_duration` p(95) | **3.08 ms** |
+| `http_req_failed` | 0.00 % (0/918) |
+| Checks (`[AM] GET / responde 302`) | 918/918 (100 %) |
+| `vus` | 1 (mín) / 10 (máx) |
+
+```text
+✓ http_req_duration p(95) = 3.08 ms < 5000 ms   # CUMPLE SLA
+```
+
+> `GET /` se sirve a nivel de servidor Express (antes del router Nest), por lo
+> que no fue afectado por el throttle global en esta prueba.
+
+### 7.2.4 Issues de ejecución pendientes (resto del equipo)
 
 | Issue | Integrante | Endpoint/script |
 |---|---|---|
 | [#181] | @Ddarielz | `GET /eventos` (`edaa_prueba.js`) |
-| [#182] | @Alfion72 | `GET /` — inicio (`jamt_prueba.js`) |
 
 Los scripts matriz ya están en `develop` ([.github/workflows/k6.yml],
 [`k6/scripts/*.js`]) listos para su ejecución por cada integrante.
@@ -316,11 +348,14 @@ Los scripts matriz ya están en `develop` ([.github/workflows/k6.yml],
 
 ## 8.1 Stack local (instalación)
 
-SonarQube se levantó **sin Docker** (no disponible en el entorno): Community LTS
-9.9.5 con H2 embebido, sonar-scanner 6.2.1 y JDK 17 portable vía
-`SONAR_JAVA_PATH`. Guía completa de instalación puesta en marcha, token/proyecto
-por API, ejecución del escaneo y solución de problemas en
-[sonarqube/README.md] (sirve de referencia para la issue de instalación #184).
+La instalación oficial del stack se realizó con **Docker Compose + PostgreSQL**
+(issue #184, PR #198): `sonarqube:lts-community` (SonarQube 9.9) + `postgres:15`
++ `sonar-scanner` 6.x. Guía completa de puesta en marcha, token/proyecto por
+API, ejecución del escaneo y solución de problemas en [sonarqube/README.md].
+
+> Los escaneos #185 y #188 usaron la variante **sin Docker** (Community LTS
+> 9.9.5 + H2 + JDK 17 portable vía `SONAR_JAVA_PATH`), levantada antes de que se
+> mergeara la instalación Compose (#184/PR #198).
 
 ## 8.2 Escaneos por integrante (issues cerradas)
 
@@ -362,8 +397,8 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 |---|---|---|
 | Sadrach Juan Diego Garcia Flores | @Sadrach34 | #177 (docs, coord. PR #189), #183 K6 (✅ PR #192), #185 Sonar (✅ PR #194) |
 | Adrián Eduardo Santos Rosales | @AdrianS-127 | #179 plan K6 (✅ PR #191), #180 K6 (✅ PR #193), #188 Sonar (✅ PR #196) |
+| Jesús Adriana Martínez Trillas | @Alfion72 | #182 K6 (✅ PR #197), #184 Sonar install (✅ PR #198), #187 Sonar (pendiente) |
 | Erick Daniel Arvayo Aviles | @Ddarielz | #178 pipeline (abierta), #181 K6 (abierta), #186 Sonar (abierta) |
-| Jesús Adriana Martínez Trillas | @Alfion72 | #182 K6 (abierta), #184 Sonar install (abierta), #187 Sonar (abierta) |
 
 # 10. Trazabilidad de requisitos de la Actividad 1.2
 
@@ -371,8 +406,8 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 |---|---|---|---|
 | 1 | Documento: justificación del pipeline de liberación y despliegue continuo | Sección 1 | [#177] / [PR #189] |
 | 2 | Entorno requerido para la liberación y el despliegue continuo | Sección 2 | [#177] / [PR #189] |
-| 3 | Niveles de servicio acordados (SLA) | Sección 3 (p95 < 5 s) | [#180], [#183] |
-| 4 | Métricas para el monitoreo de la aplicación | Sección 4 | [#180], [#183], [#185], [#188] |
+| 3 | Niveles de servicio acordados (SLA) | Sección 3 (p95 < 5 s) | [#180], [#182], [#183] |
+| 4 | Métricas para el monitoreo de la aplicación | Sección 4 | [#180], [#182], [#183], [#185], [#188] |
 | 5 | Parámetros de configuración de las herramientas utilizadas | Sección 5 | [k6/PLAN_K6.md], [sonarqube/README.md] |
 | 6 | Configurar y vincular herramienta de liberación continua con entorno de despliegue | Deploy Hook de Render | #178 (diseño) |
 | 7 | Scripts del flujo de trabajo (pipeline) | `scripts/` | #178 (diseño) |
@@ -381,16 +416,16 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 | 10 | Scripts para la generación del despliegue | `scripts/deploy/` | #178 (diseño) |
 | 11 | Pruebas de carga (K6; alternativas JMeter / `ab` evaluadas) | `k6/` | [#179] / [PR #191] |
 | 12 | PR de implementación del plan K6 (comandos de instalación + endpoints) | [k6/PLAN_K6.md] | [#179] / [PR #191] |
-| 13 | Una prueba por integrante, script `iniciales_prueba.js`, ≥ 1 endpoint, > 5 VUs, máx. métricas | `k6/scripts/*_prueba.js` | [#180] (✅), [#183] (✅), [#181] (pend.), [#182] (pend.) |
-| 14 | Commit de resultados en markdown + PR de ejecución de pruebas | `k6/RESULTADOS_*.md` | [#180] / [PR #193], [#183] / [PR #192] |
-| 15 | Uso en CI/CD (husky pre-commit o GitHub Actions) + screenshot por integrante (opcional) | [.github/workflows/k6.yml] | [#179], [#180], [#183] |
-| 16 | Implementar SonarQube en stack local (PR con pasos markdown) | [sonarqube/README.md] | #184 (ref. stack; instalada en el entorno por Sadrach) |
+| 13 | Una prueba por integrante, script `iniciales_prueba.js`, ≥ 1 endpoint, > 5 VUs, máx. métricas | `k6/scripts/*_prueba.js` | [#180] (✅), [#182] (✅), [#183] (✅), [#181] (pend.) |
+| 14 | Commit de resultados en markdown + PR de ejecución de pruebas | `k6/RESULTADOS_*.md` | [#180] / [PR #193], [#182] / [PR #197], [#183] / [PR #192] |
+| 15 | Uso en CI/CD (husky pre-commit o GitHub Actions) + screenshot por integrante (opcional) | [.github/workflows/k6.yml] | [#179], [#180], [#182], [#183] |
+| 16 | Implementar SonarQube en stack local (PR con pasos markdown) | [sonarqube/README.md], [sonarqube/docker-compose.yml] | [#184] / [PR #198] (Docker Compose + PostgreSQL, @Alfion72) |
 | 17 | Evidenciar resultados: escaneo de su PR por cada integrante | `sonarqube/RESULTADOS_*.md` | [#185] / [PR #194], [#188] / [PR #196], [#186]/[#187] (pend.) |
 
-> **Cierre parcial:** las issues cerradas #179, #180, #183, #185 y #188 de los
-> integrantes Sadrach34 y AdrianS-127 están consolidadas en este documento con
-> sus capturas de PR (Anexo A). Cuando las issues abiertas del resto del equipo
-> (#178, #181, #182, #184, #186, #187) se completen, se integrarán sus
+> **Cierre parcial:** las issues cerradas #179, #180, #182, #183, #184, #185 y
+> #188 de los integrantes Sadrach34, AdrianS-127 y Alfion72 están consolidadas
+> en este documento con sus capturas de PR (Anexo A). Cuando las issues abiertas
+> del resto del equipo (#178, #181, #186, #187) se completen, se integrarán sus
 > resultados y capturas y se generará el `.docx` final.
 
 ---
@@ -408,6 +443,14 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 **PR #193 — Ejecución K6 GET /productos** ([#180])
 
 ![PR #193 — K6 GET /productos](capturas/PR_193.png)
+
+**PR #197 — Ejecución K6 GET / (inicio)** ([#182])
+
+![PR #197 — K6 GET / inicio](capturas/PR_197.png)
+
+**PR #198 — Instalación SonarQube (Docker Compose)** ([#184])
+
+![PR #198 — Instalación SonarQube](capturas/PR_198.png)
 
 **PR #194 — Escaneo SonarQube (Sadrach)** ([#185])
 
@@ -441,6 +484,7 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 [#181]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/181
 [#182]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/182
 [#183]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/183
+[#184]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/184
 [#185]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/185
 [#188]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/188
 [PR #189]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/189
@@ -449,12 +493,17 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 [PR #193]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/193
 [PR #194]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/194
 [PR #196]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/196
+[PR #197]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/197
+[PR #198]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/198
 [k6/PLAN_K6.md]: ../k6/PLAN_K6.md
 [k6/RESULTADOS_SADRACH.md]: ../k6/RESULTADOS_SADRACH.md
 [k6/RESULTADOS_AESR.md]: ../k6/RESULTADOS_AESR.md
+[k6/RESULTADOS_ADRIANA.md]: ../k6/RESULTADOS_ADRIANA.md
 [docs/K6_CAMBIO_THROTTLE.md]: ../docs/K6_CAMBIO_THROTTLE.md
 [.github/workflows/k6.yml]: ../.github/workflows/k6.yml
 [sonarqube/README.md]: ../sonarqube/README.md
+[sonarqube/.env.example]: ../sonarqube/.env.example
+[sonarqube/docker-compose.yml]: ../sonarqube/docker-compose.yml
 [sonarqube/RESULTADOS_SADRACH.md]: ../sonarqube/RESULTADOS_SADRACH.md
 [sonarqube/RESULTADOS_ADRIAN.md]: ../sonarqube/RESULTADOS_ADRIAN.md
 [sonarqube/sonar-project.properties]: ../sonarqube/sonar-project.properties
