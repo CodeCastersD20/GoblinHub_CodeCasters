@@ -13,3 +13,5 @@ infra/terraform/crash.log
 /.scannerwork/
 sonarqube/.scannerwork/
 sonarqube/.env
+
+.opencode/
