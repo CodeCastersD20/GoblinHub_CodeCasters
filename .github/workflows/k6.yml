@@ -30,6 +30,8 @@ jobs:
             script: sjdf_prueba.js
           - label: AS
             script: as_prueba.js
+          - label: ED
+            script: ed_prueba.js
 
     steps:
       - name: Checkout code
