@@ -10,7 +10,7 @@
 > evidencia de las issues **cerradas** del flujo de liberación, pruebas de
 > carga (K6) y análisis de calidad (SonarQube) de los integrantes
 > **Sadrach34**, **AdrianS-127** y **Alfion72**: issues #179, #180, #182, #183,
-> #184, #185 y #188 (con #187 pendiente).
+> #184, #185, #187 y #188.
 
 ---
 
@@ -33,7 +33,7 @@ Presentan:
 | **Pipeline de liberación y CD (coordinación)** | Justificación del flujo de trabajo (workflow) de liberación y despliegue continuo, entorno requerido, SLA y métricas de monitoreo | [#177] | [PR #189] |
 | **Plan de pruebas de carga K6** | Instalación de K6 + selección de endpoints + scripts `iniciales_prueba.js` con > 5 VUs y SLA `p95 < 5 s` | [#179] | [PR #191] |
 | **Ejecución de prueba de carga K6 (por integrante)** | Ejecución real: `POST /api/auth/login` (bad path), `GET /productos` y `GET /` (inicio), resultados en markdown + PR de ejecución | [#180], [#182], [#183] | [PR #193], [PR #197], [PR #192] |
-| **Análisis estático SonarQube** | Instalación del stack local (Docker Compose + PostgreSQL) + escaneo del PR asignado de cada integrante con evidencia en markdown | [#184], [#185], [#188] | [PR #198], [PR #194], [PR #196] |
+| **Análisis estático SonarQube** | Instalación del stack local (Docker Compose + PostgreSQL) + escaneo del PR asignado de cada integrante con evidencia en markdown | [#184], [#185], [#187], [#188] | [PR #198], [PR #194], [PR #199], [PR #196] |
 
 Capturas de los PRs: [Anexo A](#anexo-a-capturas-de-los-pull-requests).
 
@@ -105,7 +105,7 @@ niveles de servicio pactados por el equipo:
 |---|---|---|
 | **Tiempo de respuesta bajo carga** | `p95 < 5 s` en endpoints de uso frecuente | K6: [#179] plan, [#180]/[#182]/[#183] ejecuciones |
 | **Disponibilidad del pipeline** | No se libera/despliega con pruebas fallidas | Puertas de CI (api.yml, web.yml, playwright.yml) |
-| **Calidad de código** | Quality Gate SonarQube `OK`, sin bugs ni vulnerabilidades nuevas | [#184], [#185], [#188] |
+| **Calidad de código** | Quality Gate SonarQube `OK`, sin bugs ni vulnerabilidades nuevas | [#184], [#185], [#187], [#188] |
 | **Rollback** | Volver a la versión anterior si falla el healthcheck | `HEALTHCHECK` /health + Render |
 | **Healthcheck** | API lista en `< 30 s` post-despliegue | Dockerfile multi-stage + Render |
 
@@ -118,8 +118,9 @@ Resultados verificados en esta actividad:
 - K6 `GET /` (inicio): **p95 = 3.08 ms** → SLA cumplido
   ([k6/RESULTADOS_ADRIANA.md]).
 - SonarQube (escaneos cerrados): **Quality Gate OK**, 0 bugs, 0 vulnerabilidades,
-  cobertura **87.4%**, ratings **A/A/A** ([sonarqube/RESULTADOS_SADRACH.md],
-  [sonarqube/RESULTADOS_ADRIAN.md]).
+  cobertura **87.4%** (Sadrach/Adrian) y **87.1%** (Adriana), ratings **A/A/A**
+  ([sonarqube/RESULTADOS_SADRACH.md], [sonarqube/RESULTADOS_ADRIAN.md],
+  [sonarqube/RESULTADOS_ADRIANA.md]).
 
 # 4. Métricas para el monitoreo de la aplicación
 
@@ -363,20 +364,29 @@ API, ejecución del escaneo y solución de problemas en [sonarqube/README.md].
 |---|---|---|---|---|---|
 | [#185] | @Sadrach34 | [PR #192] (K6 bad path) | [sonarqube/RESULTADOS_SADRACH.md] | Quality Gate **OK** | [PR #194] |
 | [#188] | @AdrianS-127 | [PR #193] (K6 GET /productos) | [sonarqube/RESULTADOS_ADRIAN.md] | Quality Gate **OK** | [PR #196] |
+| [#187] | @Alfion72 | [PR #197] (K6 GET / inicio) | [sonarqube/RESULTADOS_ADRIANA.md] | Quality Gate **OK** | [PR #199] |
 
-### Métricas consolidadas (ambos escaneos)
+> El escaneo de la [#187] (@Alfion72) se ejecutó sobre el **stack oficial Compose**
+> (issue #184, [PR #198], `docker compose up -d`) y escaneó su PR de K6
+> ([PR #197]); el código del PR presenta **0 issues y 0 hotspots**. Evidencia en
+> [sonarqube/RESULTADOS_ADRIANA.md] con screenshot del dashboard (Quality Gate
+> Passed):
 
-| Métrica | Sadrach (#185) | Adrian (#188) |
-|---|---|---|
-| Quality Gate | **OK** | **OK** |
-| Bugs | 0 | 0 |
-| Vulnerabilidades | 0 | 0 |
-| Security Hotspots | 5 (TO_REVIEW) | 5 (TO_REVIEW) |
-| Code Smells | 6 | 6 |
-| Cobertura | **87.4 %** | **87.4 %** |
-| Duplicados | 0.0 % | 0.3 % |
-| ncloc | 5 074 | 5 074 |
-| Ratings | A / A / A | A / A / A |
+![Dashboard SonarQube — Adriana (Quality Gate Passed)](capturas/dashboard_adriana.png)
+
+### Métricas consolidadas (3 escaneos cerrados)
+
+| Métrica | Sadrach (#185) | Adrian (#188) | Adriana (#187) |
+|---|---|---|---|
+| Quality Gate | **OK** | **OK** | **OK** |
+| Bugs | 0 | 0 | 0 |
+| Vulnerabilidades | 0 | 0 | 0 |
+| Security Hotspots | 5 (TO_REVIEW) | 5 (TO_REVIEW) | 5 (TO_REVIEW) |
+| Code Smells | 6 | 6 | 6 |
+| Cobertura | **87.4 %** | **87.4 %** | **87.1 %** |
+| Duplicados | 0.0 % | 0.3 % | 0.3 % |
+| ncloc | 5 074 | 5 074 | 5 113 |
+| Ratings | A / A / A | A / A / A | A / A / A |
 
 Los 5 hotspots están `TO_REVIEW`: `S2068` en `k6/scripts/as_prueba.js` (falso
 positivo: credencial inválida del bad path), 3 reglas de Terraform en
@@ -389,7 +399,6 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 | Issue | Integrante |
 |---|---|
 | [#186] | @Ddarielz |
-| [#187] | @Alfion72 |
 
 # 9. Reparto de tareas por integrante (issues de la Actividad 1.2)
 
@@ -397,7 +406,7 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 |---|---|---|
 | Sadrach Juan Diego Garcia Flores | @Sadrach34 | #177 (docs, coord. PR #189), #183 K6 (✅ PR #192), #185 Sonar (✅ PR #194) |
 | Adrián Eduardo Santos Rosales | @AdrianS-127 | #179 plan K6 (✅ PR #191), #180 K6 (✅ PR #193), #188 Sonar (✅ PR #196) |
-| Jesús Adriana Martínez Trillas | @Alfion72 | #182 K6 (✅ PR #197), #184 Sonar install (✅ PR #198), #187 Sonar (pendiente) |
+| Jesús Adriana Martínez Trillas | @Alfion72 | #182 K6 (✅ PR #197), #184 Sonar install (✅ PR #198), #187 Sonar (✅ PR #199) |
 | Erick Daniel Arvayo Aviles | @Ddarielz | #178 pipeline (abierta), #181 K6 (abierta), #186 Sonar (abierta) |
 
 # 10. Trazabilidad de requisitos de la Actividad 1.2
@@ -420,13 +429,13 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 | 14 | Commit de resultados en markdown + PR de ejecución de pruebas | `k6/RESULTADOS_*.md` | [#180] / [PR #193], [#182] / [PR #197], [#183] / [PR #192] |
 | 15 | Uso en CI/CD (husky pre-commit o GitHub Actions) + screenshot por integrante (opcional) | [.github/workflows/k6.yml] | [#179], [#180], [#182], [#183] |
 | 16 | Implementar SonarQube en stack local (PR con pasos markdown) | [sonarqube/README.md], [sonarqube/docker-compose.yml] | [#184] / [PR #198] (Docker Compose + PostgreSQL, @Alfion72) |
-| 17 | Evidenciar resultados: escaneo de su PR por cada integrante | `sonarqube/RESULTADOS_*.md` | [#185] / [PR #194], [#188] / [PR #196], [#186]/[#187] (pend.) |
+| 17 | Evidenciar resultados: escaneo de su PR por cada integrante | `sonarqube/RESULTADOS_*.md` | [#185] / [PR #194], [#188] / [PR #196], [#187] / [PR #199], [#186] (pend.) |
 
-> **Cierre parcial:** las issues cerradas #179, #180, #182, #183, #184, #185 y
-> #188 de los integrantes Sadrach34, AdrianS-127 y Alfion72 están consolidadas
-> en este documento con sus capturas de PR (Anexo A). Cuando las issues abiertas
-> del resto del equipo (#178, #181, #186, #187) se completen, se integrarán sus
-> resultados y capturas y se generará el `.docx` final.
+> **Cierre parcial:** las issues cerradas #179, #180, #182, #183, #184, #185,
+> #187 y #188 de los integrantes Sadrach34, AdrianS-127 y Alfion72 están
+> consolidadas en este documento con sus capturas de PR (Anexo A). Cuando las
+> issues abiertas del resto del equipo (#178, #181, #186) se completen, se
+> integrarán sus resultados y capturas y se generará el `.docx` final.
 
 ---
 
@@ -451,6 +460,10 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 **PR #198 — Instalación SonarQube (Docker Compose)** ([#184])
 
 ![PR #198 — Instalación SonarQube](capturas/PR_198.png)
+
+**PR #199 — Escaneo SonarQube (Adriana, stack Compose)** ([#187])
+
+![PR #199 — SonarQube Adriana](capturas/PR_199.png)
 
 **PR #194 — Escaneo SonarQube (Sadrach)** ([#185])
 
@@ -486,6 +499,8 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 [#183]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/183
 [#184]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/184
 [#185]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/185
+[#186]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/186
+[#187]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/187
 [#188]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/188
 [PR #189]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/189
 [PR #191]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/191
@@ -495,6 +510,7 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 [PR #196]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/196
 [PR #197]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/197
 [PR #198]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/198
+[PR #199]: https://github.com/CodeCastersD20/GoblinHub_CodeCasters/pull/199
 [k6/PLAN_K6.md]: ../k6/PLAN_K6.md
 [k6/RESULTADOS_SADRACH.md]: ../k6/RESULTADOS_SADRACH.md
 [k6/RESULTADOS_AESR.md]: ../k6/RESULTADOS_AESR.md
@@ -506,4 +522,5 @@ regla de deprecación de ESLint (`javascript:S1874`), ninguno en los PRs.
 [sonarqube/docker-compose.yml]: ../sonarqube/docker-compose.yml
 [sonarqube/RESULTADOS_SADRACH.md]: ../sonarqube/RESULTADOS_SADRACH.md
 [sonarqube/RESULTADOS_ADRIAN.md]: ../sonarqube/RESULTADOS_ADRIAN.md
+[sonarqube/RESULTADOS_ADRIANA.md]: ../sonarqube/RESULTADOS_ADRIANA.md
 [sonarqube/sonar-project.properties]: ../sonarqube/sonar-project.properties
