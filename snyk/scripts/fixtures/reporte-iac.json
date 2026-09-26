@@ -1,0 +1,23 @@
+{
+  "ok": false,
+  "issues": {
+    "vulnerabilities": [
+      {
+        "id": "SNYK-CC-TF-1",
+        "title": "Public bucket permits public access",
+        "issueType": "misconfiguration",
+        "severity": "high",
+        "resource": "aws_s3_bucket.logs",
+        "isIgnored": false
+      },
+      {
+        "id": "SNYK-CC-TF-2",
+        "title": "Unencrypted storage volume",
+        "issueType": "misconfiguration",
+        "severity": "medium",
+        "resource": "google_compute_disk.backups",
+        "isIgnored": false
+      }
+    ]
+  }
+}

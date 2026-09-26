@@ -1,0 +1,50 @@
+{
+  "ok": false,
+  "org": "goblinhub-equipo",
+  "isPrivate": true,
+  "packageManager": "npm",
+  "dependencyCount": 1284,
+  "summary": "17 vulnerable dependency paths",
+  "vulnerabilities": [
+    {
+      "id": "SNYK-JS-SHARP-19653587",
+      "title": "Heap-based Buffer Overflow in sharp",
+      "severity": "critical",
+      "packageName": "sharp",
+      "version": "0.35.1",
+      "from": ["goblinhub-api@0.0.1", "sharp@0.35.1"],
+      "fixInfo": { "fixedIn": ["0.35.4"] },
+      "identifiers": { "CVE": ["CVE-2026-84383"], "CWE": ["CWE-122"] }
+    },
+    {
+      "id": "SNYK-JS-JSYAML-19496768",
+      "title": "Allocation of Resources Without Limits or Throttling in js-yaml",
+      "severity": "high",
+      "packageName": "js-yaml",
+      "version": "4.1.0",
+      "from": ["goblinhub-web@0.0.0", "js-yaml@4.1.0"],
+      "fixInfo": { "fixedIn": ["4.3.2"] },
+      "identifiers": { "CVE": ["CVE-2026-84375"], "CWE": ["CWE-400"] }
+    },
+    {
+      "id": "SNYK-JS-QS-1305983",
+      "title": "qs Denial of Service via isBuffer | Redirection to Untrusted Site",
+      "severity": "moderate",
+      "packageName": "qs",
+      "version": "6.5.2",
+      "from": ["goblinhub-api@0.0.1", "express@4.18.2", "qs@6.5.2"],
+      "fixInfo": { "fixedIn": ["6.15.3"] },
+      "identifiers": { "CVE": ["CVE-2022-24999"], "CWE": ["CWE-400"] }
+    },
+    {
+      "id": "SNYK-JS-NODE-567739",
+      "title": "Information Exposure of Process Environment | Pipes",
+      "severity": "low",
+      "packageName": "tmp",
+      "version": "0.2.1",
+      "from": ["goblinhub-api@0.0.1", "tmp@0.2.1"],
+      "fixInfo": { "fixedIn": ["0.2.4"] },
+      "identifiers": { "CVE": [], "CWE": ["CWE-200"] }
+    }
+  ]
+}
