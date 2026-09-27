@@ -5,6 +5,15 @@
 # pasan `promtool check rules` sin quejarse. Estos tests simulan series y
 # comprueban qué se dispara y, sobre todo, qué NO se dispara.
 #
+# Una advertencia sobre estos tests: la primera versión de A-09 usaba aquí
+# `up{job="goblinhub-api", deployment_environment="production"}` como serie de
+# entrada y pasaba. En el stack real esa serie NO existía: `up` la sintetiza
+# Prometheus y solo lleva las etiquetas configuradas en el target, nunca las que
+# devuelve la API. La alerta llevaba siendo inalcanzable con
+# `health=ok`, y el test lo daba por bueno porque reproducía la misma suposición
+# equivocada. Las series de entrada tienen que copiar lo que Prometheus genera
+# de verdad, que es lo que hace este fichero tras el arreglo de
+# `honor_labels: true` en `prometheus.yml.template`.#
 # Ejecutar: make test-rules
 
 rule_files:

@@ -31,9 +31,26 @@ scrape_configs:
   # poder contradecir a la API con una etiqueta falsa en el scrape.
   - job_name: goblinhub-api
     metrics_path: /metrics
+    # `up` la sintetiza Prometheus y solo lleva las etiquetas configuradas en
+    # el target, no las que devuelve la API. Sin esta etiqueta estática, la
+    # serie se llama `up{job="goblinhub-api", instance=...}` sin más, y el
+    # selector de A-09 `up{job="goblinhub-api",
+    # deployment_environment="production"}` no coincide con ninguna serie: la
+    # alerta queda inactiva para siempre con health=ok. Se comprobó en el stack
+    # en marcha, con la API realmente caída y la alerta sin dispararse.
+    #
+    # La etiqueta no puede faltar y a la vez puesta aquí sin más, porque
+    # `honor_labels` está en false por defecto y Prometheus renombraría la
+    # etiqueta de la API a `exported_deployment_environment`, dejando las reglas
+    # de A-01 a A-14 sin series que evaluar. Con `honor_labels: true` gana la
+    # API: sus métricas conservan su `deployment_environment` real y `up`, que
+    # no lo tiene, recibe el de la configuración.
+    honor_labels: true
     static_configs:
       - targets:
           - {{API_TARGET}}
+        labels:
+          deployment_environment: {{DEPLOY_ENV}}
 
   # NO hay jobs de scrape sobre `/healthz` ni `/health/ready`, aunque esas rutas
   # parezcan la forma obvia de vigilarlas. Un job con `metrics_path` espera un

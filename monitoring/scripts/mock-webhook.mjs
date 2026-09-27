@@ -1,12 +1,12 @@
-# Receptor HTTP para simular el webhook de Alertmanager.
-#
-# Se levanta con `docker compose --profile evidencia up -d mock-webhook` y
-# recibe los JSON que envía Alertmanager cuando una alerta coincide con el
-# receptor `evidencia-prueba`. El JSON recibido se guarda en
-# `MOCK_WEBHOOK_LOG` (por defecto `/tmp/alerta-recibida.json`).
-#
-# No persiste nada en el repositorio: el fichero es un artefacto de la
-# ejecución para adjuntarlo como evidencia de la #214 (T043/T044).
+// Receptor HTTP para simular el webhook de Alertmanager.
+//
+// Se levanta con `docker compose --profile evidencia up -d mock-webhook` y
+// recibe los JSON que envía Alertmanager cuando una alerta coincide con el
+// receptor `evidencia-prueba`. El JSON recibido se guarda en
+// `MOCK_WEBHOOK_LOG` (por defecto `/tmp/alerta-recibida.json`).
+//
+// No persiste nada en el repositorio: el fichero es un artefacto de la
+// ejecución para adjuntarlo como evidencia de la #214 (T043/T044).
 
 import { createServer } from 'node:http';
 import { writeFileSync } from 'node:fs';

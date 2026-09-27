@@ -80,6 +80,14 @@ services:
       - --storage.path=/alertmanager
     ports:
       - "${ALERTMANAGER_PORT:-9093}:9093"
+    # Necesario para que `ALERTMANAGER_MOCK_WEBHOOK_URL` pueda usar
+    # `host.docker.internal`, que es la dirección que documentan `.env.example`
+    # y el runbook. Sin esta línea la entrega falla con
+    # `lookup host.docker.internal: no such host`: el DNS interno de Docker no
+    # resuelve ese nombre por sí solo. Se comprobó con una alerta de prueba real.
+    # La alternativa dentro de la red del stack es `http://mock-webhook:9095/alerta`.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks: [monitoring]
     restart: unless-stopped
     healthcheck:

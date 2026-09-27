@@ -138,4 +138,62 @@ if (desconocidas.size > 0) {
   process.exit(1);
 }
 
+// ── Etiquetas que `up` no puede tener ────────────────────────────────────────
+// `up` la sintetiza Prometheus y solo lleva las etiquetas configuradas en el
+// target, nunca las que devuelve la API. Una regla del tipo
+// `up{deployment_environment="production"} == 0` no falla: no coincide con
+// ninguna serie, la alerta se queda inactiva para siempre y `health` dice
+// `ok`. A-09 llevaba así desde que se escribió, y el test de reglas lo tapaba
+// porque usaba como entrada una serie que el Prometheus real nunca produce.
+const plantilla = join(RAIZ, 'monitoring', 'prometheus', 'prometheus.yml.template');
+const configuracion = readFileSync(plantilla, 'utf8');
+const jobApi = configuracion.match(
+  /- job_name:\s*goblinhub-api([\s\S]*?)(?=\n  - job_name:|\nmetrics_path|\Z)/,
+);
+
+if (!jobApi) {
+  console.error('\n✖ No se encontró el job `goblinhub-api` en prometheus.yml.template');
+  process.exit(1);
+}
+
+const bloque = jobApi[1];
+// Se descartan las líneas comentadas: la plantilla explica el porqué de
+// `honor_labels` y menciona el valor en prosa, así que buscar el ajuste en el
+// texto plano daría un falso positivo (y un falso negativo si el valor real
+// cambiase).
+const ajustes = bloque
+  .split('\n')
+  .filter((linea) => !linea.trimStart().startsWith('#'))
+  .join('\n');
+const reglasUsanEntorno = /up\{[^}]*deployment_environment/.test(
+  readFileSync(join(RAIZ, 'monitoring', 'prometheus', 'rules', 'goblinhub.yml'), 'utf8'),
+);
+
+if (reglasUsanEntorno) {
+  const problems = [];
+  if (!/honor_labels:\s*true/.test(ajustes)) {
+    problems.push(
+      'las reglas filtran `up` por `deployment_environment` pero el job ' +
+        '`goblinhub-api` no tiene `honor_labels: true`. Sin esa opción, la ' +
+        'etiqueta de la API se renombra a `exported_deployment_environment` ' +
+        'y las alertas A-01..A-14 no encuentran series.',
+    );
+  }
+  if (!/deployment_environment:\s*\{\{DEPLOY_ENV\}\}/.test(ajustes)) {
+    problems.push(
+      'las reglas filtran `up` por `deployment_environment` pero el job ' +
+        '`goblinhub-api` no declara la etiqueta estática. `up` no la hereda ' +
+        'de la API, así que A-09 y A-14 no pueden dispararse.',
+    );
+  }
+  if (problems.length > 0) {
+    console.error('\n✖ Configuración de scrape incoherente con las reglas:');
+    for (const problema of problems) {
+      console.error(`  - ${problema}`);
+    }
+    process.exit(1);
+  }
+  console.log('✓ El job `goblinhub-api` puede producir las etiquetas que filtran las reglas.');
+}
+
 console.log('✓ Todas las métricas usadas están publicadas o son estándar.');

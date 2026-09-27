@@ -477,20 +477,61 @@ Durante despliegues planificados:
 Para demostrar que el enrutado funciona **sin credenciales reales**:
 
 1. `cd monitoring && cp .env.example .env`
-2. Poner `DEPLOY_ENV=development`, `API_TARGET=localhost:3010`,
-   `GRAFANA_ADMIN_PASSWORD=...`
+2. Poner `DEPLOY_ENV=production` y `API_TARGET=localhost:3010` (**el valor de
+   `DEPLOY_ENV` debe coincidir con el de la API**: las reglas filtran por
+   `deployment_environment`, y un stack en `development` no evalua ninguna
+   alerta de producción), y `GRAFANA_ADMIN_PASSWORD=...`
 3. Poner `ALERTMANAGER_MOCK_WEBHOOK_URL=http://host.docker.internal:9095/alerta`
 4. `node scripts/generate-config.mjs` → se genera el receptor `evidencia-prueba`
    con la ruta condicional.
 5. `make up-evidencia` (levanta mock-webhook en 9095 + stack)
-6. Forzar una alerta de prueba: añadir temporalmente una regla con
-   `alerta_prueba="true"` y `severity=warning` que dispare (o usar
-   `alertmanager test`), o bien inyectar una alerta vía API de Alertmanager.
-7. El JSON recibido se guarda en `/tmp/alerta-recibida.json`. **Adjuntarlo en
-   el PR** como evidencia (T043/T044).
+6. Inyectar la alerta de prueba por la API de Alertmanager:
+   ```bash
+   NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+   curl -s -X POST http://localhost:9093/api/v2/alerts \
+     -H 'Content-Type: application/json' \
+     -d "[{\"labels\":{\"alertname\":\"PruebaEvidencia214\",
+          \"severity\":\"warning\",\"alerta_prueba\":\"true\",
+          \"deployment_environment\":\"production\",\"monitor\":\"goblinhub\"},
+          \"annotations\":{\"summary\":\"Alerta de prueba\"},
+          \"startsAt\":\"$NOW\",
+          \"endsAt\":\"$(date -u -d '+10 minutes' +%Y-%m-%dT%H:%M:%SZ)\"}]"
+   ```
+7. **Esperar 30–60 s**: `group_wait` son 30 s y la notificación se reintenta
+   cada `group_interval`. Comprobar la entrega con
+   `docker compose exec mock-webhook cat /tmp/alerta-recibida.json`.
+8. Verificar el enrutado en la respuesta: el campo `receiver` del JSON debe ser
+   `evidencia-prueba`.
+9. **Adjuntar en el PR** el JSON recibido y una captura de
+   `http://localhost:9093/#/alerts` como evidencia (T043/T044).
 
 > El receptor `evidencia-prueba` solo aparece cuando la variable tiene valor.
 > En producción debe quedar vacía.
+
+### 21.1 Evidencia de una alerta real, no inyectada
+
+Inyectar por la API demuestra el enrutado, pero no que las reglas disparen. Para
+demostrar el camino completo (Prometheus → Alertmanager → receptor) hay que
+provocar la condición de verdad. Para A-09 basta con parar la API:
+
+```bash
+# 1. Con la API sana, A-09 está inactiva:
+curl -s 'http://localhost:9090/api/v1/rules' | grep -o '"name":"ServicioCaido"[^}]*'
+
+# 2. Se para la API. `up` pasa a 0 y A-09 dispara a los ~2 min (su `for`).
+docker stop <contenedor-de-la-api>
+
+# 3. Se comprueba el disparo y la entrega
+curl -s 'http://localhost:9090/api/v1/rules' | grep -o '"name":"ServicioCaido"[^}]*'
+curl -s http://localhost:9093/api/v2/alerts | python3 -m json.tool
+
+# 4. Se levanta la API y la alerta se resuelve sola
+docker start <contenedor-de-la-api>
+```
+
+Se verificó el ciclo completo: con `up=0` la alerta `ServicioCaido` (A-09)
+aparece en `firing` en la UI de Alertmanager, y al volver la API la regla pasa a
+`inactive` con `health=ok` sin intervención manual.
 
 ## 22. Comprobaciones de salud del stack
 
@@ -511,7 +552,10 @@ Para demostrar que el enrutado funciona **sin credenciales reales**:
 | Grafana no carga dashboard | Provisioning mal referenciado | Ver `grafana/provisioning/dashboards/dashboard.yml` y JSON en `dashboards/` |
 | Targets DOWN con `host.docker.internal` en Linux | Falta `extra_hosts: host-gateway` | `docker-compose.yml` ya lo incluye |
 | `node-exporter` no tiene métricas de disco | Montaje `/` con `ro,rslave` | Correcto para solo lectura; A-14 usa `node_filesystem_*` |
-| Mock webhook no recibe nada | `ALERTMANAGER_MOCK_WEBHOOK_URL` apunta a host equivocado | Usar `http://host.docker.internal:9095/alerta` en Docker Desktop/WSL2, o `http://mock-webhook:9095/alerta` dentro de la red |
+| Mock webhook no recibe nada | `ALERTMANAGER_MOCK_WEBHOOK_URL` apunta a host equivocado | Alertmanager ya incluye `extra_hosts: host-gateway`, así que `http://host.docker.internal:9095/alerta` funciona; dentro de la red del stack también vale `http://mock-webhook:9095/alerta` |
+| La alerta de prueba no llega al mock | La ruta `evidencia-prueba` iba después de las de `critical`/`warning` | En Alertmanager gana la primera ruta que coincide: la de evidencia va ahora primero, en `alertmanager.yml.template` |
+| Una alerta real no aparece en la UI | `up` no lleva `deployment_environment` y A-09 no encuentra serie | `honor_labels: true` + etiqueta estática en el job `goblinhub-api`; sin esto A-09 era inalcanzable |
+| El mock no recibe nada aunque la alerta esté `active` | Faltan los 30 s de `group_wait` | Esperar; cada reintento aparece en `docker compose logs alertmanager` |
 
 ## 24. Referencias
 

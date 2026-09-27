@@ -45,10 +45,27 @@ resource "render_web_service" "goblinhub_api" {
   auto_deploy = true
 
   env_vals = {
-    NODE_ENV          = "production"
-    DATABASE_URL      = var.database_url
-    REDIS_URL         = var.redis_url
-    SUPABASE_URL      = supabase_project.goblinhub.database_url
+    NODE_ENV                  = "production"
+    DATABASE_URL              = var.database_url
+    REDIS_URL                 = var.redis_url
+    SUPABASE_URL              = supabase_project.goblinhub.database_url
+
+    # Variables de la #214. Sin `DEPLOY_ENV` la API arranca con el valor por
+    # defecto `development`, y entonces todas las reglas de producción filtran
+    # por `deployment_environment="production"` y no encuentran ninguna serie:
+    # el sistema queda en verde con la alerta muda.
+    DEPLOY_ENV                = "production"
+
+    # Límite del pool de Prisma, que alimenta M-11 y la alerta A-06. Debe
+    # coincidir con lo que admita Supabase; si el pool del backend es mayor que
+    # el de la base de datos, la saturación aparece como A-10 y no como A-06.
+    DATABASE_POOL_MAX         = var.database_pool_max
+
+    # El arranque falla sin la service role key: `SupabaseService` la exige al
+    # construir el cliente. Sin estas dos variables, el contenedor muere en el
+    # HEALTHCHECK y `auto_deploy` no levanta nada.
+    SUPABASE_ANON_KEY         = var.supabase_anon_key
+    SUPABASE_SERVICE_ROLE_KEY = var.supabase_service_role_key
   }
 }
 

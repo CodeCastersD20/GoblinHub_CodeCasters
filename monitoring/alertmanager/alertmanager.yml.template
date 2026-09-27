@@ -19,6 +19,18 @@ route:
   receiver: alertmanager-ui
 
   routes:
+    # El receptor del simulador va PRIMERO a propósito. En Alertmanager la
+    # primera ruta que coincide gana y el resto se ignora (`continue: false`),
+    # de modo que una ruta de evidencia colocada al final es inalcanzable para
+    # cualquier alerta `severity="critical"` o `severity="warning"`: se la
+    # quedan las rutas anteriores. El procedimiento de evidencia del runbook
+    # usa `severity="warning"`, que es justo el caso que se perdía.
+    {{#if ALERTMANAGER_MOCK_WEBHOOK_URL}}
+    - matchers:
+        - alerta_prueba="true"
+      receiver: evidencia-prueba
+    {{/if}}
+
     # Primero lo crítico: si el receptor de críticos está configurado, una
     # alerta crítica nunca cae en el receptor genérico.
     - matchers:
@@ -29,13 +41,6 @@ route:
     - matchers:
         - severity="warning"
       receiver: warning
-
-    # El receptor del simulador solo existe para la evidencia de la #214.
-    {{#if ALERTMANAGER_MOCK_WEBHOOK_URL}}
-    - matchers:
-        - alerta_prueba="true"
-      receiver: evidencia-prueba
-    {{/if}}
 
 # `inhibit_rules` es clave raíz, no de `route` (y se llama así, no
 # `inhibition_rules`: `amtool check-config` rechaza el nombre largo). Una
