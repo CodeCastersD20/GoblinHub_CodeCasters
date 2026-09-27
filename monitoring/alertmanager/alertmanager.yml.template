@@ -82,11 +82,20 @@ receivers:
         from: {{ALERTMANAGER_EMAIL_FROM}}
         send_resolved: true
         smarthost: {{ALERTMANAGER_SMTP_HOST}}:{{ALERTMANAGER_SMTP_PORT}}
-        auth_username: {{ALERTMANAGER_SMTP_USERNAME}}
-        auth_password: {{ALERTMANAGER_SMTP_PASSWORD}}
         require_tls: {{ALERTMANAGER_SMTP_REQUIRE_TLS}}
-        subject: '[CRÍTICA] {{ .GroupLabels.alertname }} — {{ .GroupLabels.deployment_environment }}'
-        body: |
+        {{#if ALERTMANAGER_SMTP_USERNAME}}
+        auth_username: {{ALERTMANAGER_SMTP_USERNAME}}
+        {{/if}}
+        {{#if ALERTMANAGER_SMTP_PASSWORD}}
+        auth_password: {{ALERTMANAGER_SMTP_PASSWORD}}
+        {{/if}}
+        # `email_configs` no acepta `subject` ni `body` en Alertmanager 0.28:
+        # `amtool check-config` los rechaza con «field subject not found in
+        # type config.plain». El asunto va en `headers` (que es un mapa, no una
+        # lista) y el cuerpo en `text`. Se comprobó contra la imagen oficial.
+        headers:
+          Subject: '[CRÍTICA] {{ .GroupLabels.alertname }} — {{ .GroupLabels.deployment_environment }}'
+        text: |
           {{ range .Alerts }}
           Resumen: {{ .Annotations.summary }}
           Causa probable: {{ .Annotations.cause }}
@@ -109,11 +118,16 @@ receivers:
         from: {{ALERTMANAGER_EMAIL_FROM}}
         send_resolved: true
         smarthost: {{ALERTMANAGER_SMTP_HOST}}:{{ALERTMANAGER_SMTP_PORT}}
-        auth_username: {{ALERTMANAGER_SMTP_USERNAME}}
-        auth_password: {{ALERTMANAGER_SMTP_PASSWORD}}
         require_tls: {{ALERTMANAGER_SMTP_REQUIRE_TLS}}
-        subject: '[PREVENTIVA] {{ .GroupLabels.alertname }} — {{ .GroupLabels.deployment_environment }}'
-        body: |
+        {{#if ALERTMANAGER_SMTP_USERNAME}}
+        auth_username: {{ALERTMANAGER_SMTP_USERNAME}}
+        {{/if}}
+        {{#if ALERTMANAGER_SMTP_PASSWORD}}
+        auth_password: {{ALERTMANAGER_SMTP_PASSWORD}}
+        {{/if}}
+        headers:
+          Subject: '[PREVENTIVA] {{ .GroupLabels.alertname }} — {{ .GroupLabels.deployment_environment }}'
+        text: |
           {{ range .Alerts }}
           Resumen: {{ .Annotations.summary }}
           Causa probable: {{ .Annotations.cause }}

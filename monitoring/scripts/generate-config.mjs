@@ -149,22 +149,43 @@ function validar(variables) {
  * que Alertmanager falle al cargar la configuración, y ese fallo solo se
  * descubre al arrancar el contenedor.
  *
+ * Los bloques se resuelven de dentro hacia fuera y en pasadas sucesivas. Un
+ * solo recorrido con `[\s\S]*?` no basta: el cierre del bloque exterior se
+ * emparejaría con el `{{/if}}` del primer bloque interior y la configuración
+ * salía con marcadores sin procesar. Se registró al anidar un `{{#if}}` de
+ * credenciales SMTP dentro del bloque del servidor de correo.
+ *
  * A diferencia de `envsubst`, una variable no definida en la plantilla se
  * detecta: se deja el marcador intacto para que `promtool check config` la
  * rechace en lugar de desplegar un Prometheus con un target vacío.
  */
 function interpolar(plantilla, variables) {
-  const conBloques = plantilla.replace(
-    /\{\{#if ([A-Z0-9_]+)\}\}([\s\S]*?)\{\{\/if\}\}/g,
-    (_marcador, clave, cuerpo) => {
+  // El cuerpo no puede contener otro `{{#if`, así que cada pasada resuelve solo
+  // los bloques más internos.
+  const bloque = /\{\{#if ([A-Z0-9_]+)\}\}((?:(?!\{\{#if)[\s\S])*?)\{\{\/if\}\}/g;
+
+  let conBloques = plantilla;
+  for (let pasada = 0; pasada < 20; pasada += 1) {
+    const anterior = conBloques;
+    conBloques = conBloques.replace(bloque, (_marcador, clave, cuerpo) => {
       if (!(clave in variables)) {
         throw new Error(
           `La plantilla usa {{#if ${clave}}} y esa variable no existe en .env`,
         );
       }
       return variables[clave] === '' ? '' : cuerpo;
-    },
-  );
+    });
+    if (conBloques === anterior) {
+      break;
+    }
+  }
+
+  if (conBloques.includes('{{#if') || conBloques.includes('{{/if')) {
+    throw new Error(
+      'La plantilla tiene bloques {{#if}} sin cerrar, o anidados más profundo ' +
+        'de lo que el generador sabe resolver',
+    );
+  }
 
   return conBloques.replace(/\{\{([A-Z0-9_]+)\}\}/g, (marcador, clave) => {
     if (!(clave in variables)) {
@@ -174,6 +195,115 @@ function interpolar(plantilla, variables) {
     }
     return variables[clave];
   });
+}
+
+/**
+ * Casos de interpolación. Se ejecutan con `--test` y en CI.
+ *
+ * El de anidamiento existe porque el generador no lo soportaba: el bloque
+ * exterior se cerraba con el `{{/if}}` del interior y la configuración salía
+ * con marcadores sin procesar. Solo se detectó porque `amtool` la rechacaba en
+ * CI; en local el `.env` no activaba SMTP y el bloque ni siquiera se generaba.
+ */
+function probadorInterpolacion() {
+  // La comparación ignora líneas en blanco: al retirar un `{{#if}}` quedan los
+  // saltos de línea que ocupaba el marcador, y eso es cosmético. Lo que importa
+  // es qué sobrevive del bloque y qué no.
+  const sinVacias = (texto) =>
+    texto
+      .split('\n')
+      .map((linea) => linea.trim())
+      .filter((linea) => linea !== '')
+      .join('\n');
+
+  const casos = [
+    {
+      nombre: 'sustituye una variable simple',
+      entrada: 'smarthost: {{HOST}}:{{PORT}}',
+      variables: { HOST: 'smtp.x', PORT: '587' },
+      esperado: 'smarthost: smtp.x:587',
+    },
+    {
+      nombre: 'omite el bloque si la variable está vacía',
+      entrada: 'a\n{{#if X}}\nB: 1\n{{/if}}\nc',
+      variables: { X: '' },
+      esperado: 'a\nc',
+    },
+    {
+      nombre: 'conserva el bloque si la variable tiene valor',
+      entrada: 'a\n{{#if X}}\nB: 1\n{{/if}}\nc',
+      variables: { X: 'si' },
+      esperado: 'a\nB: 1\nc',
+    },
+    {
+      nombre: 'resuelve el bloque interior y luego el exterior',
+      entrada: '{{#if OUTER}}\nO\n{{#if INNER}}\nI: 1\n{{/if}}\n{{/if}}\nfin',
+      variables: { OUTER: 'si', INNER: 'si' },
+      esperado: 'O\nI: 1\nfin',
+    },
+    {
+      nombre: 'descarta el interior sin tocar el exterior',
+      entrada: '{{#if OUTER}}\nO\n{{#if INNER}}\nI: 1\n{{/if}}\n{{/if}}\nfin',
+      variables: { OUTER: 'si', INNER: '' },
+      esperado: 'O\nfin',
+    },
+    {
+      nombre: 'descarta el exterior y con él el interior',
+      entrada: '{{#if OUTER}}\nO\n{{#if INNER}}\nI: 1\n{{/if}}\n{{/if}}\nfin',
+      variables: { OUTER: '', INNER: 'si' },
+      esperado: 'fin',
+    },
+  ];
+
+  let fallos = 0;
+  for (const caso of casos) {
+    let obtenido;
+    try {
+      obtenido = interpolar(caso.entrada, caso.variables);
+    } catch (error) {
+      console.error(`✖ ${caso.nombre}: lanzó ${error.message}`);
+      fallos += 1;
+      continue;
+    }
+    if (sinVacias(obtenido) === sinVacias(caso.esperado)) {
+      console.log(`✓ ${caso.nombre}`);
+    } else {
+      console.error(
+        `✖ ${caso.nombre}\n  esperado: ${JSON.stringify(caso.esperado)}` +
+          `\n  obtenido: ${JSON.stringify(obtenido)}`,
+      );
+      fallos += 1;
+    }
+  }
+
+  // Una variable ausente debe fallar, no dejar el marcador en la salida.
+  try {
+    interpolar('{{#if NO_EXISTE}}\nx\n{{/if}}', {});
+    console.error('✖ una variable inexistente no lanzó ningún error');
+    fallos += 1;
+  } catch {
+    console.log('✓ una variable inexistente falla de forma explícita');
+  }
+
+  // Un bloque sin cerrar también.
+  try {
+    interpolar('{{#if X}}\nsin cerrar', { X: 'si' });
+    console.error('✖ un bloque sin cerrar no lanzó ningún error');
+    fallos += 1;
+  } catch {
+    console.log('✓ un bloque sin cerrar falla de forma explícita');
+  }
+
+  if (fallos > 0) {
+    console.error(`\n${fallos} caso(s) de interpolación fallan`);
+    process.exit(1);
+  }
+  console.log('\n✓ Interpolación correcta');
+}
+
+if (process.argv.includes('--test')) {
+  probadorInterpolacion();
+  process.exit(0);
 }
 
 const variables = leerEnv(join(RAIZ, '.env'));

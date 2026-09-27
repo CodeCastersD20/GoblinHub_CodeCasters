@@ -85,5 +85,6 @@ test-receivers: config
 # Todo lo que ejecuta `.github/workflows/monitoring.yml`. Un único comando para
 # no tener que saber qué pasos existen.
 verify: lint test-rules
+	@node scripts/generate-config.mjs --test
 	@node scripts/check-contract-metricas.mjs
 	@node scripts/check-dashboard.mjs
