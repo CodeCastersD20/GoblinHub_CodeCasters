@@ -91,6 +91,9 @@ jobs:
             "prom/alertmanager:$ALERTMANAGER_VERSION" \
             check-config /etc/alertmanager/alertmanager.yml
 
+      - name: Tests del generador de configuración
+        run: node scripts/generate-config.mjs --test
+
       - name: El generador falla si falta una variable obligatoria
         run: |
           # Una configuración incompleta que no detiene el arranque es un
