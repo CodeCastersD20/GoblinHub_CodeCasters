@@ -1,0 +1,160 @@
+name: Continuous Delivery & Release
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Entorno manual para despliegue'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+permissions:
+  contents: write
+
+jobs:
+  integration:
+    name: Lint, Type-Check & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'goblinhub-api/package-lock.json'
+      
+      - name: Install API dependencies
+        run: npm ci
+        working-directory: goblinhub-api
+      - name: Generate API Prisma client
+        run: npx prisma generate
+        working-directory: goblinhub-api
+      - name: Lint API
+        run: npm run lint
+        working-directory: goblinhub-api
+      - name: Type-check API
+        run: npx tsc --noEmit
+        working-directory: goblinhub-api
+      
+      - name: Install Web dependencies
+        run: npm ci
+        working-directory: goblinhub_web
+      - name: Lint Web
+        run: npm run lint
+        working-directory: goblinhub_web
+      - name: Type-check Web
+        run: npx tsc --noEmit
+        working-directory: goblinhub_web
+
+  tests:
+    name: Run Release Tests
+    runs-on: ubuntu-latest
+    needs: integration
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run tests
+        run: |
+          chmod +x scripts/test/*.sh
+          ./scripts/test/run_release_tests.sh
+
+  release:
+    name: Build & Package Release
+    runs-on: ubuntu-latest
+    needs: tests
+    outputs:
+      release_version: ${{ steps.build.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build and Package
+        id: build
+        run: |
+          chmod +x scripts/release/*.sh
+          ./scripts/release/build_release.sh
+          # El script exporta RELEASE_VERSION
+          echo "version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ steps.build.outputs.version }}
+          path: release_artifacts/
+          retention-days: 7
+      - name: Create Git Tag (only on main)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.build.outputs.version }}
+          git push origin ${{ steps.build.outputs.version }}
+
+  deploy-development:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: release
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'development')
+    environment: development
+    env:
+      DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+      HEALTHCHECK_URL: ${{ vars.HEALTHCHECK_URL }}
+      ROLLBACK_HOOK_URL: ${{ secrets.ROLLBACK_HOOK_URL }}
+      RELEASE_VERSION: ${{ needs.release.outputs.release_version }}
+      ENVIRONMENT_NAME: development
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy and Verify
+        run: |
+          chmod +x scripts/deploy/*.sh
+          ./scripts/deploy/deploy_and_verify.sh
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [release, deploy-development]
+    if: always() && needs.release.result == 'success' && needs.deploy-development.result != 'failure' && needs.deploy-development.result != 'cancelled' && (github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging'))
+    environment: staging
+    env:
+      DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+      HEALTHCHECK_URL: ${{ vars.HEALTHCHECK_URL }}
+      ROLLBACK_HOOK_URL: ${{ secrets.ROLLBACK_HOOK_URL }}
+      RELEASE_VERSION: ${{ needs.release.outputs.release_version }}
+      ENVIRONMENT_NAME: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy and Verify
+        run: |
+          chmod +x scripts/deploy/*.sh
+          ./scripts/deploy/deploy_and_verify.sh
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [release, deploy-staging]
+    if: always() && needs.release.result == 'success' && needs.deploy-staging.result != 'failure' && needs.deploy-staging.result != 'cancelled' && (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production'))
+    environment: production
+    env:
+      DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+      HEALTHCHECK_URL: ${{ vars.HEALTHCHECK_URL }}
+      ROLLBACK_HOOK_URL: ${{ secrets.ROLLBACK_HOOK_URL }}
+      RELEASE_VERSION: ${{ needs.release.outputs.release_version }}
+      ENVIRONMENT_NAME: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy and Verify
+        run: |
+          chmod +x scripts/deploy/*.sh
+          ./scripts/deploy/deploy_and_verify.sh
