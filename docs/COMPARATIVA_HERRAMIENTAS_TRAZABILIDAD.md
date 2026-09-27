@@ -260,9 +260,11 @@ proyecto tuviera presupuesto, este documento es el argumento para reabrirlo.
 
 El modelo elegido no bloquea la adoptación de OpenTelemetry, y esa es la razón
 principal para elegirlo: **`Trazas` es un span raíz y `Spans` son sus hijos con
-`parent_id`, la misma forma del modelo de datos de OpenTelemetry.** Cuando se
-justifique —más de un servicio, o un agregador de logs que exija el formato
-estándar— la migración consiste en:
+`parent_id`, la misma forma del modelo de datos de OpenTelemetry.** La columna
+`servicio` y el filtro homónimo de `GET /traces` ya forman parte del contrato
+aunque hoy haya un solo proceso, precisamente para que la llegada de un segundo
+servicio no obligue a cambiarlo. Cuando se justifique —más de un servicio, o un
+agregador de logs que exija el formato estándar— la migración consiste en:
 
 1. Añadir el SDK y el exportador, y dejar de escribir las tablas a mano.
 2. Servir la consulta del visor contra el backend de trazas, conservando el mismo
@@ -270,8 +272,10 @@ estándar— la migración consiste en:
    frontend no cambie**.
 3. Retener las tablas solo si se quieren los datos anteriores a la fecha de corte.
 
-El contrato de los endpoints es la pieza que hay que proteger para que esto sea
-una migración y no un rediseño.
+El identificador de correlación acepta el `traceparent` del estándar W3C Trace
+Context, que es lo que permite correlacionar entre procesos el día que exista el
+segundo. El contrato de los endpoints es la pieza que hay que proteger para que
+esto sea una migración y no un rediseño.
 
 ### 6.4 Riesgos
 

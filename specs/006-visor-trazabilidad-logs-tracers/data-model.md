@@ -22,9 +22,11 @@ erDiagram
     Traza {
         uuid     id_traza       PK "generado por la aplicación"
         varchar  correlation_id UK "hasta 64 caracteres, propagado o generado"
+        varchar  servicio       "leido de TRAZAS_SERVICIO"
         varchar  metodo         "GET, POST, PUT, PATCH, DELETE"
         varchar  ruta           "normalizada, sin identificadores"
         int      estado_http    "codigo de respuesta"
+        varchar  nivel          "info, warn o error"
         int      duracion_ms    "tiempo total de la peticion"
         varchar  ambiente       "development, staging o production"
         uuid     id_usuario     FK "nulo si la peticion no se autentico"
@@ -56,9 +58,11 @@ que el visor abre.
 |---|---|---|---|
 | `id_traza` | `UUID` | no | Clave primaria. La genera la aplicación, no la base de datos, porque la traza se escribe al final de la petición y el identificador debe existir desde el principio. |
 | `correlation_id` | `VarChar(64)` | no | **Único**. Identificador devuelto en la respuesta. Debe caber en 64 caracteres porque ese es el tope que `FR-002` impone al valor recibido del cliente. |
+| `servicio` | `VarChar(50)` | no | Nombre del proceso que emitió la traza, leído de `TRAZAS_SERVICIO`. Con un solo proceso el valor es constante; la columna existe para que la llegada de un segundo servicio no obligue a cambiar el contrato de consulta ni a reconstruir el histórico. |
 | `metodo` | `VarChar(10)` | no | Verbo HTTP en mayúsculas. |
 | `ruta` | `VarChar(200)` | no | Ruta **normalizada**: los segmentos que son identificadores se sustituyen por `:id`. Ver *Normalización de rutas*. |
 | `estado_http` | `Int` | no | Código de respuesta. Guarda el valor real, incluidos los 4xx: un 401 es información de diagnóstico, no ruido. |
+| `nivel` | `VarChar(10)` | no | `info`, `warn` o `error`, derivado de `estado_http` por `FR-016`. Es un enum de dominio cerrado, no texto libre. Se añade porque la issue pide definir niveles de log, y se fija en la fila en lugar de derivarlo en cada lectura para que el filtro por nivel pueda usar un índice. |
 | `duracion_ms` | `Int` | no | Duración total en milisegundos enteros. Medida con reloj monotónico, nunca con reloj de pared, para que un ajuste de hora del sistema no produzca duraciones negativas. |
 | `ambiente` | `VarChar(20)` | no | `development`, `staging` o `production`, leído de `DEPLOY_ENV`. |
 | `id_usuario` | `UUID` | sí | Usuario autenticado. Es `nulo` en las rutas públicas y en las tareas programadas. Se guarda a propósito: es un dato de auditoría, no un secreto (`FR-018` no lo incluye en la lista de enmascarado). |
@@ -69,7 +73,7 @@ que el visor abre.
 
 ### Índices
 
-Cuatro índices, cada uno dispuesto para un filtro distinto de la historia 3:
+Cinco índices, cada uno dispuesto para un filtro distinto de la historia 3:
 
 | Índice | Columnas | Filtro que sirve |
 |---|---|---|
@@ -77,6 +81,7 @@ Cuatro índices, cada uno dispuesto para un filtro distinto de la historia 3:
 | `idx_trazas_fecha` | `fecha_inicio` | Listado por defecto y rango de fechas |
 | `idx_trazas_error` | `estado_http`, `fecha_inicio` | Localizar errores por endpoint y periodo |
 | `idx_trazas_ambiente` | `ambiente`, `fecha_inicio` | Distinguir el despliegue |
+| `idx_trazas_servicio` | `servicio`, `fecha_inicio` | Acotar a un proceso concreto |
 
 > No se usa `sort: Desc` en los índices: el generador de Prisma declara
 > `previewFeatures = ["partialIndexes"]` y añadir una característica de vista
@@ -132,6 +137,7 @@ modo que un parámetro desconocido es un `400` y no se ignora en silencio.
 |---|---|---|---|---|
 | `page` | entero | `1` | `>= 1` | Comienza en uno, no en cero. |
 | `limit` | entero | `50` | `1` a `200` | Fuera de rango se **acota**, no se rechaza, para no romper la navegación del visor. |
+| `servicio` | texto | — | hasta 50 | Coincidencia exacta sobre el valor de `TRAZAS_SERVICIO`. |
 | `metodo` | texto | — | Verbo HTTP | Se normaliza a mayúsculas. |
 | `ruta` | texto | — | hasta 200 | Coincidencia por prefijo, sobre la ruta ya normalizada. |
 | `estado` | entero | — | `100` a `599` | Permite filtrar por una clase completa si se pasa un valor con la misma semántica que el código. |
@@ -153,13 +159,13 @@ El `estado` de un span, en cambio, se fija al cerrarlo y no cambia.
 ## Retención y volumen
 
 Las trazas viven en la base de datos de negocio, así que el volumen es un riesgo
-de primer orden. Tres mecanismos, los tres configurables por entorno:
+de primer orden. Los mecanismos que lo acotan, todos configurables por entorno:
 
 | Variable | Por defecto | Efecto |
 |---|---|---|
 | `TRAZAS_ENABLED` | `true` | Si es `false`, no se instrumenta nada y el servicio sigue respondiendo con normalidad. |
-| `TRAZAS_MUESTREO` | `1` | Proporción de peticiones que se persisten, entre 0 y 1. Los errores y las peticiones por encima del umbral de latencia se persisten **siempre**, con independencia del muestreo. |
-| `TRAZAS_LATENCIA_MIN_MS` | `0` | Por debajo de este valor en milisegundos, la traza solo se guarda si el muestreo la seleccionó. |
+| `TRAZAS_SERVICIO` | `goblinhub-api` | Nombre del proceso que emite la traza. Un valor vacío usa el valor por defecto. |
+| `TRAZAS_NIVEL_MINIMO` | `info` | Nivel a partir del cual se persiste una traza. Con `warn` o `error` las peticiones correctas de nivel inferior no se guardan; los errores se persisten **siempre**, con independencia del nivel configurado. Un valor fuera del catálogo usa `info` y deja un aviso en el log. |
 | `TRAZAS_RETENCION_DIAS` | `7` | Días que se conservan antes de la purga. Un valor no numérico o fuera de rango usa el valor por defecto y deja un aviso en el log, en vez de impedir el arranque. |
 
 `DEPLOY_ENV` **no se define aquí**: la introduce el módulo de métricas de

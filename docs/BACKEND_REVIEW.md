@@ -619,18 +619,20 @@ El backend actual (`SupabaseValidationTokenService`) ya validaría estos tokens 
 > monitoreo* están planificados en `specs/005-modulo-metricas-monitoreo/`
 > (issue #210 para la planeación, issue #214 para la implementación). La
 > herramienta se seleccionó en `docs/COMPARATIVA_HERRAMIENTAS_MONITOREO.md`.
-> El punto de *Logs* sigue abierto. *Tracing* está planificado en
-> `specs/006-visor-trazabilidad-logs-tracers/` (issue #204, que cubre planeación e
-> implementación; comparación de herramientas en
-> `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md`), pero a la fecha **no está
-> implementado**: no hay correlación de `request-id` entre el guard de auth, el
-> interceptor de logs y las queries de Prisma, y el esquema no tiene las tablas
-> `Trazas` ni `Spans`. La desviación de OpenTelemetry que este documento recomienda
+> El punto de *Logs* sigue abierto: es la tarea T049 de la spec 005. *Tracing*
+> está en implementación en `specs/006-visor-trazabilidad-logs-tracers/`
+> (issue #204; comparación de herramientas en
+> `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md`). La rama de esa issue ya
+> tiene el módulo `tracing`, las tablas `Trazas` y `Spans` con sus índices, el
+> identificador de correlación propagado desde el middleware hasta el log de
+> actividad y los pasos internos, y los endpoints de consulta. Quedan pendientes
+> el visor de administración, la retención y la documentación, tras lo cual este
+> punto se cierra. La desviación de OpenTelemetry que este documento recomienda
 > está justificada en el *Complexity Tracking* de esa spec.
 
 - **Logs:** solo `Logger` de Nest a stdout, sin formato estructurado (JSON). En un entorno con agregador de logs (Datadog, CloudWatch, Loki), texto plano dificulta el filtrado y las alertas basadas en campos. Migrar a `nestjs-pino` con formato JSON (`level`, `msg`, `requestId`, `userId`) es bajo esfuerzo y alto retorno.
 - **Metrics:** no hay `/metrics` (Prometheus) ni ningún contador de latencia/tasa de error por endpoint expuesto. Sin esto, no hay forma de alertar sobre degradación antes de que un usuario reporte el problema.
-- **Tracing:** no hay correlación de request-id entre el guard de auth, el interceptor de logs y las queries de Prisma — un incidente requiere reconstruir el flujo manualmente desde logs sueltos. OpenTelemetry con exporter a cualquier backend (Jaeger, Tempo, Datadog APM) resolvería esto con el instrumentation automático de Nest + Prisma.
+- **Tracing:** un incidente exige reconstruir el flujo manualmente desde logs sueltos, porque nada correlaciona una petición con sus registros ni con sus consultas a la base de datos. OpenTelemetry con exporter a cualquier backend (Jaeger, Tempo, Datadog APM) resolvería esto con la instrumentación automática de Nest + Prisma.
 - **Backups sin monitoreo:** el cron de backup solo loguea éxito/fallo (`backup.scheduler.ts:20-24`) — si falla silenciosamente durante días (ej. `pg_dump` no instalado en la imagen nueva tras un cambio de infra), nadie se entera hasta necesitar restaurar.
 
 ### 7.5 Mejoras de deployment

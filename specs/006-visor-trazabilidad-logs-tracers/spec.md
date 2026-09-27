@@ -18,9 +18,12 @@ justificada en `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md`. Recoge la deuda
 T050 de `specs/005-modulo-metricas-monitoreo/tasks.md`, que quedó fuera del
 alcance de #214.
 
-**Alcance**: este spec cubre los cinco criterios de aceptación de #204. Tres
-fragmentos del *alcance* quedan fuera a propósito y están declarados, con su
-motivo, en «Desviaciones del alcance de #204».
+**Alcance**: este spec cubre los cinco criterios de aceptación de #204. Un único
+fragmento del *alcance* queda fuera a propósito —el formato JSON de los mensajes
+que la API escribe con `Logger` de Nest— y está declarado, con su motivo, en
+«Desviaciones del alcance de #204». Los tres que una versión anterior de este
+documento descartaba, «definir niveles de log» y «filtrar por servicio», **se
+entregan**: los dos están nombrados en el alcance de la issue.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -87,8 +90,9 @@ endpoint y despliegue».
 
 ### User Story 3 - El administrador localiza errores por endpoint y despliegue (Priority: P1)
 
-Como administrador, puedo filtrar las solicitudes por método, ruta, código de
-estado, entorno de despliegue y periodo, y encontrar rápido las que fallaron.
+Como administrador, puedo filtrar las solicitudes por servicio, método, ruta,
+código de estado, entorno de despliegue y periodo, y encontrar rápido las que
+fallaron.
 
 **Why this priority**: Es el criterio de aceptación más operativo de la issue. La
 utilidad de un visor se mide por si **encuentra el error**, no por cuántas filas
@@ -104,10 +108,11 @@ devuelve el detalle completo de una de ellas.
 
 1. **Given** trazas de varios endpoints y estados, **When** se consulta la lista con un filtro de método y estado, **Then** todas las trazas devueltas cumplen ese filtro.
 2. **Given** trazas de dos entornos de despliegue, **When** se filtra por entorno, **Then** solo aparecen las de ese entorno, y el valor proviene de la variable `DEPLOY_ENV`.
-3. **Given** un periodo con fechas, **When** se filtra por rango, **Then** solo aparecen las comprendidas en él, y un rango invertido devuelve la lista vacía en lugar de un error.
-4. **Given** una lista larga de trazas, **When** se solicita una página, **Then** la respuesta indica el total, la página y el tamaño, y las páginas no se solapan.
-5. **Given** un `correlationId` que no existe, **When** se consulta su detalle, **Then** se responde `404` con un mensaje que no revela información sobre otras trazas.
-6. **Given** un usuario sin rol `admin`, **When** consulta la lista o el detalle, **Then** se responde `403` y no se devuelve ningún dato de traza.
+3. **Given** trazas de más de un servicio, **When** se filtra por servicio, **Then** solo aparecen las de ese servicio, y el valor proviene de `TRAZAS_SERVICIO`.
+4. **Given** un periodo con fechas, **When** se filtra por rango, **Then** solo aparecen las comprendidas en él, y un rango invertido devuelve la lista vacía en lugar de un error.
+5. **Given** una lista larga de trazas, **When** se solicita una página, **Then** la respuesta indica el total, la página y el tamaño, y las páginas no se solapan.
+6. **Given** un `correlationId` que no existe, **When** se consulta su detalle, **Then** se responde `404` con un mensaje que no revela información sobre otras trazas.
+7. **Given** un usuario sin rol `admin`, **When** consulta la lista o el detalle, **Then** se responde `403` y no se devuelve ningún dato de traza.
 
 **Trazabilidad**: cubre el AC «Se pueden localizar errores por endpoint y
 despliegue» de #204.
@@ -138,7 +143,7 @@ enmascarado.
 2. **Given** un valor de texto muy largo, **When** se redacta, **Then** se trunca a una longitud máxima y se marca como truncado.
 3. **Given** una cabecera de autorización con el formato `Bearer <jwt>`, **When** se redacta, **Then** solo se conserva el esquema, nunca el token.
 4. **Given** un identificador de usuario, **When** se persiste la traza, **Then** se guarda para poder atribuir la acción, porque es un dato de auditoría y no un secreto.
-5. **Given** un volumen alto de peticiones, **When** se aplica el muestreo configurado, **Then** solo se persisten las trazas seleccionadas, y los errores se persisten siempre.
+5. **Given** una petición que falla, **When** se persiste su traza con el mensaje del error, **Then** ese mensaje pasa por la misma redacción que los atributos del paso.
 
 **Trazabilidad**: cobre el AC «No se registran secretos ni datos sensibles
 innecesarios» de #204.
@@ -177,32 +182,32 @@ despliegue» de #204 desde la perspectiva visual, y da sentido a la palabra
 ### User Story 6 - Se define cuánto se guarda y cuánto tiempo (Priority: P2)
 
 Como administrador, sé que las trazas se purgan pasado un periodo configurable y
-que puedo elegir con qué detalle se registran, sin que la base de datos crezca sin
-límite.
+que puedo elegir el nivel a partir del cual se registran, sin que la base de datos
+crezca sin límite.
 
 **Why this priority**: Es la mitad del alcance de la issue («definir retención,
-niveles de log»), de la que este spec cubre **la retención**; los niveles de log
-quedan fuera y están registrados en «Desviaciones del alcance de #204». Es una
-condición para que la historia 2 sea segura de desplegar en producción. Sin purga,
-la base de datos de negocio recibe miles de filas diarias y compite con el tráfico
-real; sin muestreo, un despliegue funcional puede duplicar las escrituras. Es P2
-porque el visor es útil sin esto en desarrollo, pero no lo es en producción.
+niveles de log»), y este spec cubre las dos. Es una condición para que la historia
+2 sea segura de desplegar en producción. Sin purga, la base de datos de negocio
+recibe miles de filas diarias y compite con el tráfico real; sin nivel mínimo, un
+despliegue en desarrollo llena la tabla de trazas correctas que nadie va a mirar.
+Es P2 porque el visor es útil sin esto en desarrollo, pero no lo es en producción.
 
-**Independent Test**: Con la retención fijada a un día y trazas con fecha anterior,
-`PurgeTracesUseCase` las elimina y devuelve el número de filas purgadas.
+**Independent Test**: Con el nivel mínimo fijado en `error` y trazas
+persistidas, `TracingInterceptor` no escribe las de nivel `info`; con la retención
+fijada a un día y trazas con fecha anterior, `PurgeTracesUseCase` las elimina y
+devuelve el número de filas purgadas.
 
 **Acceptance Scenarios**:
 
 1. **Given** trazas más antiguas que el periodo de retención, **When** se ejecuta la purga, **Then** se eliminan y se devuelve cuántas se eliminaron.
 2. **Given** trazas dentro del periodo de retención, **When** se ejecuta la purga, **Then** permanecen intactas.
-3. **Given** el muestreo configurado al 10 %, **When** llegan muchas peticiones, **Then** solo se persisten aproximadamente una de cada diez, salvo los errores, que se persisten siempre.
+3. **Given** el nivel mínimo configurado en `error`, **When** llegan peticiones correctas, **Then** no se persisten sus trazas; y **Given** una que falla, **When** se procesa, **Then** su traza se persiste siempre, con independencia del nivel configurado.
 4. **Given** la trazabilidad desactivada por configuración, **When** llegan peticiones, **Then** no se persiste ninguna traza y el servicio sigue respondiendo con normalidad.
-5. **Given** un periodo de retención no numérico o fuera de rango, **When** se resuelve la configuración, **Then** se usa el valor por defecto y se avisa por log, en vez de fallar el arranque.
-6. **Given** una petición que supera el umbral de latencia configurado, **When** se completa, **Then** su traza se persiste aunque el muestreo la hubiera descartado.
+5. **Given** un nivel, un nombre de servicio o un periodo de retención no numéricos o fuera de catálogo, **When** se resuelve la configuración, **Then** se usa el valor por defecto y se avisa por log, en vez de fallar el arranque.
+6. **Given** una petición instrumentada de nivel `info` con el nivel mínimo en `info`, **When** se completa, **Then** su traza se persiste.
 
-**Trazabilidad**: cubre la parte de «Definir retención y protección de datos
-sensibles» del alcance de #204. Los **niveles de log** no se cubren: ver
-«Desviaciones del alcance de #204».
+**Trazabilidad**: cubre la parte de «Definir retención, niveles de log y protección
+de datos sensibles» del alcance de #204.
 
 ---
 
@@ -297,8 +302,9 @@ parámetros» de #204.
 ### Persistencia de trazas
 
 - **FR-007**: DEBE existir un modelo `Trazas` con identificador de correlación
-  único, método, ruta normalizada, código de estado, duración en milisegundos,
-  entorno de despliegue, usuario, marca de inicio, marca de fin y borrado lógico.
+  único, servicio, método, ruta normalizada, código de estado, nivel, duración en
+  milisegundos, entorno de despliegue, usuario, marca de inicio, marca de fin y
+  borrado lógico.
 - **FR-008**: DEBE existir un modelo `Spans` con identificador de traza,
   identificador de padre opcional, nombre, tipo, duración, estado, atributos y
   marca de inicio, con borrado en cascada de los hijos al eliminar la traza.
@@ -307,24 +313,27 @@ parámetros» de #204.
   `YYYYMMDDHHMMSS_descripcion` del repositorio.
 - **FR-010**: Un fallo al escribir la traza NO DEBE alterar la respuesta que recibe
   el cliente ni impedir la ejecución de la petición.
-- **FR-011**: El esquema DEBE permitir filtrar por método, ruta, código de estado,
-  entorno, identificador de correlación, usuario y rango de fechas mediante índices
-  que no obliguen a recorrer la tabla completa.
+- **FR-011**: El esquema DEBE permitir filtrar por servicio, método, ruta, código
+  de estado, entorno, identificador de correlación, usuario y rango de fechas
+  mediante índices que no obliguen a recorrer la tabla completa.
 
 ### Consulta de trazas
 
 - **FR-012**: La API DEBE exponer `GET /traces` con los parámetros `page`, `limit`,
-  `metodo`, `ruta`, `estado`, `ambiente`, `correlationId`, `usuarioId`, `desde`,
-  `hasta`, `minDuracion` e `includeTotal`, devolviendo total, página y tamaño
-  junto a los datos.
+  `servicio`, `metodo`, `ruta`, `estado`, `ambiente`, `correlationId`, `usuarioId`,
+  `desde`, `hasta`, `minDuracion` e `includeTotal`, devolviendo total, página y
+  tamaño junto a los datos.
 - **FR-013**: La API DEBE exponer `GET /traces/:correlationId` con la traza y sus
   pasos en estructura de árbol, y responder `404` si no existe.
 - **FR-014**: Los parámetros de consulta DEBEN validarse con `class-validator` bajo
   el `ValidationPipe` global con `whitelist: true`, rechazando los desconocidos.
 - **FR-015**: `page` DEBE empezar en uno, `limit` DEBE estar acotado y las páginas
   DEBEN ser disjuntas, sin repeticiones ni huecos.
-- **FR-016**: La API DEBE exponer `GET /traces/summary` con el agregado de rutas
-  más lentas y tasa de error por endpoint y entorno, para el diagnóstico rápido.
+- **FR-016**: La traza DEBE registrar su **servicio**, leído de `TRAZAS_SERVICIO`, y
+  su **nivel**, derivado del código de respuesta (`info` por debajo de 400, `warn`
+  en 4xx, `error` en 5xx o fallo), y ambos DEBEN ser filtrables por índice junto con
+  el entorno. El servicio se persiste aunque hoy tenga un solo valor, para que el
+  contrato no cambie cuando exista un segundo proceso.
 
 ### Protección de datos sensibles
 
@@ -352,8 +361,8 @@ parámetros» de #204.
 - **FR-024**: La vista DEBE distinguir los estados de carga, error y vacío, y exponer
   una forma de ampliar una fila para ver los atributos del paso.
 - **FR-025**: La vista DEBE ser alcanzable desde la navegación del panel
-  administrativo, y la navegación existente NO DEBE apuntar a rutas que ya no
-  existan.
+  administrativo, en una ruta propia bajo el mismo guard de rol que el resto del
+  panel.
 - **FR-026**: La vista NO DEBE requerir una dependencia de grafos, de cronogramas o
   de visualización nueva, reutilizando los estilos ya presentes en el repositorio.
 
@@ -363,14 +372,16 @@ parámetros» de #204.
   inicio sea anterior al periodo de retención, y devuelva cuántas eliminó.
 - **FR-028**: La purga DEBE ejecutarse de forma programada y periódica, y su
   resultado DEBE quedar registrado.
-- **FR-029**: El muestreo, el umbral de latencia, la activación y el periodo de
-  retención DEBEN ser configurables por variables de entorno, con valores por
-  defecto seguros, y una configuración inválida NO DEBE impedir el arranque.
+- **FR-029**: El nivel mínimo de log, el nombre de servicio, la activación y el
+  periodo de retención DEBEN ser configurables por variables de entorno, con
+  valores por defecto seguros, y una configuración inválida NO DEBE impedir el
+  arranque.
 - **FR-030**: El entorno de despliegue DEBE obtenerse de `DEPLOY_ENV` y su valor
   DEBE ser uno de `development`, `staging` o `production`, en coherencia con el
   catálogo que valida `specs/005-modulo-metricas-monitoreo`.
-- **FR-031**: Las trazas se DEBEN poder desactivar por completo sin que el
-  servicio deje de atender peticiones.
+- **FR-031**: La trazabilidad DEBE poder desactivarse por completo sin que el
+  servicio deje de atender peticiones, y las trazas de nivel `error` DEBEN
+  persistirse siempre que esté activa, con independencia del nivel mínimo.
 - **FR-032**: DEBE existir un documento que describa el contrato de cabeceras, el
   formato de la traza y del paso, el esquema de la base de datos, todos los
   parámetros de los endpoints, los permisos exigidos y la política de retención.
@@ -389,24 +400,30 @@ parámetros» de #204.
 - **FR-036**: El PR de implementación DEBE adjuntar evidencia de que el visor
   funciona, con una captura y la salida de la prueba de propagación.
 - **FR-037**: La cobertura del módulo de trazabilidad DEBE estar incluida en la
-  configuración de Jest, junto con la de los módulos `logs` y `health`, que hoy
-  están fuera de la lista medida.
+  configuración de Jest.
 
 ### Key Entities
 
 - **Identificador de correlación**: valor de hasta 64 caracteres que identifica una
   solicitud a lo largo de toda su vida. Es único por traza, se devuelve en la
   respuesta y se propaga hacia el log y hacia los pasos internos.
-- **Traza**: una petición completa. Guarda el método, la ruta normalizada, el
-  código de estado, la duración total, el entorno, el usuario, el mensaje de error
-  si lo hubo y las marcas de inicio y fin.
+- **Traza**: una petición completa. Guarda el servicio, el método, la ruta
+  normalizada, el código de estado, el nivel, la duración total, el entorno, el
+  usuario, el mensaje de error si lo hubo y las marcas de inicio y fin.
 - **Paso (span)**: una operación interna con nombre, tipo, duración, estado,
   atributos y un identificador de padre opcional que permite reconstruir el árbol.
+- **Nivel de traza**: severidad derivada del código de respuesta, `info` para
+  menos de 400, `warn` para 4xx y `error` para 5xx o fallo. Es lo que decide si la
+  traza se persiste cuando hay un nivel mínimo configurado.
+- **Servicio**: nombre del proceso que atendió la petición, leído de
+  `TRAZAS_SERVICIO`. Con un solo proceso su valor es constante, y por eso el filtro
+  por servicio no descarta nada todavía; se añade ahora para que el contrato no
+  cambie cuando exista un segundo servicio.
 - **Entorno de despliegue**: `development`, `staging` o `production`, leído de
   `DEPLOY_ENV`.
-- **Filtro de consulta**: conjunto de criterios (método, ruta, estado, entorno,
-  usuario, correlación, rango de fechas, duración mínima) que acota el conjunto de
-  trazas devuelto.
+- **Filtro de consulta**: conjunto de criterios (servicio, método, ruta, estado,
+  entorno, usuario, correlación, rango de fechas, duración mínima) que acota el
+  conjunto de trazas devuelto.
 - **Política de retención**: número de días que se conservan las trazas antes de
   ser purgadas, configurable por entorno.
 
@@ -426,27 +443,31 @@ parámetros» de #204.
 - **SC-004**: La prueba de propagación y la evidencia del visor quedan adjuntas al
   PR de implementación, con la salida del caso Supertest y una captura.
 - **SC-005**: Ninguna variable de entorno de trazabilidad queda sin documentar, y
-  todos los parámetros de los tres endpoints aparecen en el documento de contrato.
+  todos los parámetros de los dos endpoints aparecen en el documento de contrato.
 - **SC-006**: Las tablas de trazas y pasos están cubiertas por la configuración de
-  cobertura de Jest, y los módulos `logs` y `health` también.
+  cobertura de Jest.
 - **SC-007**: Con la trazabilidad desactivada, la API responde con normalidad a las
   peticiones de negocio y no escribe ninguna fila de traza.
 - **SC-008**: Con la retención fijada a un día, la purga programada elimina todas
   las trazas anteriores a esa fecha y deja intactas las posteriores.
+- **SC-009**: Con el nivel mínimo en `error`, no se persiste ninguna traza de
+  petición correcta, y `GET /traces?servicio=` acota por el valor de
+  `TRAZAS_SERVICIO` sin recorrer la tabla completa.
 
 ## Desviaciones del alcance de #204
 
 El alcance de #204 enumera cuatro compromisos. Este spec cubre los cinco criterios
-de aceptación, pero **tres fragmentos del alcance quedan fuera a propósito**. Se
-declaran aquí para que la diferencia sea explícita y no se lea como un olvido.
+de aceptación y **tres de los cuatro compromisos completos**. Un único fragmento
+queda fuera a propósito, y se declara aquí para que la diferencia sea explícita y no
+se lea como un olvido.
 
-### 1. «Centralizar y consultar registros estructurados» — parcial
+### «Centralizar y consultar registros estructurados» — parcial
 
 **Qué sí se entrega**: un almacén de registros estructurados y consultable. Las
 tablas `Trazas` y `Spans` tienen columnas tipadas, no texto libre, y se consultan
-por índice a través de `GET /traces`, `GET /traces/:correlationId` y
-`GET /traces/summary`, con su visor en el panel de administración. Eso es un
-registro estructurado con consulta estructurada.
+por índice a través de `GET /traces` y `GET /traces/:correlationId`, con su visor
+en el panel de administración. Eso es un registro estructurado con consulta
+estructurada.
 
 **Qué no se entrega**: convertir los mensajes que la API ya escribía con `Logger`
 de Nest en texto plano en registros JSON con campos separados. Este spec no toca
@@ -461,47 +482,18 @@ eje es la correlación y las trazas. El punto *Logs* de
 **Dónde queda**: punto *Logs* de `docs/BACKEND_REVIEW.md` §7.4, y tareas T049 y
 T050 de `specs/005-modulo-metricas-monitoreo/tasks.md`.
 
-### 2. «Definir niveles de log» — no cubierto
+### Los otros tres compromisos — completos
 
-**Qué sí se entrega**: el control de **cuánto** y **cuándo** se registra, que es
-lo que evita que la base de datos crezca sin límite. `FR-029` hace configurables
-por entorno el muestreo, el umbral de latencia por encima del cual una traza se
-guarda siempre, el interruptor de activación y el periodo de retención. Los errores
-se persisten siempre con independencia del muestreo (`FR-031` y el escenario 3 de
-la historia 6).
-
-**Qué no se entrega**: un nivel de severidad configurable del tipo
-`TRAZAS_NIVEL=error|warn|info|debug` que descarte las trazas por debajo de un
-umbral. No hay ningún requisito de nivel en este spec y ninguna tarea lo
-implementa.
-
-**Por qué**: el muestreo por probabilidad más el umbral de latencia cubren el
-problema operativo que motiva el nivel —no llenar la base de datos de trazas
-irrelevantes— sin añadir un eje de configuración más. Cuando exista el formato
-JSON del punto 1, el nivel llega con él y se decidirá allí.
-
-**Dónde queda**: mismo destino que el punto 1, tareas T049 y T050 de la spec 005.
-
-### 3. «Filtros por servicio, operación, estado y periodo» — parcial
-
-**Qué sí se entrega**: los filtros de `FR-012` cubren **operación** (`metodo` y
-`ruta`), **estado** (`estado`) y **periodo** (`desde` y `hasta`), más `ambiente`,
-`correlationId`, `usuarioId`, `minDuracion` y `includeTotal`.
-
-**Qué no se entrega**: el filtro por **servicio**. El modelo `Trazas` no tiene
-columna de servicio y `GET /traces` no acepta ese parámetro.
-
-**Por qué**: según los *Assumptions*, el backend es un único proceso de NestJS sin
-servicios que intercambien tráfico entre sí, así que el valor de *servicio* sería
-constante y el filtro no descartaría nada. Añadirlo ahora sería un parámetro que
-siempre devuelve lo mismo.
-
-**Cómo se resuelve**: cuando exista un segundo servicio, la migración consiste en
-añadir la columna, el parámetro y el índice. La ruta está descrita en
-`docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md` §6.3 y en el *Complexity
-Tracking* de `plan.md`. El identificador de correlación ya acepta el `traceparent`
-del estándar W3C (`FR-003`), que es lo que permite correlacionar entre servicios
-cuando ese momento llegue.
+- **«Propagar correlation ID/trace ID entre servicios»**: cubierto por `FR-001` a
+  `FR-006`. La propagación dentro del proceso es directa; entre servicios, el
+  identificador acepta el `traceparent` del estándar W3C Trace Context (`FR-003`),
+  que es el mecanismo de interoperabilidad para cuando exista un segundo proceso.
+- **«Integrar trazas o rastros con filtros por servicio, operación, estado y
+  periodo»**: cubierto por `FR-011`, `FR-012` y `FR-016`. Los cuatro filtros del
+  texto de la issue existen: `servicio`, `metodo` y `ruta` para la operación,
+  `estado`, y `desde` y `hasta` para el periodo.- **«Definir retención, niveles de log y protección de datos sensibles»**: los tres
+  entregables existen. La retención por `FR-027` y `FR-028`, el nivel de log por
+  `FR-029` y `FR-031`, y la protección de datos por `FR-017` a `FR-021`.
 
 ## Out of Scope
 
@@ -537,7 +529,8 @@ cuando ese momento llegue.
   patrón de token de inyección y de paginación que replica el módulo nuevo.
 - `goblinhub_web/src/pages/admin/logs/LogsAdmin.css` contiene filtros, paginación,
   fila expandible y estilos de datos crudos que **existen pero no se usan**; el
-  visor los reutiliza en vez de escribir estilos nuevos.
+  visor los reutiliza en vez de escribir estilos nuevos. `LogsAdmin.tsx` y
+  `useLogs.ts` se leen como patrón y no se modifican.
 - `docs/BACKEND_REVIEW.md` §7.4 y §7.8: origen del encargo y cierre de los puntos
   *Logs* y *Tracing* al terminar esta issue.
 
@@ -545,9 +538,10 @@ cuando ese momento llegue.
 
 - El backend sigue siendo un solo proceso sobre NestJS, sin servicios que
   intercambien tráfico entre sí. La ausencia de I/O entre microservicios es la
-  razón principal para descartar OpenTelemetry en este alcance.
-- La base de datos de PostgreSQL admite el volumen de trazas con el muestreo y la
-  retención configurados. Si el volumen creciera, la ruta de evolución es un
+  razón principal para descartar OpenTelemetry en este alcance, y la razón por la
+  que el filtro por servicio no descarta nada todavía.
+- La base de datos de PostgreSQL admite el volumen de trazas con el nivel mínimo y
+  la retención configurados. Si el volumen creciera, la ruta de evolución es un
   almacén dedicado, no cambiar el contrato de los endpoints.
 - El rol `admin` es el único autorizado a consultar trazas, en coherencia con los
   cuatro endpoints que ya expone `LogController`.

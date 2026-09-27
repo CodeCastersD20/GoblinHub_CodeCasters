@@ -24,11 +24,12 @@ El plan añade un módulo `tracing` que (1) genera o propaga un identificador de
 correlación en cada petición, lo publica para el resto de la aplicación y lo
 devuelve en la respuesta; (2) persiste la solicitud y sus pasos internos en dos
 tablas de Prisma, aplicando redacción de datos sensibles **en el punto de
-escritura**; (3) expone la consulta de trazas con filtros por método, ruta, estado,
-entorno y periodo, protegida con el guard de rol `admin` que ya usa el módulo
-`logs`; (4) purga lo que supere el periodo de retención; y (5) extiende la vista
-de administración existente con una pestaña de trazabilidad y un recorrido de
-pasos dibujado con los estilos que ya están en el repositorio.
+escritura**; (3) expone la consulta de trazas con filtros por servicio, método,
+ruta, estado, entorno y periodo, protegida con el guard de rol `admin` que ya usa
+el módulo `logs`; (4) define el nivel de log y el periodo de retención, y purga lo
+que supere ese periodo; y (5) añade una vista propia de trazabilidad al panel de
+administración, con un recorrido de pasos dibujado con los estilos que ya están en
+el repositorio.
 
 **No se instalan dependencias nuevas ni contenedores.** Es una decisión
 deliberada, argumentada en `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md`, y es
@@ -49,15 +50,16 @@ administrativo.
 correlación se usa `node:async_hooks`, que forma parte del runtime de Node.
 
 **Storage**: PostgreSQL de Supabase mediante Prisma, **la misma base de datos de
-negocio**. Dos modelos nuevos, `Trazas` y `Spans`. El volumen se acota con
-muestreo, umbral de latencia y purga por retención, los tres configurables.
+negocio**. Dos modelos nuevos, `Trazas` y `Spans`. El volumen se acota con el
+nivel mínimo de log que se persiste y con la purga por retención, los dos
+configurables por entorno.
 
 **Testing**: Jest con `ts-jest` (unitarios, siguiendo el patrón de instanciación
 directa con `as unknown as` y `jest.mock` de factories de `health.service.spec.ts`),
-Supertest con `test/jest-e2e.json` para la prueba de propagación, Vitest con
-Testing Library en el frontend (patrón `vi.mock` del servicio más `MemoryRouter`,
-como `products.test.tsx`) y Playwright para el recorrido de permisos. El comando
-de cobertura de Jest se amplía para incluir este módulo.
+Supertest con `test/jest-e2e.json` para las pruebas de permisos y de propagación, y
+Vitest con Testing Library en el frontend (patrón `vi.mock` del servicio más
+`MemoryRouter`, como `products.test.tsx`). El comando de cobertura de Jest se
+amplía para incluir este módulo.
 
 **Target Platform**: Contenedor Node sobre Render (`plan = "starter"`), con
 `infra/terraform/main.tf` como descriptor. La aplicación web se sirve como SPA
@@ -78,9 +80,10 @@ negocio, así que el crecimiento de las tablas es un riesgo de primer orden;
 obligatorios; el tamaño de página está acotado para no permitir consultas que
 agoten la base.
 
-**Scale/Scope**: un backend de un solo proceso; un panel administrativo con cuatro
-vistas previas (`/admin`, `/admin/logs`, `/admin/eventos`, `/admin/usuarios`); dos
-modelos de datos nuevos; tres endpoints; cinco historias P1 y tres P2.
+**Scale/Scope**: un backend de un solo proceso; un panel administrativo con cinco
+vistas (`/admin`, `/admin/logs`, `/admin/trazas`, `/admin/eventos`,
+`/admin/usuarios`); dos modelos de datos nuevos; dos endpoints; cinco historias P1
+y tres P2.
 
 ## Constitution Check
 
@@ -91,11 +94,11 @@ modelos de datos nuevos; tres endpoints; cinco historias P1 y tres P2.
 | **I. Test-First** (no negociable) | Las tareas de `tasks.md` de cada historia de usuario se escriben **antes** que las de implementación, y el PR incluye la prueba de propagación que exige la issue. Las historias 1, 2, 3 y 4 son P1 con sus pruebas escritas antes de escribir código. | **PASS** |
 | **II. Security-First** | Todos los endpoints nuevos exigen `SupabaseAuthGuard` + `RolesGuard` + `@Roles(RolUsuario.admin)`. La redacción se aplica antes de persistir (`FR-017`). No hay secretos en el código; toda configuración nueva se documenta en `.env.example` con placeholders. | **PASS** |
 | **III. Type-Safe & Validated** | TypeScript estricto en ambas capas. Los parámetros de consulta se validan con `class-validator` bajo el `ValidationPipe` con `whitelist: true` (`FR-014`). Prisma es la fuente de verdad y la migración se versiona y revisa. | **PASS** |
-| **IV. Modular Single-Responsibility** | Módulo `tracing` con la estructura de `events` y `logs` (`application/`, `domain/`, `infrastructure/`, `interfaces/`). No se crean módulos comodín. El visor reutiliza la página de logs en vez de crear una segunda pantalla de administración. | **PASS** |
-| **V. End-to-End Integration** | Verificación de que la correlación fluye de la respuesta al log y a la traza, con Supertest (`FR-035`) y con un caso de Playwright que comprueba que el rol `admin` accede al visor y un jugador no. | **PASS** |
+| **IV. Modular Single-Responsibility** | Módulo `tracing` con la estructura de `events` y `logs` (`application/`, `domain/`, `infrastructure/`, `interfaces/`). No se crean módulos comodín. El visor es una vista propia del panel de administración, y no altera la vista de logs que ya existe. | **PASS** |
+| **V. End-to-End Integration** | Verificación de que la correlación fluye de la respuesta al log y a la traza, con Supertest (`FR-035`). Los permisos del visor quedan cubiertos por los casos de Supertest del propio endpoint, con el mismo guard que el resto de la API. | **PASS** |
 | **Stack aprobado** | No se añade ningún framework. Los módulos de `specs/005-…` y de este plan comparten `DEPLOY_ENV`; el catálogo de entornos se documenta en vez de duplicar el validador, con una prueba que verifica la sincronía. | **PASS** |
 | **Reglas de datos** | Sin borrado físico como norma: `Trazas` tiene `deleted_at`. La purga es la excepción documentada que exige el Principio III, con su justificación en `docs/TRAZABILIDAD.md`. | **PASS con justificación** |
-| **Quality Gates** | `tasks.md` incluye ampliar la cobertura de Jest, añadir el paso `test:e2e` al pipeline y ejecutar `npm run api` y `npm run web` antes de abrir el PR. | **PASS** |
+| **Quality Gates** | `tasks.md` incluye ampliar la cobertura de Jest para que el módulo entre en la medición, y ejecutar `npm run api` y `npm run web` antes de abrir el PR. | **PASS** |
 
 **Complejidad tracking**: hay una desviación que justificar, y está en
 *Complexity Tracking* al final de este documento.
@@ -129,22 +132,26 @@ docs/
 goblinhub-api/src/modules/tracing/
 ├── tracing.module.ts
 ├── domain/
+│   ├── constants/
+│   │   ├── redaction-keys.ts              # política de claves sensibles
+│   │   └── tracing-config.ts              # niveles, retención y nombre de servicio
 │   ├── entities/
 │   │   ├── traza.entity.ts
 │   │   └── span.entity.ts
 │   ├── enums/
-│   │   └── tipo-span.enum.ts
+│   │   ├── tipo-span.enum.ts
+│   │   └── nivel-traza.enum.ts
 │   ├── repositories/
 │   │   └── traza.repository.ts            # interfaz + token TRAZA_REPOSITORY
 │   └── services/
-│       └── redaction.service.ts           # redacción de secretos antes de escribir
+│       ├── redaction.service.ts           # redacción de secretos antes de escribir
+│       └── tracing-context.service.ts     # AsyncLocalStorage del identificador
 ├── application/
 │   ├── dtos/
 │   │   └── get-traces-query.dto.ts        # class-validator + @ApiProperty
 │   └── use-case/
 │       ├── get-traces.use-case.ts
 │       ├── get-trace.use-case.ts
-│       ├── get-traces-summary.use-case.ts
 │       └── purge-traces.use-case.ts
 ├── infrastructure/
 │   ├── prisma/
@@ -169,14 +176,15 @@ goblinhub-api/prisma/
 ```text
 goblinhub_web/src/
 ├── services/
-│   ├── traces.service.ts                  # NUEVO: tipado de Trazas, Spans y filtros
-│   └── logs.service.ts                    # EDITADO: reutilizado, sin cambios de contrato
+│   └── traces.service.ts                   # NUEVO: tipado de Trazas, Spans y filtros
 ├── hooks/
-│   └── useTraces.ts                       # NUEVO: patrón de useLogs, con sus errores corregidos
-└── pages/admin/logs/
-    ├── LogsAdmin.tsx                      # EDITADO: shell con pestañas Registros y Trazas
-    ├── LogsAdmin.css                      # REUTILIZADO: 401 líneas hoy sin importar
-    ├── TrazasAdmin.tsx                    # NUEVO: la pestaña de trazabilidad
+│   └── useTraces.ts                       # NUEVO: patrón de useLogs
+├── pages/admin/logs/
+│   ├── LogsAdmin.tsx                      # LEÍDO: patrón a seguir, sin cambios
+│   └── LogsAdmin.css                      # LEÍDO: origen de los estilos a reutilizar
+└── pages/admin/trazas/
+    ├── TrazasAdmin.css                    # NUEVO: reutiliza las clases de LogsAdmin.css
+    ├── TrazasAdmin.tsx                    # NUEVO: la vista de trazabilidad
     ├── TraceFilters.tsx                   # NUEVO
     ├── TracesTable.tsx                    # NUEVO
     ├── TraceDetail.tsx                    # NUEVO
@@ -186,17 +194,19 @@ goblinhub_web/src/
 **Structure Decision**: se sigue la estructura de directorios existente, sin
 introducir variantes. El backend replica la de `src/modules/logs/`, que usa
 `application/` en español correcto y no la variante mal escrita `aplication/` de
-`products` y `rewards`. El repositorio de trazas usa un token `Symbol` inyectado
-como `LOG_REPOSITORY`, que es el patrón más reciente del proyecto.
+`products` y `rewards`. El token de inyección del repositorio de trazas es la
+propia clase abstracta `TrazaRepository`, como ya hacen el resto de módulos del
+proyecto.
 
-La decisión no obvia es **dónde vive el visor**. El repositorio ya tiene
-`goblinhub_web/src/pages/admin/logs/`, y dentro de ella un `LogsAdmin.css` de 401
-líneas con filtros, paginación, botón de expandir fila, estilos de datos crudos y
-estado vacío, que **nadie importa** porque el componente no lo importa. Crear una
-página `/admin/trazas` con estilos nuevos habría duplicado ese trabajo. Por eso el
-visor se añade como una segunda pestaña de la vista existente, y se reutiliza ese
-CSS. La ruta `/admin/trazas` se registra como alias de la misma pantalla para que
-el enlace sea legible.
+La decisión no obvia es **dónde vive el visor**. El repositorio tiene
+`goblinhub_web/src/pages/admin/logs/`, y dentro de ella un `LogsAdmin.css` con
+filtros, paginación, botón de expandir fila, estilos de datos crudos y estado
+vacío. El visor necesita de todo eso, así que **reutiliza esas clases**, pero no se
+implementa como una pestaña dentro de `LogsAdmin.tsx`: esa vista funciona y esta
+issue no pide reestructurarla. El visor es una vista propia en
+`pages/admin/trazas/`, registrada en `/admin/trazas` como hermana de `/admin/logs`
+bajo el mismo `ProtectedRoute` de rol `admin`, y alcanzable desde la navegación
+del panel. `LogsAdmin.tsx` y `useLogs.ts` no se tocan.
 
 El waterfall de los pasos se dibuja con CSS puro, con `left` y `width` en
 porcentaje, sin librería de grafos ni de cronogramas: el repositorio mantiene sus
@@ -211,14 +221,16 @@ posicionada en el tiempo.
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | Se descarta la recomendación de OpenTelemetry de `docs/BACKEND_REVIEW.md` §7.4 (y la tarea T050 de la spec 005) y se implementa la trazabilidad en la aplicación | El visor es un criterio de aceptación de #204 y tiene que vivir **dentro del panel administrativo**, con el mismo JWT, el mismo guard de rol y la misma navegación. Un backend de trazas externo obliga a una segunda URL, un segundo login y una superficie de autenticación que no respeta el RBAC del producto. La matriz de `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md` da 480 a la opción propia frente a 315 a OpenTelemetry, y la diferencia se concentra en ese criterio (C2) y en complejidad operativa (C4) | La alternativa "simple" aquí no es OpenTelemetry, sino **no construir el visor**: un `correlation_id` en el log sin consulta estructurada no permite localizar errores por endpoint ni por despliegue, que es el AC operativo de la issue. Entre las dos opciones de trazabilidad real, la propia es la que no introduce contenedores, dependencias ni un salto a otro sistema de datos |
-| La traza se persiste en la base de datos de negocio, no en un almacén dedicado | Es lo que permite no operar infraestructura nueva y respetar el principio de presupuesto cero del proyecto. El riesgo se acota con muestreo, umbral de latencia y purga por retención, los tres configurables | Un almacén dedicado obligaría a un contenedor más que respaldar y a un segundo origen de verdad, contra la comparación de la spec 005, que ya eligió la vía de menor infraestructura posible para las métricas |
+| La traza se persiste en la base de datos de negocio, no en un almacén dedicado | Es lo que permite no operar infraestructura nueva y respetar el principio de presupuesto cero del proyecto. El riesgo se acota con el nivel mínimo de log que se persiste y con la purga por retención, los dos configurables por entorno | Un almacén dedicado obligaría a un contenedor más que respaldar y a un segundo origen de verdad, contra la comparación de la spec 005, que ya eligió la vía de menor infraestructura posible para las métricas |
 
 **Riesgo residual aceptado**: el modelo `Trazas` es un span raíz y `Spans` son sus
 hijos con `parent_id`, que es la misma forma del modelo de datos de OpenTelemetry.
 Si el proyecto crece a más de un servicio, la migración consiste en añadir el SDK
 y el exportador y en servir la misma consulta contra el backend de trazas,
 conservando el contrato de `GET /traces` y `GET /traces/:correlationId` para que
-el frontend no cambie. Ese contrato es la pieza que hay que proteger: por eso los
-tres endpoints llevan anotaciones completas de `@nestjs/swagger`, con
-`@ApiProperty` en cada campo del DTO de filtros, para que `/api/docs` documente
-la consulta y los tests de contrato tengan un punto de referencia estable.
+el frontend no cambie. La columna `servicio` y el filtro homónimo ya están en el
+contrato desde este primer despliegue, precisamente para que ese segundo servicio
+no obligue a cambiarlo. Ese contrato es la pieza que hay que proteger: por eso los
+dos endpoints llevan anotaciones completas de `@nestjs/swagger`, con `@ApiProperty`
+en cada campo del DTO de filtros, para que `/api/docs` documente la consulta y los
+tests de contrato tengan un punto de referencia estable.
