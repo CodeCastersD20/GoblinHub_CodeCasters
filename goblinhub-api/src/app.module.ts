@@ -14,6 +14,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { PrismaModule } from './connect/prisma.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ActivityLogInterceptor } from './modules/logs/infrastructure/interceptors/activity-log.interceptor';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ActivityLogInterceptor } from './modules/logs/infrastructure/intercepto
     UploadModule,
     ReportsModule,
     PrismaModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [
