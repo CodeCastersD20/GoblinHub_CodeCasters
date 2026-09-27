@@ -619,7 +619,14 @@ El backend actual (`SupabaseValidationTokenService`) ya validaría estos tokens 
 > monitoreo* están planificados en `specs/005-modulo-metricas-monitoreo/`
 > (issue #210 para la planeación, issue #214 para la implementación). La
 > herramienta se seleccionó en `docs/COMPARATIVA_HERRAMIENTAS_MONITOREO.md`.
-> El punto de *Logs* sigue abierto, así como *Tracing*.
+> El punto de *Logs* sigue abierto. *Tracing* está planificado en
+> `specs/006-visor-trazabilidad-logs-tracers/` (issue #204, que cubre planeación e
+> implementación; comparación de herramientas en
+> `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md`), pero a la fecha **no está
+> implementado**: no hay correlación de `request-id` entre el guard de auth, el
+> interceptor de logs y las queries de Prisma, y el esquema no tiene las tablas
+> `Trazas` ni `Spans`. La desviación de OpenTelemetry que este documento recomienda
+> está justificada en el *Complexity Tracking* de esa spec.
 
 - **Logs:** solo `Logger` de Nest a stdout, sin formato estructurado (JSON). En un entorno con agregador de logs (Datadog, CloudWatch, Loki), texto plano dificulta el filtrado y las alertas basadas en campos. Migrar a `nestjs-pino` con formato JSON (`level`, `msg`, `requestId`, `userId`) es bajo esfuerzo y alto retorno.
 - **Metrics:** no hay `/metrics` (Prometheus) ni ningún contador de latencia/tasa de error por endpoint expuesto. Sin esto, no hay forma de alertar sobre degradación antes de que un usuario reporte el problema.

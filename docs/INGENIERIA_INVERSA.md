@@ -414,6 +414,8 @@ Leyenda: ✅ implementado · ⚠️ parcial · ❌ sin implementar
 
 > Las entidades **`intereses`, `usuario_intereses`, `disponibilidades`, `canjes` y `captacion_novatos`** no tienen rama/issue de implementación de CRUD identificable en el historial activo, lo que confirma que quedaron como diseño de esquema sin backlogs funcionales asociados.
 
+> **Trazabilidad de peticiones (trazas y pasos)**: está planificada en `specs/006-visor-trazabilidad-logs-tracers/` (issue #204, rama `feat/204-feature-implementar-visor-de-trazabilidad-con-logs-y-tracers`, aún sin push). **No está implementada**: el esquema Prisma no tiene las tablas `Trazas` ni `Spans`, y el mapa de endpoints de §4.1 no incluye todavía `/traces`. Cuando se implemente, este capítulo se completa con esas dos tablas en el diagrama ER de §3, los tres endpoints de trazas en §4.1 y la pestaña del visor en §4.2, según la tarea T073 de esa spec.
+
 ---
 
 ## 5. Análisis
