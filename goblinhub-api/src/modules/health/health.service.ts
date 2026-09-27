@@ -1,8 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { PrismaService } from '../../connect/prisma.service';
 
 export const DEFAULT_DEPENDENCY_TIMEOUT_MS = 2000;
+
+/**
+ * Token del presupuesto de tiempo de la sonda. Existe para que Nest pueda
+ * inyectar el valor: un parámetro de constructor con valor por defecto sigue
+ * siendo obligatorio para el contenedor de inyección (con `emitDecoratorMetadata`
+ * se declara como `Number`), y sin `@Optional()` la aplicación no arranca.
+ */
+export const HEALTH_DEPENDENCY_TIMEOUT = Symbol('HEALTH_DEPENDENCY_TIMEOUT_MS');
 
 export type EstadoDependencia = 'up' | 'down';
 
@@ -26,11 +34,15 @@ export interface ReporteReadiness {
 export class HealthService {
   private readonly logger = new Logger(HealthService.name);
   private readonly redis?: Redis;
+  private readonly timeoutMs: number;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly timeoutMs: number = DEFAULT_DEPENDENCY_TIMEOUT_MS,
+    @Optional()
+    @Inject(HEALTH_DEPENDENCY_TIMEOUT)
+    timeoutMs?: number,
   ) {
+    this.timeoutMs = timeoutMs ?? DEFAULT_DEPENDENCY_TIMEOUT_MS;
     const redisUrl = process.env.REDIS_URL;
     if (redisUrl) {
       this.redis = new Redis(redisUrl);

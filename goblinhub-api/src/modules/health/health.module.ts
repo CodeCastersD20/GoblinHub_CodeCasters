@@ -7,5 +7,8 @@ import { PrismaModule } from '../../connect/prisma.module';
   imports: [PrismaModule],
   controllers: [HealthController],
   providers: [HealthService],
+  // `MetricsModule` reutiliza `readiness()` para publicar M-13 sin duplicar la
+  // comprobación de dependencias.
+  exports: [HealthService],
 })
 export class HealthModule {}

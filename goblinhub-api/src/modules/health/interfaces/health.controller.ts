@@ -31,7 +31,14 @@ export class HealthController {
     return this.healthService.liveness();
   }
 
-  @Get('health')
+  /**
+   * `GET /health` y `GET /health/ready` son la misma comprobación con dos
+   * nombres: `/health` es el que ya conocían el runbook de despliegue y
+   * `scripts/deploy/healthcheck.sh`, y `/health/ready` es el nombre que fija la
+   * spec 005 (FR-007). Se sirven ambos para no obligar a cambiar nada de lo
+   * existente.
+   */
+  @Get(['health', 'health/ready'])
   @HttpCode(HttpStatus.OK)
   async readiness(): Promise<ReporteReadiness> {
     const reporte = await this.healthService.readiness();
