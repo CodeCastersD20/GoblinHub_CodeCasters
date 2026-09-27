@@ -124,6 +124,11 @@ async function bootstrap() {
       '/logs',
       '/backup',
       '/upload',
+      // Sondeadas por Prometheus y por las sondas de Render: no llegan con
+      // Origin ni Authorization, y sin esta excepción se recibirían un 302 al
+      // frontend en lugar de las métricas (spec 005, FR-008).
+      '/metrics',
+      '/health',
     ];
     if (apiPaths.some((apiPath) => path.startsWith(apiPath))) {
       return next();
