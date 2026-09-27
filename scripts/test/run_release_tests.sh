@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "==> Ejecutando pruebas en el entorno de liberación..."
+echo "==> [TEST] Ejecutando suite de pruebas automatizadas..."
 
-echo "==> Pruebas de goblinhub-api..."
+echo "==> [API] Tests..."
 cd goblinhub-api
-npm ci
 npm run test
 cd ..
 
-echo "==> Pruebas de goblinhub_web..."
+echo "==> [WEB] Tests..."
 cd goblinhub_web
-npm ci
 npm run test
 cd ..
 
-echo "==> Todas las pruebas pasaron exitosamente. Entorno validado."
+echo "==> [TEST] Todas las pruebas pasaron."
