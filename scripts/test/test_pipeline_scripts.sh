@@ -8,11 +8,11 @@ echo "==========================================="
 TOTAL_TESTS=5
 PASSED=0
 
-# 1. Prueba de idempotencia (setup repetido)
-echo -n "Prueba 1: Idempotencia (prepare_env)... "
-if bash scripts/setup/prepare_env.sh >/dev/null 2>&1 && bash scripts/setup/prepare_env.sh >/dev/null 2>&1; then
+# 1. Prueba de idempotencia (empaquetado repetido)
+echo -n "Prueba 1: Idempotencia (empaquetado)... "
+if bash scripts/release/build_release.sh >/dev/null 2>&1 && bash scripts/release/build_release.sh >/dev/null 2>&1; then
   echo "PASSED"
-  ((PASSED++))
+  PASSED=$((PASSED + 1))
 else
   echo "FAILED"
 fi
@@ -29,7 +29,7 @@ chmod +x .tmp_bin/npm
 export PATH="$PWD/.tmp_bin:$PATH"
 if ! bash scripts/ci/run_integration.sh >/dev/null 2>&1; then
   echo "PASSED"
-  ((PASSED++))
+  PASSED=$((PASSED + 1))
 else
   echo "FAILED"
 fi
@@ -41,7 +41,7 @@ echo -n "Prueba 3: Generación de artefactos y checksums... "
 bash scripts/release/build_release.sh >/dev/null 2>&1
 if ls .release/goblinhub-*.tar.gz 1> /dev/null 2>&1 && ls .release/goblinhub-*.tar.gz.sha256 1> /dev/null 2>&1 && [ -f ".release/release-manifest.json" ]; then
   echo "PASSED"
-  ((PASSED++))
+  PASSED=$((PASSED + 1))
 else
   echo "FAILED"
 fi
@@ -55,7 +55,7 @@ export ENVIRONMENT_NAME="test"
 export HEALTHCHECK_URL="http://127.0.0.1:9999"
 if bash scripts/deploy/deploy_and_verify.sh >/dev/null 2>&1; then
   echo "PASSED"
-  ((PASSED++))
+  PASSED=$((PASSED + 1))
 else
   echo "FAILED"
 fi
@@ -72,7 +72,7 @@ export SLEEP_SECONDS=1
 export ROLLBACK_HOOK_URL="http://127.0.0.1:9999/mock_rollback"
 if ! bash scripts/deploy/deploy_and_verify.sh >/dev/null 2>&1; then
   echo "PASSED"
-  ((PASSED++))
+  PASSED=$((PASSED + 1))
 else
   echo "FAILED"
 fi
