@@ -615,6 +615,12 @@ El backend actual (`SupabaseValidationTokenService`) ya validaría estos tokens 
 
 ### 7.4 Observabilidad (logs, metrics, tracing)
 
+> **En seguimiento**: los puntos de *Metrics* (línea siguiente) y de *Backups sin
+> monitoreo* están planificados en `specs/005-modulo-metricas-monitoreo/`
+> (issue #210 para la planeación, issue #214 para la implementación). La
+> herramienta se seleccionó en `docs/COMPARATIVA_HERRAMIENTAS_MONITOREO.md`.
+> El punto de *Logs* sigue abierto, así como *Tracing*.
+
 - **Logs:** solo `Logger` de Nest a stdout, sin formato estructurado (JSON). En un entorno con agregador de logs (Datadog, CloudWatch, Loki), texto plano dificulta el filtrado y las alertas basadas en campos. Migrar a `nestjs-pino` con formato JSON (`level`, `msg`, `requestId`, `userId`) es bajo esfuerzo y alto retorno.
 - **Metrics:** no hay `/metrics` (Prometheus) ni ningún contador de latencia/tasa de error por endpoint expuesto. Sin esto, no hay forma de alertar sobre degradación antes de que un usuario reporte el problema.
 - **Tracing:** no hay correlación de request-id entre el guard de auth, el interceptor de logs y las queries de Prisma — un incidente requiere reconstruir el flujo manualmente desde logs sueltos. OpenTelemetry con exporter a cualquier backend (Jaeger, Tempo, Datadog APM) resolvería esto con el instrumentation automático de Nest + Prisma.
@@ -661,6 +667,12 @@ Stack sugerido, priorizado por esfuerzo/beneficio:
 2. Logs estructurados JSON + agregador (Loki/CloudWatch/Datadog) — bajo esfuerzo, alto beneficio inmediato para debugging.
 3. Alertas básicas sobre tasa de error 5xx y latencia P95 por endpoint (una vez haya métricas expuestas).
 4. Dashboard de BullMQ (si se adopta colas) para visibilidad de jobs fallidos de logs/backups.
+
+> **Planificado**: los puntos 1 y 3 están cubiertos por
+> `specs/005-modulo-metricas-monitoreo/` (issues #210 y #214), con la selección de
+> herramienta en `docs/COMPARATIVA_HERRAMIENTAS_MONITOREO.md`. El punto 1 se
+> resuelve con `/healthz` y `/health/ready` en el módulo de métricas. El punto 2
+> sigue abierto, igual que el punto 4.
 
 ---
 

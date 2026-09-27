@@ -42,6 +42,7 @@ Alternativa automatizada (workflow oficial de Spec Kit en este repo):
 | **b)** Tour guiado interactivo (driver.js) | `specs/002-tour-guiado-interactivo-driverjs/` | `spec.md` | `plan.md` | `tasks.md` |
 | **c)** Infraestructura como código (Codespaces + Terraform) | `specs/003-infraestructura-codigo-codespaces-terraform/` | `spec.md` | `plan.md` | `tasks.md` |
 | **3)** Casos de prueba E2E (sección 3) | `specs/004-casos-de-prueba-e2e/` | `spec.md` | `plan.md` | `tasks.md` |
+| **Módulo de métricas de monitoreo** (Prometheus + Grafana + Alertmanager) | `specs/005-modulo-metricas-monitoreo/` | `spec.md` | `plan.md` | `tasks.md` |
 
 ## Flujo por módulo ejecutado
 
@@ -52,6 +53,10 @@ Alternativa automatizada (workflow oficial de Spec Kit en este repo):
 3. `docs/166-sdd-formal` (issue #166): documentación SDD formal.
 4. `docs/167-planeacion-integrante` (issue #167): PRs de planeación por integrante.
 5. `feat/168-playwright-mcp-ia-skill` (issue #168): módulo AU (extra).
+6. `docs/210-planeacion-sdd-metricas-monitoreo` (issue #210): planeación del
+   módulo de métricas, con comparación y selección de la herramienta de
+   monitoreo. La implementación es `feat/214-tablero-y-alertas-de-metricas`
+   (issue #214).
 
 ## Verificación
 

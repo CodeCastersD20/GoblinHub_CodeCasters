@@ -14,6 +14,11 @@
   de backup` <https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/139>
 - **Issue #157** — `[Docs] Actualizar documentación (seguimiento spec-kit e
   infraestructura como código)`
+- **Issue #210** — Planeación SDD del módulo de métricas de monitoreo. Rama
+  `docs/210-planeacion-sdd-metricas-monitoreo`, cierra con el PR de esta issue.
+- **Issue #214** — `[Feature]: Implementar tablero y alertas de métricas`
+  <https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/214>
+  (depende de #210; se implementa desde `specs/005-modulo-metricas-monitoreo/`).
 
 ## 2. Código elaborado (documentación y markdowns)
 
@@ -23,9 +28,22 @@
 - **PR #145** — `.pgpass` temporal para ocultar la contraseña en backup/restore.
 - **PR #157** — Actualización de documentación SDD/spec-kit e infraestructura
   como código.
+- **Planeación SDD del módulo de métricas** (este trabajo) — comparación de
+  Nagios, Zabbix, Prometheus + Grafana y Datadog en
+  `docs/COMPARATIVA_HERRAMIENTAS_MONITOREO.md`, con selección de
+  **Prometheus + Grafana + Alertmanager** justificada por costo, integración y
+  alertas; y los artefactos `spec.md`, `plan.md` y `tasks.md` en
+  `specs/005-modulo-metricas-monitoreo/`.
 
 ## 3. Uso
 
 - `docker build` + `docker run` reproducen el backend; `HEALTHCHECK` valida el
   estado; los logs JSON alimentan la monitorización en Render.
 - El bad path del login valida la UX de error de autenticación en CI.
+- La planeación de métricas se recorre en este orden: primero la comparativa
+  (§3 y §4) para ver por qué se descartó cada alternativa, después
+  `specs/005-modulo-metricas-monitoreo/plan.md` §2 y §3 para el catálogo de
+  métricas con umbral, unidad, fuente y acción, §4 para las reglas de alerta y
+  §5–§6 para los canales de notificación y la separación por entorno. Las tareas
+  de implementación están en `specs/005-modulo-metricas-monitoreo/tasks.md` y se
+  ejecutan en la issue #214.
