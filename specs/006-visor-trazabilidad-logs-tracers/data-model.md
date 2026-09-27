@@ -69,7 +69,7 @@ que el visor abre.
 
 ### Índices
 
-Tres índices, cada uno dispuesto para un filtro distinto de la historia 3:
+Cuatro índices, cada uno dispuesto para un filtro distinto de la historia 3:
 
 | Índice | Columnas | Filtro que sirve |
 |---|---|---|

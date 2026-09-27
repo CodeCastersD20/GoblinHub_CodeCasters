@@ -4,6 +4,7 @@ import { SupabaseAuthGuard } from './supabse-auth.guard';
 import { SupabaseValidationTokenService } from '../application/use-case/validationT.use-case';
 import { User } from '@supabase/supabase-js';
 import { PrismaService } from '../../../connect/prisma.service';
+import { TracingContextService } from '../../tracing/domain/services/tracing-context.service';
 
 jest.mock('ioredis', () => {
   return {
@@ -65,6 +66,7 @@ describe('SupabaseAuthGuard', () => {
     guard = new SupabaseAuthGuard(
       validationService,
       prismaService as unknown as PrismaService,
+      new TracingContextService(),
     );
   });
 

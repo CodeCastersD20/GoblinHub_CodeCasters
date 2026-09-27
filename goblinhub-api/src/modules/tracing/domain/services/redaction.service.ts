@@ -8,7 +8,8 @@ import {
   normalizarClave,
 } from '../constants/redaction-keys';
 
-type Json =
+/** JSON serializable: lo que devuelve la redacción y lo que se persiste. */
+export type Json =
   string | number | boolean | null | Json[] | { [clave: string]: Json };
 
 /**

@@ -117,6 +117,7 @@ model Usuario {
   captacion_novato   Captacion_Novato?
   logs_actividad     Logs_Actividad[]
   canjes             Canje[]
+  trazas             Traza[]
 
   @@index([id_usuario_creador], map: "idx_usuarios_creador", where: { deleted_at: null })
   @@map("usuarios")
@@ -324,4 +325,68 @@ model Canje {
   @@index([id_usuario], map: "idx_canjes_usuario", where: { deleted_at: null })
   @@index([id_recompensa], map: "idx_canjes_recompensa", where: { deleted_at: null })
   @@map("canjes")
+}
+
+// ==================== TRAZABILIDAD ====================
+// `tipo` y `estado` de los spans son VarChar y no enums de Postgres a proposito:
+// el catalogo es corto y esta cerrado en el dominio, mientras que cambiar un
+// enum de Postgres obliga a una migracion de tipo. Anadirlo despues solo obliga
+// a tocar el dominio, no la base de datos.
+
+model Traza {
+  // Los genera la aplicacion y no la base de datos: la traza se escribe al
+  // final de la peticion, pero su identificador tiene que existir desde el
+  // principio porque los spans hijos ya lo referencian.
+  id_traza       String   @id @db.Uuid
+  correlation_id String   @db.VarChar(64)
+  metodo         String   @db.VarChar(10)
+  ruta           String   @db.VarChar(200)
+  estado_http    Int
+  duracion_ms    Int
+  ambiente       String   @db.VarChar(20)
+  id_usuario     String?  @db.Uuid
+  error          String?
+  fecha_inicio   DateTime @default(now())
+  fecha_fin      DateTime
+  deleted_at     DateTime?
+
+  usuario Usuario? @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
+  spans   Span[]
+
+  // Sin `where: { deleted_at: null }` a diferencia del resto de tablas: la
+  // purga de FR-027 borra fisicamente las trazas vencidas, de modo que el
+  // volumen de borradas es residual. Un indice parcial obligaria a que todas
+  // las consultas del visor incluyeran el predicado para no dejarlo sin usar.
+  // La unicidad y el indice van declarados juntos a proposito. Con `@unique` en
+  // el campo, Prisma crea su propio indice y el `@@index` de abajo seria un
+  // segundo indice sobre la misma columna: se pagaria dos veces en cada
+  // escritura, y esta es la columna mas escrita de la tabla.
+  @@unique([correlation_id], map: "idx_trazas_correlation_id")
+  @@index([fecha_inicio], map: "idx_trazas_fecha")
+  @@index([estado_http, fecha_inicio], map: "idx_trazas_error")
+  @@index([ambiente, fecha_inicio], map: "idx_trazas_ambiente")
+  @@map("trazas")
+}
+
+model Span {
+  // Los genera la aplicacion, igual que la traza: el arbol se construye en
+  // memoria durante la peticion y cada paso necesita su identificador para
+  // poder colgarlo de su padre.
+  id_span      String   @id @db.Uuid
+  id_traza     String   @db.Uuid
+  parent_id    String?  @db.Uuid
+  nombre       String   @db.VarChar(120)
+  tipo         String   @db.VarChar(30)
+  duracion_ms  Int
+  estado       String   @db.VarChar(20)
+  atributos    Json?
+  fecha_inicio DateTime
+
+  traza Traza @relation(fields: [id_traza], references: [id_traza], onDelete: Cascade)
+
+  // Sin `deleted_at` ni indice parcial: un span sin traza no significa nada, y
+  // por eso el borrado es en cascada. No tiene ciclo de vida propio.
+  @@index([id_traza], map: "idx_spans_traza")
+  @@index([id_traza, parent_id], map: "idx_spans_traza_padre")
+  @@map("spans")
 }

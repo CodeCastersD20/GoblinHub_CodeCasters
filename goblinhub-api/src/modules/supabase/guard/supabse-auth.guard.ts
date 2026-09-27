@@ -13,6 +13,8 @@ import {
 } from '../interfaces/types/authenticated-request.interface';
 import { ValidationResult } from '../interfaces/types/validation-result.interface';
 import { Redis } from 'ioredis';
+import { TracingContextService } from '../../tracing/domain/services/tracing-context.service';
+import { TipoSpan } from '../../tracing/domain/enums/tipo-span.enum';
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
@@ -22,6 +24,7 @@ export class SupabaseAuthGuard implements CanActivate {
   constructor(
     private readonly validationTokenService: SupabaseValidationTokenService,
     private readonly prisma: PrismaService,
+    private readonly tracing: TracingContextService,
   ) {
     this.redisClient = new Redis(process.env.REDIS_URL as string);
   }
@@ -43,56 +46,81 @@ export class SupabaseAuthGuard implements CanActivate {
       );
     }
     try {
-      const result: ValidationResult =
-        await this.validationTokenService.validtoken(token);
+      // El árbol de spans deja claro dónde se va el tiempo de una autenticación:
+      // la llamada a Supabase y la carga del perfil son las dos cosas que
+      // pueden tardar, y sin esto solo se vería un único tiempo opaco.
+      const authenticated = await this.tracing.registrarSpan(
+        'autenticar usuario',
+        TipoSpan.auth,
+        async (padre) => {
+          const result: ValidationResult = await this.tracing.registrarSpan(
+            'validar token',
+            TipoSpan.auth,
+            () => this.validationTokenService.validtoken(token),
+            { padre },
+          );
 
-      if (result.success && result.user) {
-        const userId = result.user.id;
-        const cacheKey = `user:${userId}:profile`;
+          if (!result.success || !result.user) {
+            throw new UnauthorizedException('Invalid token');
+          }
 
-        // 1. Intentar obtener de la caché (Redis)
-        const cachedProfile = await this.redisClient.get(cacheKey);
+          const userId = result.user.id;
+          const cacheKey = `user:${userId}:profile`;
 
-        let profile: {
-          activo: boolean;
-          deleted_at: Date | string | null;
-        } | null = null;
+          // 1. Intentar obtener de la caché (Redis)
+          const cachedProfile = await this.redisClient.get(cacheKey);
 
-        if (cachedProfile) {
-          profile = JSON.parse(cachedProfile) as {
+          let profile: {
             activo: boolean;
             deleted_at: Date | string | null;
-          };
-        } else {
-          // 2. Cache Miss: Buscar en la base de datos
-          profile = await this.prisma.usuario.findUnique({
-            where: { id_usuario: userId },
-            select: { activo: true, deleted_at: true },
-          });
+          } | null = null;
 
-          if (profile) {
-            // Guardar en Redis con TTL de 15 minutos (900 segundos)
-            await this.redisClient.setex(
-              cacheKey,
-              900,
-              JSON.stringify(profile),
+          if (cachedProfile) {
+            profile = JSON.parse(cachedProfile) as {
+              activo: boolean;
+              deleted_at: Date | string | null;
+            };
+          } else {
+            // 2. Cache Miss: Buscar en la base de datos
+            profile = await this.tracing.registrarSpan(
+              'cargar perfil',
+              TipoSpan.prisma,
+              () =>
+                this.prisma.usuario.findUnique({
+                  where: { id_usuario: userId },
+                  select: { activo: true, deleted_at: true },
+                }),
+              { padre },
             );
+
+            if (profile) {
+              // Guardar en Redis con TTL de 15 minutos (900 segundos)
+              await this.redisClient.setex(
+                cacheKey,
+                900,
+                JSON.stringify(profile),
+              );
+            }
           }
-        }
 
-        if (!profile || !profile.activo || profile.deleted_at) {
-          throw new UnauthorizedException('Usuario no encontrado o inactivo');
-        }
+          if (!profile || !profile.activo || profile.deleted_at) {
+            throw new UnauthorizedException('Usuario no encontrado o inactivo');
+          }
 
-        request.user = result.user as SupabaseUser;
-        this.logger.log(
-          `token validated successfully for user: ${
-            result.user.email ?? result.user.id
-          }`,
-        );
-        return true;
-      }
-      throw new UnauthorizedException('Invalid token');
+          request.user = result.user as SupabaseUser;
+
+          return {
+            email: result.user.email ?? result.user.id,
+            desdeCache: Boolean(cachedProfile),
+          };
+        },
+      );
+
+      this.logger.log(
+        `token validated successfully for user: ${authenticated.email}`,
+      );
+
+      return true;
     } catch (error: unknown) {
       const errorMesage = this.extractErrorMessage(error);
       this.logger.error(`Token validation failed: ${errorMesage}`);

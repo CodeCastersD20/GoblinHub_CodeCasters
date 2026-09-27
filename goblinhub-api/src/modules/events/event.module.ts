@@ -10,6 +10,7 @@ import { EventRepositoryPrisma } from './infrastructure/prisma/event.repository'
 import { EventExpirationScheduler } from './infrastructure/scheduler/event-expiration.scheduler';
 import { PrismaModule } from '../../connect/prisma.module';
 import { SupabaseAuthModule } from '../supabase/supabase-auth.module';
+import { TracingModule } from '../tracing/tracing.module';
 
 @Module({
   controllers: [EventController],
@@ -25,6 +26,6 @@ import { SupabaseAuthModule } from '../supabase/supabase-auth.module';
       useClass: EventRepositoryPrisma,
     },
   ],
-  imports: [PrismaModule, SupabaseAuthModule],
+  imports: [PrismaModule, SupabaseAuthModule, TracingModule],
 })
 export class EventModule {}

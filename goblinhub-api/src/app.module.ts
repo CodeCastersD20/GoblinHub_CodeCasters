@@ -19,6 +19,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
 import { MetricsInterceptor } from './modules/metrics/infrastructure/interceptors/metrics.interceptor';
 import { CorrelationIdMiddleware } from './modules/tracing/infrastructure/middleware/correlation-id.middleware';
 import { TracingModule } from './modules/tracing/tracing.module';
+import { TracingInterceptor } from './modules/tracing/infrastructure/interceptors/tracing.interceptor';
 
 @Module({
   imports: [
@@ -60,6 +61,14 @@ import { TracingModule } from './modules/tracing/tracing.module';
       // latencia cubra también el trabajo de la auditoría (spec 005, T012).
       provide: APP_INTERCEPTOR,
       useClass: MetricsInterceptor,
+    },
+    {
+      // El más interno de los tres: la escritura de la traza es lo último que
+      // ocurre dentro de la petición, y para que la latencia que publica
+      // `MetricsInterceptor` la incluya tiene que medirla por fuera. Por eso va
+      // el último (spec 006, T026).
+      provide: APP_INTERCEPTOR,
+      useExisting: TracingInterceptor,
     },
   ], // Aplica el guard de throttling globalmente
 })

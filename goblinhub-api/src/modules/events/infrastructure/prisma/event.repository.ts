@@ -4,10 +4,15 @@ import { Event } from '../../domain/entities/event.entity';
 import { EventMapper } from '../mappers/event-status.mapper';
 import { EventRepository } from '../../domain/repositories/event.repository';
 import { Evento as PrismaEvento } from '@prisma/client';
+import { TracingContextService } from '../../../tracing/domain/services/tracing-context.service';
+import { TipoSpan } from '../../../tracing/domain/enums/tipo-span.enum';
 
 @Injectable()
 export class EventRepositoryPrisma extends EventRepository {
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private tracing: TracingContextService,
+  ) {
     super();
   }
 
@@ -91,18 +96,31 @@ export class EventRepositoryPrisma extends EventRepository {
     return this.mapToDomain(created);
   }
 
+  /**
+   * Las consultas se instrumentan con un span cada una porque son el punto donde
+   * una lista de eventos se puede volver lenta: un `findMany` sin filtro sobre
+   * la tabla equivocada es indistinguible de una base de datos lenta, y en el
+   * visor el coste aparece en la petición concreta que lo sufriría.
+   */
   async findAll(): Promise<Event[]> {
-    const eventos = await this.prisma.evento.findMany({
-      where: { deleted_at: null },
-    });
+    const eventos = await this.tracing.registrarSpan(
+      'listar eventos',
+      TipoSpan.prisma,
+      () => this.prisma.evento.findMany({ where: { deleted_at: null } }),
+    );
 
     return eventos.map((e) => this.mapToDomain(e));
   }
 
   async findById(id: string): Promise<Event | null> {
-    const evento = await this.prisma.evento.findUnique({
-      where: { id_evento: id, deleted_at: null },
-    });
+    const evento = await this.tracing.registrarSpan(
+      'buscar evento por id',
+      TipoSpan.prisma,
+      () =>
+        this.prisma.evento.findUnique({
+          where: { id_evento: id, deleted_at: null },
+        }),
+    );
 
     if (!evento) return null;
 
@@ -110,12 +128,17 @@ export class EventRepositoryPrisma extends EventRepository {
   }
 
   async findByName(name: string): Promise<Event | null> {
-    const evento = await this.prisma.evento.findFirst({
-      where: {
-        titulo: { equals: name, mode: 'insensitive' },
-        deleted_at: null,
-      },
-    });
+    const evento = await this.tracing.registrarSpan(
+      'buscar evento por nombre',
+      TipoSpan.prisma,
+      () =>
+        this.prisma.evento.findFirst({
+          where: {
+            titulo: { equals: name, mode: 'insensitive' },
+            deleted_at: null,
+          },
+        }),
+    );
 
     if (!evento) return null;
 
@@ -123,12 +146,17 @@ export class EventRepositoryPrisma extends EventRepository {
   }
 
   async searchByName(name: string): Promise<Event[]> {
-    const eventos = await this.prisma.evento.findMany({
-      where: {
-        titulo: { contains: name, mode: 'insensitive' },
-        deleted_at: null,
-      },
-    });
+    const eventos = await this.tracing.registrarSpan(
+      'buscar eventos por nombre',
+      TipoSpan.prisma,
+      () =>
+        this.prisma.evento.findMany({
+          where: {
+            titulo: { contains: name, mode: 'insensitive' },
+            deleted_at: null,
+          },
+        }),
+    );
 
     return eventos.map((e) => this.mapToDomain(e));
   }
