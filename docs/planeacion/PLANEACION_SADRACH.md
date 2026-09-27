@@ -14,6 +14,8 @@
   <https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/154>
 - **Issue #164** — `[Docs]: Generar specs spec-kit de módulos piloto`
   <https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/164>
+- **Issue #203** — `[Docs]: Definir SLA, métricas y parámetros del caso de
+  estudio` <https://github.com/CodeCastersD20/GoblinHub_CodeCasters/issues/203>
 
 ## 2. Código elaborado (documentación y markdowns)
 
@@ -25,6 +27,10 @@
   `docs/INGENIERIA_INVERSA.md` (ER Mermaid, trazabilidad, análisis, brechas).
 - **PR #169** — Specs/planes/tareas de Spec Kit de los módulos piloto a/b/c y
   casos de prueba (`specs/`, issue #164).
+- **PR #217** — SLA, métricas y parámetros del caso de estudio
+  (`docs/SLA_METRICAS_Y_PARAMETROS.md`, issue #203) más las rutas de salud
+  `GET /healthz` y `GET /health` de la API, que son la condición para que el
+  SLA de disponibilidad sea medible.
 
 ## 3. Uso
 
@@ -32,3 +38,7 @@
   sistema y priorizar mejoras (brechas B1–B11).
 - Los comandos `/speckit.specify`, `/speckit.plan` y `/speckit.tasks` generan los
   artefactos de `specs/` para especificar features antes de codificar.
+- `docs/SLA_METRICAS_Y_PARAMETROS.md` fija los objetivos de servicio por
+  entorno (disponibilidad, latencia, errores, RTO, RPO) y el inventario de
+  parámetros de CI/CD, entorno e IaC. Es la referencia al evaluar si una entrega
+  cumple el contrato del caso de estudio.
