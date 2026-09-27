@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { EventModule } from './modules/events/event.module';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -17,6 +17,8 @@ import { ActivityLogInterceptor } from './modules/logs/infrastructure/intercepto
 import { HealthModule } from './modules/health/health.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { MetricsInterceptor } from './modules/metrics/infrastructure/interceptors/metrics.interceptor';
+import { CorrelationIdMiddleware } from './modules/tracing/infrastructure/middleware/correlation-id.middleware';
+import { TracingModule } from './modules/tracing/tracing.module';
 
 @Module({
   imports: [
@@ -41,6 +43,7 @@ import { MetricsInterceptor } from './modules/metrics/infrastructure/interceptor
     PrismaModule,
     HealthModule,
     MetricsModule,
+    TracingModule,
   ],
   controllers: [],
   providers: [
@@ -60,4 +63,14 @@ import { MetricsInterceptor } from './modules/metrics/infrastructure/interceptor
     },
   ], // Aplica el guard de throttling globalmente
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  /**
+   * El middleware va con `'*'` y no con una lista de rutas porque debe excluir
+   * el identificador también de las peticiones que no llegan a ningún
+   * controlador, y porque así el orden respecto a los interceptores es siempre el
+   * mismo: el middleware corre antes que el guard y que el interceptor.
+   */
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}
