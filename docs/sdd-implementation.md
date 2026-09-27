@@ -87,6 +87,15 @@ especificaciones inmutables del entorno y el despliegue. Espec:
 Skill `e2e-ia` de opencode que automatiza la generación y ejecución de pruebas
 E2E desde una spec. Ver `feat/168-playwright-mcp-ia-skill`.
 
+### Piloto F (Observabilidad — Prometheus + Grafana + Alertmanager)
+La degradación de la aplicación se convierte en requisitos verificables: cada
+métrica con umbral, unidad, fuente y acción, y cada alerta con severidad, causa
+probable y procedimiento de respuesta. La comparación y selección de la
+herramienta está en `docs/COMPARATIVA_HERRAMIENTAS_MONITOREO.md` (issue #210) y
+los artefactos en `specs/005-modulo-metricas-monitoreo/`. Es el piloto que
+convierte un hallazgo de auditoría (`docs/BACKEND_REVIEW.md` §7.4 y §7.8) en
+tareas implementables y trazables.
+
 ## 4. Seguimiento y herramientas (flujo Spec-Kit)
 
 - **Instalación**: `GUIA_INSTALACION_SPEC_KIT.md` (uv/pipx + `specify init` +
@@ -106,6 +115,8 @@ E2E desde una spec. Ver `feat/168-playwright-mcp-ia-skill`.
 | Guía de instalación Spec Kit | `docs/GUIA_INSTALACION_SPEC_KIT.md` |
 | Propuesta Kiro vs Spec Kit | `docs/sdd-proposal.md` |
 | Brechas y hoja de ruta SDD formal | `docs/SDD_BRECHAS_Y_HOJA_DE_RUTA.md` |
+| Comparativa y selección de herramienta de monitoreo | `docs/COMPARATIVA_HERRAMIENTAS_MONITOREO.md` (issue #210) |
+| Spec del módulo de métricas y alertas | `specs/005-modulo-metricas-monitoreo/` (issues #210, #214) |
 
 ## 6. Conclusión
 
