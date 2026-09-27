@@ -1,0 +1,197 @@
+name: AU - Seguridad automatizada (Snyk)
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      umbral:
+        description: "Severidad mínima que bloquea el pipeline (política del equipo: critical)"
+        required: false
+        default: critical
+        type: choice
+        options: [critical, high, medium, low]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snyk-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UMBRAL: ${{ github.event.inputs.umbral || 'critical' }}
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+jobs:
+  autocomprobacion:
+    name: Autocomprobación del resumidor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Pruebas del resumen de reportes
+        run: node --test snyk/scripts/summarize.test.mjs
+
+  dependencias:
+    name: Snyk Open Source (${{ matrix.nombre }})
+    runs-on: ubuntu-latest
+    needs: autocomprobacion
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - nombre: api
+            dir: goblinhub-api
+          - nombre: web
+            dir: goblinhub_web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verificar secreto SNYK_TOKEN
+        id: token
+        run: |
+          if [ -z "$SNYK_TOKEN" ]; then
+            echo "::warning title=SNYK_TOKEN ausente::Se omite el escaneo de ${{ matrix.nombre }}. Configura el secret SNYK_TOKEN (Settings > Secrets and variables > Actions)."
+            echo "disponible=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "disponible=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Snyk CLI
+        if: steps.token.outputs.disponible == 'true'
+        uses: snyk/actions/setup@v1
+        with:
+          command: install
+
+      - name: Escanear dependencias
+        if: steps.token.outputs.disponible == 'true'
+        continue-on-error: true
+        working-directory: ${{ matrix.dir }}
+        run: snyk test --severity-threshold=low --json > "$GITHUB_WORKSPACE/snyk-dependencias-${{ matrix.nombre }}.json"
+
+      - name: Resumen y gate de politica
+        if: always() && steps.token.outputs.disponible == 'true'
+        run: node snyk/scripts/summarize.mjs "snyk-dependencias-${{ matrix.nombre }}.json" --gate "$UMBRAL" --titulo "Dependencias — ${{ matrix.nombre }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-dependencias-${{ matrix.nombre }}
+          path: snyk-dependencias-${{ matrix.nombre }}.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  codigo:
+    name: Snyk Code (SAST)
+    runs-on: ubuntu-latest
+    needs: autocomprobacion
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verificar secreto SNYK_TOKEN
+        id: token
+        run: |
+          if [ -z "$SNYK_TOKEN" ]; then
+            echo "::warning title=SNYK_TOKEN ausente::Se omite el escaneo de codigo. Configura el secret SNYK_TOKEN (Settings > Secrets and variables > Actions)."
+            echo "disponible=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "disponible=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Snyk CLI
+        if: steps.token.outputs.disponible == 'true'
+        uses: snyk/actions/setup@v1
+        with:
+          command: install
+
+      - name: Escanear codigo
+        if: steps.token.outputs.disponible == 'true'
+        continue-on-error: true
+        run: snyk code test --severity-threshold=low --json > snyk-codigo.json
+
+      - name: Resumen y gate de politica
+        if: always() && steps.token.outputs.disponible == 'true'
+        run: node snyk/scripts/summarize.mjs snyk-codigo.json --gate "$UMBRAL" --titulo "Snyk Code (SAST)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-codigo
+          path: snyk-codigo.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  infraestructura:
+    name: Snyk IaC (Terraform)
+    runs-on: ubuntu-latest
+    needs: autocomprobacion
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verificar secreto SNYK_TOKEN
+        id: token
+        run: |
+          if [ -z "$SNYK_TOKEN" ]; then
+            echo "::warning title=SNYK_TOKEN ausente::Se omite el escaneo de infraestructura. Configura el secret SNYK_TOKEN (Settings > Secrets and variables > Actions)."
+            echo "disponible=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "disponible=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Snyk CLI
+        if: steps.token.outputs.disponible == 'true'
+        uses: snyk/actions/setup@v1
+        with:
+          command: install
+
+      - name: Escanear infraestructura como codigo
+        if: steps.token.outputs.disponible == 'true'
+        continue-on-error: true
+        run: snyk iac test infra/terraform --severity-threshold=low --json > snyk-iac.json
+
+      - name: Resumen y gate de politica
+        if: always() && steps.token.outputs.disponible == 'true'
+        run: node snyk/scripts/summarize.mjs snyk-iac.json --gate "$UMBRAL" --titulo "Snyk IaC (Terraform)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-iac
+          path: snyk-iac.json
+          retention-days: 30
+          if-no-files-found: ignore

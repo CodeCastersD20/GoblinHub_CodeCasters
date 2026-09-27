@@ -1,0 +1,32 @@
+# Política de excepciones de seguridad — Snyk (módulo AU, issue #213)
+#
+# Este archivo es el registro de excepciones del proyecto. Snyk lo lee
+# automáticamente en cada escaneo (dependencias, SAST e IaC) y omite los
+# hallazgos listados aquí.
+#
+# Reglas (ver snyk/POLITICA.md):
+#   1. Solo se exceptúan hallazgos SIN parche disponible o con impacto
+#      demostrado como no alcanzable en GoblinHub.
+#   2. Toda entrada requiere justificación escrita, responsable y fecha de
+#      expiración (máximo 30 días naturales).
+#   3. La excepción caduca sola: Snyk vuelve a reportar el hallazgo y, si la
+#      severidad es bloqueante, el pipeline falla.
+#   4. No se agregan IDs "para que CI pase": un hallazgo nuevo no se exceptúa,
+#      se corrige.
+#
+# Cómo registrar una excepción (desde la raíz del repo, con la CLI autenticada):
+#   snyk ignore --id=SNYK-JS-EXAMPLE-1234567 --reason="Sin parche; no alcanzable" \
+#     --expires=2026-10-31
+#   snyk ignore --path=/goblinhub-api/package.json --reason="Dependencia de test"
+#
+# Formato de una entrada:
+#
+# version: v1.0.0
+# ignore:
+#   - id: SNYK-JS-EXAMPLE-1234567
+#     paths:
+#       - /goblinhub-api
+#     reason: Sin parche disponible; el flujo afectado no usa carga de archivos
+#     expires: 2026-10-31
+
+version: v1.0.0

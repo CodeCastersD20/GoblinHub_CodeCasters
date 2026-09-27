@@ -1,0 +1,28 @@
+{
+  "ok": false,
+  "runs": [
+    {
+      "id": "issue-1",
+      "title": "Path Traversal",
+      "issueData": {
+        "id": "javascript-example",
+        "title": "Path Traversal",
+        "severity": "high",
+        "packageName": "express",
+        "filename": "goblinhub-api/src/main.ts"
+      },
+      "nodes": [{ "nodeId": "1", "filePath": "goblinhub-api/src/main.ts" }]
+    },
+    {
+      "id": "issue-2",
+      "title": "Use of a Broken or Risky Cryptographic Algorithm",
+      "issueData": {
+        "id": "javascript-example-2",
+        "title": "Use of a Broken or Risky Cryptographic Algorithm",
+        "severity": "medium",
+        "packageName": "crypto",
+        "filename": "goblinhub-api/src/auth/jwt.strategy.ts"
+      }
+    }
+  ]
+}
