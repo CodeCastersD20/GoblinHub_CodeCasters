@@ -1,0 +1,48 @@
+# Datasources del tablero de GoblinHub (spec 005, §6).
+#
+# Provisionado, no editado a mano: Grafana carga este fichero al arrancar y el
+# tablero queda operativo sin que nadie tenga que hacer clic en "Add data
+# source". El repositorio guarda la definición; las credenciales viajan por
+# variables de entorno del contenedor.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    # `uid` explícito: el dashboard versionado lo referencia por uid. Si se deja
+    # que Grafana lo genere, el JSON del tablero apuntaría a un id distinto en
+    # cada instalación y fallaría al aprovisionarse.
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      # Es la única forma de que Grafana y las reglas usen la misma noción de
+      # "ahora": sin esto, el panel y las alertas pueden discrepar por unos
+      # segundos en la frontera de un `for`.
+      timeInterval: ${PROMETHEUS_SCRAPE_INTERVAL}
+      httpMethod: POST
+
+  - name: PostgreSQL-negocio
+    uid: postgres-negocio
+    type: postgres
+    access: proxy
+    # Datasource de solo lectura para las métricas de negocio N-01…N-08. Si no
+    # hay credenciales configuradas, el datasource queda sin url y Grafana lo
+    # muestra como no disponible; la sección de negocio del tablero se
+    # degrada a vacío y el resto sigue funcionando.
+    url: ${BUSINESS_DB_HOST}:${BUSINESS_DB_PORT}
+    user: ${BUSINESS_DB_USER}
+    secureJsonData:
+      password: ${BUSINESS_DB_PASSWORD}
+    jsonData:
+      database: ${BUSINESS_DB_NAME}
+      sslmode: ${BUSINESS_DB_SSLMODE}
+      maxOpenConns: 2
+      maxIdleConns: 1
+      connMaxLifetime: 14400
+      postgresVersion: 1600
+      timescaledb: false
+    editable: false

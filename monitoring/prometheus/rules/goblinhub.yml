@@ -1,0 +1,327 @@
+# Reglas de alerta de GoblinHub (spec 005, §4).
+#
+# Validar antes de publicar: `make lint` (o `promtool check rules`).
+#
+# Criterio de entorno, tomado de `docs/SLA_METRICAS_Y_PARAMETROS.md`:
+#   - producción  → alertas reales, con `for` completo.
+#   - staging     → informativas. No existe servicio de staging desplegado, y
+#                   cuando exista sus SLA son de referencia, no contractuales.
+#                   Se emiten con `severity: info`, que Alertmanager enruta al
+#                   receptor por defecto (solo la UI): notificar por Slack o
+#                   correo un objetivo declarado como informativo entrenaría al
+#                   equipo a ignorar el canal.
+#   - development → sin alertas. El ruido de un stack local no debe llegar al
+#                   mismo canal que un incidente de producción.
+#
+# Cada alerta lleva `summary`, `cause` y `runbook`: son los tres campos que el
+# runbook exige para poder actuar sin abrir contexto adicional.
+
+groups:
+  # ─────────────────────────── reglas de recording ───────────────────────────
+  # Precalcula lo que el tablero pide a cada refresco. Además de acelerar el
+  # dashboard, fija la definición de "latencia P95" en un único sitio: si cada
+  # panel compusiera su propio PromQL, dos paneles podrían discrepar sobre si
+  # la API está degradada.
+  - name: goblinhub-recording
+    interval: 30s
+    rules:
+      - record: goblinhub:http_p95_seconds
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le, route, deployment_environment) (
+              rate(goblinhub_http_request_duration_seconds_bucket[5m])
+            )
+          )
+
+      - record: goblinhub:http_p99_seconds
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, route, deployment_environment) (
+              rate(goblinhub_http_request_duration_seconds_bucket[5m])
+            )
+          )
+
+      # La tasa de error es la métrica que más se mira durante un incidente, y
+      # un panel que dice «No data» obliga a deducir si significa 0 % o que
+      # falta el scrape. `sum()` sobre un vector vacío no devuelve serie
+      # alguna, así que sin el `or` el ratio desaparece justo cuando no hay
+      # errores. El `or` injecta un 0 por entorno presente en el contador, y la
+      # división por `clamp_min` evita el 0/0 cuando no ha habido tráfico.
+      - record: goblinhub:http_error_ratio_5m
+        expr: |
+          (
+            sum by (deployment_environment) (
+              rate(goblinhub_http_requests_total{status=~"5.."}[5m])
+            )
+            or
+            0 * count by (deployment_environment) (goblinhub_http_requests_total)
+          )
+          /
+          clamp_min(
+            sum by (deployment_environment) (
+              rate(goblinhub_http_requests_total[5m])
+            ), 0.001
+          )
+
+      - record: goblinhub:http_throughput_per_second
+        expr: |
+          sum by (deployment_environment) (rate(goblinhub_http_requests_total[5m]))
+
+      - record: goblinhub:prisma_pool_saturation
+        expr: |
+          goblinhub_prisma_pool_connections_in_use
+          /
+          clamp_min(goblinhub_prisma_pool_connections_max, 1)
+
+  # ──────────────────────────── preventivas (warning) ───────────────────────
+  - name: goblinhub-alertas-preventivas
+    rules:
+      - alert: LatenciaP95Degradada
+        expr: |
+          goblinhub:http_p95_seconds{deployment_environment="production"} > 1
+        for: 10m
+        labels:
+          severity: warning
+          alerta_id: A-01
+        annotations:
+          summary: >-
+            La latencia P95 de la API es {{ $value | humanizeDuration }} (umbral: 1 s).
+          cause: >-
+            Consultas lentas a PostgreSQL o caché de dashboard ausente. La ruta
+            más lenta aparece en el panel «Latencia por ruta» del tablero.
+          runbook: a01-latencia-p95
+
+      - alert: TasaError5xxElevada
+        expr: |
+          goblinhub:http_error_ratio_5m{deployment_environment="production"} > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          alerta_id: A-02
+        annotations:
+          summary: >-
+            El {{ $value | humanizePercentage }} de las peticiones de los
+            últimos 5 min devolvió 5xx (umbral: 1 %).
+          cause: >-
+            Error de negocio no controlado o caída de dependencia externa.
+            Filtrar por `route` y reproducir; los logs se localizan por el
+            `requestId` de la respuesta.
+          runbook: a02-tasa-error-5xx
+
+      - alert: MemoriaResidenteAlta
+        expr: |
+          process_resident_memory_bytes{deployment_environment="production"} > 419430400
+        for: 10m
+        labels:
+          severity: warning
+          alerta_id: A-03
+        annotations:
+          summary: >-
+            La API usa {{ $value | humanize1024 }}B de memoria residente
+            (umbral: 400 MiB).
+          cause: >-
+            Fuga lenta o caché en memoria sin límite. Si la tendencia crece de
+            forma monótona entre despliegues, es una fuga.
+          runbook: a03-memoria
+
+      - alert: CpuSostenida
+        expr: |
+          rate(process_cpu_seconds_total{deployment_environment="production"}[5m]) > 0.85
+        for: 15m
+        labels:
+          severity: warning
+          alerta_id: A-04
+        annotations:
+          summary: >-
+            La API consume {{ $value | humanizePercentage }} de una CPU durante
+            los últimos 5 min (umbral: 85 %).
+          cause: >-
+            Consultas N+1, serialización costosa o `sharp` en uploads.
+          runbook: a04-cpu
+
+      - alert: EventLoopBloqueado
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (
+              rate(nodejs_eventloop_lag_seconds_bucket{deployment_environment="production"}[5m])
+            )
+          ) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+          alerta_id: A-05
+        annotations:
+          summary: >-
+            El event loop se bloquea {{ $value | humanizeDuration }} en P95
+            (umbral: 200 ms).
+          cause: >-
+            El cron de backup o el de expiraciones compite con el tráfico.
+          runbook: a05-event-loop
+
+      - alert: PoolPrismaSaturado
+        expr: |
+          goblinhub:prisma_pool_saturation{deployment_environment="production"} > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          alerta_id: A-06
+        annotations:
+          summary: >-
+            El pool de Prisma está al {{ $value | humanizePercentage }} de su
+            límite (umbral: 80 %).
+          cause: >-
+            Límite de conexiones de Supabase alcanzado. La API empieza a
+            esperar conexiones y todo el resto de latencias sube con ella.
+          runbook: a06-pool-prisma
+
+      - alert: BackupAtrasado
+        expr: |
+          (time() - goblinhub_backup_last_success_timestamp_seconds{deployment_environment="production"}) > 90000
+        for: 1h
+        labels:
+          severity: warning
+          alerta_id: A-07
+        annotations:
+          summary: >-
+            El último respaldo correcto fue hace
+            {{ $value | humanizeDuration }} (umbral: 25 h, con el RPO de 24 h
+            como margen).
+          cause: >-
+            `pg_dump` ausente en la imagen, o el cron no llegó a ejecutarse.
+          runbook: a07-backup
+
+      # A-08 (registros por debajo de lo esperado) NO se implementa como regla
+      # activa: su expresión es `deriv(N-01[7d]) < 0` y N-01 (altas de usuario)
+      # vive en PostgreSQL, no en la API. Sin `postgres_exporter` no hay forma
+      # de evaluar `deriv()` sobre ella, y una regla que no puede dispararse
+      # parece viva sin estarlo. Queda expuesta en el tablero como panel
+      # de negocio (datasource PostgreSQL) y como tarea pendiente de la #214.
+      # Ver `docs/RUNBOOK_MONITOREO.md` y el §7 de la especificación.
+
+  # ────────────────────────────── críticas (critical) ───────────────────────
+  - name: goblinhub-alertas-criticas
+    rules:
+      - alert: ServicioCaido
+        expr: |
+          up{job="goblinhub-api", deployment_environment="production"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          alerta_id: A-09
+        annotations:
+          summary: Prometheus no logra sondeoar la API de producción.
+          cause: >-
+            Proceso caído, despliegue fallido o sin memoria para arrancar.
+          runbook: a09-servicio-caido
+
+      - alert: DependenciaCriticaCaida
+        expr: |
+          goblinhub_health_ready{deployment_environment="production"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          alerta_id: A-10
+        annotations:
+          summary: >-
+            La sonda de dependencias reporta PostgreSQL o Redis inalcanzable.
+          cause: >-
+            Límite de conexiones de Supabase agotado o caché caída. NO
+            reiniciar en cascada: un reinicio no arregla un límite de
+            conexiones y solo añade otra caída al ciclo.
+          runbook: a10-dependencia-critica
+
+      - alert: LatenciaP95Critica
+        expr: |
+          goblinhub:http_p95_seconds{deployment_environment="production"} > 2.5
+        for: 5m
+        labels:
+          severity: critical
+          alerta_id: A-11
+        annotations:
+          summary: >-
+            La latencia P95 alcanzó {{ $value | humanizeDuration }} (umbral
+            crítico: 2,5 s).
+          cause: >-
+            Dependencia lenta o saturación de la base de datos.
+          runbook: a11-latencia-p95-critica
+
+      - alert: TasaError5xxCritica
+        expr: |
+          goblinhub:http_error_ratio_5m{deployment_environment="production"} > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          alerta_id: A-12
+        annotations:
+          summary: >-
+            El {{ $value | humanizePercentage }} de las peticiones devolvió 5xx
+            (umbral crítico: 5 %).
+          cause: >-
+            Fallo generalizado, no puntual. Si se concentra en `/auth`,
+            revisar Supabase Auth antes que la API.
+          runbook: a12-tasa-error-critica
+
+      - alert: ErrorRateExtremo
+        expr: |
+          goblinhub:http_error_ratio_5m{deployment_environment="production"} > 0.20
+        for: 1m
+        labels:
+          severity: critical
+          alerta_id: A-13
+        annotations:
+          summary: >-
+            El {{ $value | humanizePercentage }} de las peticiones devolvió 5xx:
+            el servicio está, en la práctica, caído.
+          cause: Caída total del servicio.
+          runbook: a13-error-rate-extremo
+
+  # ───────────────────────────── infraestructura ───────────────────────────
+  - name: goblinhub-alertas-infraestructura
+    rules:
+      - alert: MetricasSinEscribirPorDisco
+        expr: |
+          predict_linear(
+            node_filesystem_avail_bytes{job="node", fstype!="", mountpoint="/", deployment_environment="production"}[6h],
+            4 * 24 * 3600
+          ) < 0
+        for: 30m
+        labels:
+          severity: critical
+          alerta_id: A-14
+        annotations:
+          summary: >-
+            El disco del nodo de Prometheus se llenará en menos de 4 días y
+            quedan {{ $value | humanize1024 }}B.
+          cause: >-
+            Prometheus dejará de escribir y TODAS las alertas quedarán mudas.
+            Esta alerta existe para que el silencio sea visible: sin ella, el
+            sistema entero parece tranquilo justo cuando está ciego.
+          runbook: a14-disco
+
+  # ─────────────────────── staging: informativo, sin notificar ─────────────
+  - name: goblinhub-staging-informativas
+    rules:
+      - alert: StagingServicioCaido
+        expr: up{job="goblinhub-api", deployment_environment="staging"} == 0
+        for: 5m
+        labels:
+          severity: info
+          alerta_id: A-09
+        annotations:
+          summary: Staging no responde (informativo, no notificado).
+          cause: Staging no está desplegado; la alerta no debe escalarse.
+          runbook: a09-servicio-caido
+
+      - alert: StandingErrorRateAlto
+        expr: |
+          goblinhub:http_error_ratio_5m{deployment_environment="staging"} > 0.05
+        for: 15m
+        labels:
+          severity: info
+          alerta_id: A-12
+        annotations:
+          summary: >-
+            Tasa de error alta en staging ({{ $value | humanizePercentage }}),
+            muy por encima del objetivo informativo del 5 %.
+          cause: Datos sintéticos; revisar antes de promover a producción.
+          runbook: a12-tasa-error-critica

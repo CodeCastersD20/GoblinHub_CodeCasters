@@ -1,0 +1,796 @@
+{
+  "uid": "goblinhub-overview",
+  "title": "GoblinHub — Métricas y Monitoreo",
+  "description": "Tablero de la issue #214. Technical: salud de la API, tráfico HTTP, recursos y alertas. Negocio: altas, conversión y ocupación de cupos (datasource PostgreSQL de solo lectura).",
+  "tags": ["goblinhub", "spec-005", "monitoreo"],
+  "editable": false,
+  "graphTooltip": 1,
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": { "refresh_intervals": ["10s", "30s", "1m", "5m", "15m"] },
+  "templating": {
+    "list": [
+      {
+        "name": "entorno",
+        "label": "Entorno",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(goblinhub_http_requests_total, deployment_environment)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": false,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "ruta",
+        "label": "Ruta",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(goblinhub_http_requests_total{deployment_environment=~\"$entorno\"}, route)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "name": "Alertas",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "enable": true,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "expr": "ALERTS{alertstate=\"firing\"}",
+        "titleFormat": "{{alertname}}"
+      },
+      {
+        "name": "Despliegues",
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "iconColor": "rgba(96, 255, 96, 1)",
+        "expr": "",
+        "tagKeys": "deploy",
+        "titleFormat": "Despliegue {{tag deploy}}",
+        "type": "tags"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Resumen — ¿hay incidente ahora?",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "collapsed": false
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Estado de la API",
+      "description": "`up` del job de la API. 0 significa caída total o red caída (A-09).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(up{job=\"goblinhub-api\", deployment_environment=~\"$entorno\"})",
+          "instant": true,
+          "legendFormat": "API"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value_and_name",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "CAÍDA", "color": "red", "index": 0 },
+                "1": { "text": "ACTIVA", "color": "green", "index": 1 }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Dependencias (health ready)",
+      "description": "Sonda de dependencias: PostgreSQL y Redis. 0 dispara A-10 sin que la API necesariamente esté caída.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(goblinhub_health_ready{deployment_environment=~\"$entorno\"})",
+          "instant": true,
+          "legendFormat": "ready"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value_and_name",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "DEGRADADA", "color": "red", "index": 0 },
+                "1": { "text": "OK", "color": "green", "index": 1 }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Latencia P95",
+      "description": "Umbrales del plan: A-01 por encima de 1 s, A-11 por encima de 2,5 s.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(goblinhub:http_p95_seconds{deployment_environment=~\"$entorno\"})",
+          "instant": true,
+          "legendFormat": "P95"
+        }
+      ],
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2.5 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Tasa de error 5xx",
+      "description": "Umbrales del plan: A-02 por encima del 1 %, A-12 por encima del 5 %, A-13 por encima del 20 %.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(goblinhub:http_error_ratio_5m{deployment_environment=~\"$entorno\"})",
+          "instant": true,
+          "legendFormat": "5xx"
+        }
+      ],
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "orange", "value": 0.05 },
+              { "color": "red", "value": 0.2 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Peticiones por segundo",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(goblinhub:http_throughput_per_second{deployment_environment=~\"$entorno\"})",
+          "instant": true,
+          "legendFormat": "RPS"
+        }
+      ],
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "decimals": 2, "color": { "mode": "fixed", "fixedColor": "blue" } },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Alertas disparadas",
+      "description": "Cuenta de alertas en estado `firing`. Es el primer número que hay que mirar durante un incidente.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(ALERTS{alertstate=\"firing\"})",
+          "instant": true,
+          "legendFormat": "firing"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value_and_name",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "NINGUNA", "color": "green", "index": 0 }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Salud, dependencias y respaldo",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 101,
+      "collapsed": false
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Health ready (0 = dependencia caída)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 7 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "goblinhub_health_ready{deployment_environment=~\"$entorno\"}",
+          "legendFormat": "{{deployment_environment}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Pool de Prisma (M-11)",
+      "description": "Conexiones en uso frente al máximo configurado. Por encima del 80 % se dispara A-06: la API empieza a esperar conexiones y con ellas suben todas las demás latencias.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 7 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "goblinhub_prisma_pool_connections_in_use{deployment_environment=~\"$entorno\"}",
+          "legendFormat": "en uso"
+        },
+        {
+          "refId": "B",
+          "expr": "goblinhub_prisma_pool_connections_max{deployment_environment=~\"$entorno\"}",
+          "legendFormat": "máximo"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Antigüedad del último respaldo (M-12)",
+      "description": "Horas desde el último `pg_dump` correcto. El umbral de A-07 son 25 h, con el RPO de 24 h como margen para no despertar a nadie de madrugada por un respaldo que aún no tocaba.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 7 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(time() - goblinhub_backup_last_success_timestamp_seconds{deployment_environment=~\"$entorno\"}) / 3600",
+          "legendFormat": "horas"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "min": 0,
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 25 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "row",
+      "title": "Tráfico HTTP",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "collapsed": false
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Peticiones por segundo por ruta",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (route) (rate(goblinhub_http_requests_total{deployment_environment=~\"$entorno\", route=~\"$ruta\"}[5m]))",
+          "legendFormat": "{{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 0, "stacking": { "mode": "normal" } }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"] } }
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Latencia por ruta (P50 / P95 / P99)",
+      "description": "El P95 agregado no dice qué ruta rompió: este panel sí. Es el primer paso del runbook de A-01 y de A-11.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "goblinhub:http_p95_seconds{deployment_environment=~\"$entorno\", route=~\"$ruta\"}",
+          "legendFormat": "P95 {{route}}"
+        },
+        {
+          "refId": "B",
+          "expr": "goblinhub:http_p99_seconds{deployment_environment=~\"$entorno\", route=~\"$ruta\"}",
+          "legendFormat": "P99 {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 5 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["max"] } }
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Tasa de error 5xx",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 23 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "goblinhub:http_error_ratio_5m{deployment_environment=~\"$entorno\"}",
+          "legendFormat": "{{deployment_environment}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "id": 23,
+      "type": "table",
+      "title": "Rutas con más 5xx (últimas 24 h)",
+      "description": "Totales por ruta, no tasa: para responder «¿dónde está el error?» importa el volumen, no el porcentaje.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 23 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (route, status) (increase(goblinhub_http_requests_total{deployment_environment=~\"$entorno\", status=~\"5..\"}[24h])))",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true
+            },
+            "renameByName": {
+              "Value": "5xx (24 h)",
+              "route": "Ruta",
+              "status": "Estado"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" } } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "5xx (24 h)" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "gradient" } },
+              { "id": "decimals", "value": 0 }
+            ]
+          }
+        ]
+      },
+      "options": { "showHeader": true, "cellHeight": "sm", "footer": { "show": false } }
+    },
+    {
+      "type": "row",
+      "title": "Recursos del proceso",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+      "id": 103,
+      "collapsed": false
+    },
+    {
+      "id": 30,
+      "type": "timeseries",
+      "title": "Memoria residente",
+      "description": "A-03 dispara por encima de 400 MiB. Si la línea sube de forma monótona entre despliegues, es una fuga, no un pico.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 31 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_resident_memory_bytes{deployment_environment=~\"$entorno\"}",
+          "legendFormat": "RSS"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 419430400 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "CPU",
+      "description": "A-04 dispara al 85 % sostenido durante 15 min.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 31 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(process_cpu_seconds_total{deployment_environment=~\"$entorno\"}[5m])",
+          "legendFormat": "CPU"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.85 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "id": 32,
+      "type": "timeseries",
+      "title": "Event loop lag (P95)",
+      "description": "A-05 dispara por encima de 200 ms. Un event loop bloqueado convierte un pico de tráfico en una caída percibida de toda la API.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 31 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(nodejs_eventloop_lag_seconds_bucket{deployment_environment=~\"$entorno\"}[5m])))",
+          "legendFormat": "P95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.2 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "row",
+      "title": "Alertas",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 38 },
+      "id": 104,
+      "collapsed": false
+    },
+    {
+      "id": 40,
+      "type": "table",
+      "title": "Alertas activas",
+      "description": "Equivalente en Grafana de la vista de Alertmanager, útil cuando se consulta desde el tablero y no desde el puerto 9093.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 39 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count by (alertname, severity, deployment_environment, alerta_id) (ALERTS{alertstate=\"firing\"})",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": true },
+            "renameByName": {
+              "Value": "Instancias",
+              "alertname": "Alerta",
+              "alerta_id": "ID",
+              "deployment_environment": "Entorno",
+              "severity": "Severidad"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": { "fields": {}, "sort": [{ "field": "Severidad", "desc": true }] }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" } } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Severidad" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "critical": { "text": "CRÍTICA", "color": "red", "index": 0 },
+                      "warning": { "text": "PREVENTIVA", "color": "orange", "index": 1 },
+                      "info": { "text": "INFORMATIVA", "color": "blue", "index": 2 }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": { "showHeader": true, "cellHeight": "sm", "footer": { "show": false } }
+    },
+    {
+      "type": "row",
+      "title": "Negocio (N-01…N-08) — requiere datasource PostgreSQL de solo lectura",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 48 },
+      "id": 105,
+      "collapsed": false
+    },
+    {
+      "id": 50,
+      "type": "timeseries",
+      "title": "N-01 · Altas de usuario por día",
+      "description": "Objetivo ≥ 20/día. Es la métrica que A-08 querría vigilar con `deriv()`; hoy se lee directamente de la base de datos, sin `postgres_exporter`.",
+      "datasource": { "type": "postgres", "uid": "postgres-negocio" },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 49 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawQuery": true,
+"rawSql": "SELECT $__timeGroup(fecha, '1d'), COUNT(*)::double precision AS \"Altas\" FROM usuarios WHERE deleted_at IS NULL AND $__timeFilter(fecha) GROUP BY 1 ORDER BY 1"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "lineWidth": 1, "fillOpacity": 60 } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "id": 51,
+      "type": "bargauge",
+      "title": "N-05 · Ocupación de cupos por evento",
+      "description": "Por encima del 90 % el evento se llena y hay que abrir más; por debajo del 10 % sobra difusión (FR-019, N-05).",
+      "datasource": { "type": "postgres", "uid": "postgres-negocio" },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 49 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT e.titulo AS \"Evento\", CASE WHEN e.cupo_maximo = 0 THEN 0 ELSE LEAST(100.0 * COUNT(i.id_inscripcion) / e.cupo_maximo, 100) END AS \"Ocupación\" FROM eventos e LEFT JOIN inscripciones i ON i.id_evento = e.id_evento AND i.deleted_at IS NULL WHERE e.deleted_at IS NULL GROUP BY e.id_evento, e.titulo, e.cupo_maximo ORDER BY 3 DESC LIMIT 10"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 10 },
+              { "color": "yellow", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "displayMode": "gradient", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "id": 52,
+      "type": "timeseries",
+      "title": "N-07 · Actividad registrada por día",
+      "description": "Registros en `logs_actividad`. Si cae de golpe, sospechar del interceptor de auditoría antes que del negocio.",
+      "datasource": { "type": "postgres", "uid": "postgres-negocio" },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 49 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(fecha_hora, '1d'), COUNT(*)::double precision AS \"Registros\" FROM logs_actividad WHERE deleted_at IS NULL AND $__timeFilter(fecha_hora) GROUP BY 1 ORDER BY 1"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "lineWidth": 1, "fillOpacity": 60 } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    }
+  ]
+}
