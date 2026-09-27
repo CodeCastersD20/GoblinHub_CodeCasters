@@ -43,3 +43,6 @@ El script `scripts/deploy/deploy_and_verify.sh`:
 2. Realiza sondeos continuos al `HEALTHCHECK_URL` por 30 segundos (`6 reintentos x 5s`).
 3. Si recibe un código `HTTP 200`, se considera la liberación exitosa y actualiza el Markdown en el Action Summary.
 4. Si agota el tiempo o falla, invoca inmediatamente el `ROLLBACK_HOOK_URL`, aborta el pipeline (`exit 1`) y documenta el incidente en el resumen de GitHub Actions. También es posible disparar rollbacks manuales usando eventos de `workflow_dispatch`.
+
+## 6. Scripts de Pipeline
+Consulta la guía detallada [SCRIPTS_PIPELINE.md](./SCRIPTS_PIPELINE.md) para aprender a ejecutar y probar localmente todas las fases del ciclo CI/CD.
