@@ -1,0 +1,19 @@
+# Contexto de build de la API. Sin esto, el daemon de Docker se llevaría
+# materiales que no hacen falta para construir y que además incluyen secretos.
+
+node_modules
+dist
+coverage
+backups
+.env
+.env.*
+!.env.example
+*.log
+.vscode
+.idea
+test
+**/*.spec.ts
+.git
+.github
+monitoring
+docs
