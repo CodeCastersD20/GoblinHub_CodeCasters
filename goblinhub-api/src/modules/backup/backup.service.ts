@@ -12,13 +12,17 @@ import {
   withTemporaryPassfile,
 } from './database-credentials';
 import { validateManifest, writeManifest } from './backup-manifest';
+import { MetricsService } from '../metrics/infrastructure/services/metrics.service';
 
 @Injectable()
 export class BackupService {
   private readonly logger = new Logger(BackupService.name);
   private readonly backupsDir: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly metricsService: MetricsService,
+  ) {
     this.backupsDir = path.join(process.cwd(), 'backups');
     // Crear carpeta si no existe al iniciar el servicio
     if (!fs.existsSync(this.backupsDir)) {
@@ -72,6 +76,10 @@ export class BackupService {
 
     const stats = fs.statSync(filepath);
     const sizeKb = Math.round(stats.size / 1024);
+
+    // M-12: el respaldo solo era observable por el log. Con esta marca, la
+    // alerta A-07 puede distinguir "no hay respaldos" de "el cron falló".
+    this.metricsService.registrarBackupExitoso();
 
     this.logger.log(`Backup completed: ${filename} (${sizeKb} KB)`);
     return { filename, path: filepath, sizeKb };

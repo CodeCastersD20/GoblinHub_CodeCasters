@@ -1,0 +1,170 @@
+# Stack de monitoreo de GoblinHub (spec 005, §5 y §7).
+#
+# Levanta Prometheus, Alertmanager, Grafana y node_exporter. La configuración
+# se renderiza antes que nada: el servicio `config-init` ejecuta
+# `scripts/generate-config.mjs` y el resto solo arranca si termina con éxito
+# (`service_completed_successfully`). Un Prometheus con una configuración
+# inválida no arranca, y un Prometheus que no arranca deja el sistema entero
+# aparentemente tranquilo; que el fallo sea visible en `docker compose up` es
+# parte del objetivo.
+#
+#   cp .env.example .env   # y rellena DEPLOY_ENV, API_TARGET y credenciales
+#   make up                # o: docker compose up -d
+
+name: goblinhub-monitoring
+
+volumes:
+  # Configuración renderizada. Un volumen y no el directorio del repositorio:
+  # los ficheros generados contienen credenciales de Slack, Discord o SMTP y
+  # no deben tocar el disco de trabajo.
+  config: {}
+  prometheus-data: {}
+  grafana-data: {}
+
+networks:
+  monitoring:
+    driver: bridge
+
+services:
+  # ───────────────────── render de configuración (una vez) ───────────────────
+  config-init:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ./:/app:ro
+      - config:/out
+    command: ["node", "scripts/generate-config.mjs", "--out", "/out"]
+    restart: "no"
+
+  # ────────────────────────────── Prometheus ────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+    volumes:
+      - config:/etc/prometheus:ro
+      - ./prometheus/rules:/etc/prometheus-rules:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}
+      - --storage.tsdb.retention.size=${PROMETHEUS_RETENTION_SIZE:-10GB}
+      - --web.enable-lifecycle
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      # En Linux, `host.docker.internal` no existe por defecto. Sin esta
+      # entrada, el scrape contra la API local falla con "no such host" y el
+      # fallo se confunde con una caída de la API.
+      - "host.docker.internal:host-gateway"
+    networks: [monitoring]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ────────────────────────────── Alertmanager ──────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    depends_on:
+      config-init:
+        condition: service_completed_successfully
+    volumes:
+      - config:/etc/alertmanager:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    ports:
+      - "${ALERTMANAGER_PORT:-9093}:9093"
+    # Necesario para que `ALERTMANAGER_MOCK_WEBHOOK_URL` pueda usar
+    # `host.docker.internal`, que es la dirección que documentan `.env.example`
+    # y el runbook. Sin esta línea la entrega falla con
+    # `lookup host.docker.internal: no such host`: el DNS interno de Docker no
+    # resuelve ese nombre por sí solo. Se comprobó con una alerta de prueba real.
+    # La alternativa dentro de la red del stack es `http://mock-webhook:9095/alerta`.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [monitoring]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ──────────────────────────────── Grafana ─────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.6.0
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?define GRAFANA_ADMIN_PASSWORD en .env}
+      # El tablero es de solo lectura; que Grafana acepte escrituras solo
+      # añade una vía para perder el dashboard durante un incidente.
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/goblinhub-overview.json
+      # Grafana interpola estas variables al aprovisionar los datasources. Se
+      # pasan con valor por defecto porque una variable sin definir deja un
+      # `url:` vacío y el datasource no llega a aprovisionarse.
+      PROMETHEUS_SCRAPE_INTERVAL: ${PROMETHEUS_SCRAPE_INTERVAL:-15s}
+      BUSINESS_DB_HOST: ${BUSINESS_DB_HOST:-host.docker.internal}
+      BUSINESS_DB_PORT: ${BUSINESS_DB_PORT:-5432}
+      BUSINESS_DB_NAME: ${BUSINESS_DB_NAME:-postgres}
+      BUSINESS_DB_USER: ${BUSINESS_DB_USER:-postgres}
+      BUSINESS_DB_PASSWORD: ${BUSINESS_DB_PASSWORD:-}
+      BUSINESS_DB_SSLMODE: ${BUSINESS_DB_SSLMODE:-disable}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks: [monitoring]
+    restart: unless-stopped
+
+  # ───────────────────────────── node_exporter ──────────────────────────────
+  # Solo alimenta A-14 (disco lleno). Publica las métricas del host en texto
+  # plano por defecto, así que queda ligado a la red interna del stack y NO se
+  # publica un puerto: no es una API de negocio y nadie debe poder consultarla
+  # desde fuera.
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/credentials/.+|var/lib/docker/.+)($$|/)
+    volumes:
+      - /:/host:ro,rslave
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [monitoring]
+    restart: unless-stopped
+
+  # ─────────────── webhook receptor de la evidencia (opcional) ───────────────
+  # Solo se levanta con `--profile evidencia` (ver Makefile). Sirve para
+  # demostrar el enrutado de una alerta real sin depender de credenciales de
+  # terceros.
+  mock-webhook:
+    image: node:22-alpine
+    profiles: [evidencia]
+    working_dir: /app
+    volumes:
+      - ./:/app:ro
+    command: ["node", "scripts/mock-webhook.mjs"]
+    environment:
+      MOCK_WEBHOOK_PORT: "9095"
+      MOCK_WEBHOOK_LOG: /tmp/alerta-recibida.json
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "9095:9095"
+    networks: [monitoring]
+    restart: unless-stopped

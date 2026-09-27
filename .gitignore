@@ -15,3 +15,11 @@ sonarqube/.scannerwork/
 sonarqube/.env
 
 .opencode/
+
+# Stack de monitoreo (spec 005): configuración renderizada y secretos.
+# El repositorio guarda las plantillas `*.template` y `.env.example`; los
+# ficheros con credenciales de Slack, Discord, SMTP o del datasource de negocio
+# no se versionan nunca (Principio II de la constitución).
+monitoring/.env
+monitoring/prometheus/prometheus.yml
+monitoring/alertmanager/alertmanager.yml

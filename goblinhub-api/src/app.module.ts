@@ -15,6 +15,8 @@ import { PrismaModule } from './connect/prisma.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ActivityLogInterceptor } from './modules/logs/infrastructure/interceptors/activity-log.interceptor';
 import { HealthModule } from './modules/health/health.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
+import { MetricsInterceptor } from './modules/metrics/infrastructure/interceptors/metrics.interceptor';
 
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { HealthModule } from './modules/health/health.module';
     ReportsModule,
     PrismaModule,
     HealthModule,
+    MetricsModule,
   ],
   controllers: [],
   providers: [
@@ -48,6 +51,12 @@ import { HealthModule } from './modules/health/health.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: ActivityLogInterceptor,
+    },
+    {
+      // Se registra después de ActivityLogInterceptor para que la métrica de
+      // latencia cubra también el trabajo de la auditoría (spec 005, T012).
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
     },
   ], // Aplica el guard de throttling globalmente
 })

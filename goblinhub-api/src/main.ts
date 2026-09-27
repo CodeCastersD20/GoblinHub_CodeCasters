@@ -4,6 +4,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import type { Express, Request, Response, NextFunction } from 'express';
+import type { Server } from 'node:http';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -124,6 +125,11 @@ async function bootstrap() {
       '/logs',
       '/backup',
       '/upload',
+      // Sondeadas por Prometheus y por las sondas de Render: no llegan con
+      // Origin ni Authorization, y sin esta excepción se recibirían un 302 al
+      // frontend en lugar de las métricas (spec 005, FR-008).
+      '/metrics',
+      '/health',
     ];
     if (apiPaths.some((apiPath) => path.startsWith(apiPath))) {
       return next();
@@ -147,7 +153,17 @@ async function bootstrap() {
     res.redirect(frontendUrl);
   });
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(`🚀 API corriendo en: http://localhost:3000`);
+  // El puerto se lee del socket ya escuchando, no de `process.env`: con un
+  // valor ausente o inválido, `app.listen` aplica su propio default y el log
+  // anunciaba un puerto distinto del que se estaba sirviendo.
+  // `app.listen` está tipado como `any` en NestJS pese a devolver un
+  // `http.Server`, y el lint estricto rechaza cualquier asignación de `any`.
+  const servidorHttp = (await app.listen(
+    process.env.PORT ?? 3000,
+  )) as unknown as Server;
+  const direccion = servidorHttp.address();
+  const puerto =
+    typeof direccion === 'object' && direccion !== null ? direccion.port : 0;
+  console.log(`🚀 API corriendo en: http://localhost:${puerto}`);
 }
 void bootstrap();

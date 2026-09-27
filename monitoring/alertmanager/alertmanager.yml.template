@@ -1,0 +1,145 @@
+# Plantilla de Alertmanager. NO editar el fichero generado `alertmanager.yml` a
+# mano: se produce con `node scripts/generate-config.mjs` (spec 005, §5 y §7).
+#
+# Los bloques condicionales hacen que un receptor sin canal configurado no
+# llegue al fichero generado: un `slack_configs` con webhook vacío hace fallar
+# la carga de la configuración de Alertmanager, y ese fallo solo se descubre
+# cuando el contenedor ya está arrancando.
+
+global:
+  resolve_timeout: 5m
+
+route:
+  # Agrupar por alerta y entorno: una ventana de caída con 50 rutas afectadas
+  # debe generar un aviso, no 50 (spec 005, §4.3).
+  group_by: [alertname, deployment_environment]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: alertmanager-ui
+
+  routes:
+    # El receptor del simulador va PRIMERO a propósito. En Alertmanager la
+    # primera ruta que coincide gana y el resto se ignora (`continue: false`),
+    # de modo que una ruta de evidencia colocada al final es inalcanzable para
+    # cualquier alerta `severity="critical"` o `severity="warning"`: se la
+    # quedan las rutas anteriores. El procedimiento de evidencia del runbook
+    # usa `severity="warning"`, que es justo el caso que se perdía.
+    {{#if ALERTMANAGER_MOCK_WEBHOOK_URL}}
+    - matchers:
+        - alerta_prueba="true"
+      receiver: evidencia-prueba
+    {{/if}}
+
+    # Primero lo crítico: si el receptor de críticos está configurado, una
+    # alerta crítica nunca cae en el receptor genérico.
+    - matchers:
+        - severity="critical"
+      receiver: critical
+      continue: false
+
+    - matchers:
+        - severity="warning"
+      receiver: warning
+
+# `inhibit_rules` es clave raíz, no de `route` (y se llama así, no
+# `inhibition_rules`: `amtool check-config` rechaza el nombre largo). Una
+# alerta crítica silencia a la preventiva equivalente, nunca a otra: `equal`
+# obliga a que coincidan alerta y entorno, de modo que una crítica en
+# producción no silencia a una preventiva en staging.
+inhibit_rules:
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: [alertname, deployment_environment]
+
+receivers:
+  # Canal de respaldo: no requiere credenciales y funciona desde el primer
+  # arranque. Si el equipo no configura ningún canal externo, las alertas siguen
+  # siendo consultables aquí y en el tablero.
+  - name: alertmanager-ui
+
+  - name: critical
+    {{#if SLACK_WEBHOOK_URL}}
+    slack_configs:
+      - send_resolved: true
+        channel: '#incidentes-criticos'
+        title: 'CRÍTICA — {{ .GroupLabels.alertname }} ({{ .GroupLabels.deployment_environment }})'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}\nCausa probable: {{ .Annotations.cause }}\nRespuesta: docs/RUNBOOK_MONITOREO.md#{{ .Annotations.runbook }}{{ end }}'
+        api_url: {{SLACK_WEBHOOK_URL}}
+    {{/if}}
+    {{#if DISCORD_WEBHOOK_URL}}
+    discord_configs:
+      - send_resolved: true
+        title: 'CRÍTICA — {{ .GroupLabels.alertname }} ({{ .GroupLabels.deployment_environment }})'
+        message: '{{ range .Alerts }}{{ .Annotations.summary }}\nCausa probable: {{ .Annotations.cause }}\nRespuesta: docs/RUNBOOK_MONITOREO.md#{{ .Annotations.runbook }}{{ end }}'
+        webhook_url: {{DISCORD_WEBHOOK_URL}}
+    {{/if}}
+    {{#if ALERTMANAGER_SMTP_HOST}}
+    email_configs:
+      - to: {{ALERTMANAGER_EMAIL_TO}}
+        from: {{ALERTMANAGER_EMAIL_FROM}}
+        send_resolved: true
+        smarthost: {{ALERTMANAGER_SMTP_HOST}}:{{ALERTMANAGER_SMTP_PORT}}
+        require_tls: {{ALERTMANAGER_SMTP_REQUIRE_TLS}}
+        {{#if ALERTMANAGER_SMTP_USERNAME}}
+        auth_username: {{ALERTMANAGER_SMTP_USERNAME}}
+        {{/if}}
+        {{#if ALERTMANAGER_SMTP_PASSWORD}}
+        auth_password: {{ALERTMANAGER_SMTP_PASSWORD}}
+        {{/if}}
+        # `email_configs` no acepta `subject` ni `body` en Alertmanager 0.28:
+        # `amtool check-config` los rechaza con «field subject not found in
+        # type config.plain». El asunto va en `headers` (que es un mapa, no una
+        # lista) y el cuerpo en `text`. Se comprobó contra la imagen oficial.
+        headers:
+          Subject: '[CRÍTICA] {{ .GroupLabels.alertname }} — {{ .GroupLabels.deployment_environment }}'
+        text: |
+          {{ range .Alerts }}
+          Resumen: {{ .Annotations.summary }}
+          Causa probable: {{ .Annotations.cause }}
+          Procedimiento: docs/RUNBOOK_MONITOREO.md#{{ .Annotations.runbook }}
+          {{ end }}
+    {{/if}}
+
+  - name: warning
+    {{#if SLACK_WEBHOOK_URL}}
+    slack_configs:
+      - send_resolved: true
+        channel: '#alertas'
+        title: 'Preventiva — {{ .GroupLabels.alertname }} ({{ .GroupLabels.deployment_environment }})'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}\nCausa probable: {{ .Annotations.cause }}\nRespuesta: docs/RUNBOOK_MONITOREO.md#{{ .Annotations.runbook }}{{ end }}'
+        api_url: {{SLACK_WEBHOOK_URL}}
+    {{/if}}
+    {{#if ALERTMANAGER_SMTP_HOST}}
+    email_configs:
+      - to: {{ALERTMANAGER_EMAIL_TO}}
+        from: {{ALERTMANAGER_EMAIL_FROM}}
+        send_resolved: true
+        smarthost: {{ALERTMANAGER_SMTP_HOST}}:{{ALERTMANAGER_SMTP_PORT}}
+        require_tls: {{ALERTMANAGER_SMTP_REQUIRE_TLS}}
+        {{#if ALERTMANAGER_SMTP_USERNAME}}
+        auth_username: {{ALERTMANAGER_SMTP_USERNAME}}
+        {{/if}}
+        {{#if ALERTMANAGER_SMTP_PASSWORD}}
+        auth_password: {{ALERTMANAGER_SMTP_PASSWORD}}
+        {{/if}}
+        headers:
+          Subject: '[PREVENTIVA] {{ .GroupLabels.alertname }} — {{ .GroupLabels.deployment_environment }}'
+        text: |
+          {{ range .Alerts }}
+          Resumen: {{ .Annotations.summary }}
+          Causa probable: {{ .Annotations.cause }}
+          Procedimiento: docs/RUNBOOK_MONITOREO.md#{{ .Annotations.runbook }}
+          {{ end }}
+    {{/if}}
+
+  {{#if ALERTMANAGER_MOCK_WEBHOOK_URL}}
+  # Receptor de la evidencia de alerta de la #214: permite demostrar que el
+  # enrutado entrega la notificación sin depender de credenciales de terceros.
+  - name: evidencia-prueba
+    webhook_configs:
+      - send_resolved: true
+        url: {{ALERTMANAGER_MOCK_WEBHOOK_URL}}
+  {{/if}}

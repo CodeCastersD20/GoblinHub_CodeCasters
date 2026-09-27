@@ -1,0 +1,83 @@
+# Plantilla de Prometheus. NO editar el fichero generado `prometheus.yml` a mano:
+# se produce con `node scripts/generate-config.mjs` (spec 005, §7).
+#
+# Prometheus no interpola variables de entorno en su configuración, así que los
+# valores llegan desde el generador. `promtool check config` valida el
+# resultado en CI.
+
+global:
+  scrape_interval: {{PROMETHEUS_SCRAPE_INTERVAL}}
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: goblinhub
+
+rule_files:
+  # Ruta propia y no `rules/` dentro de /etc/prometheus: ese directorio es un
+  # volumen de solo lectura y anidar otro mount debajo hace fallar el arranque
+  # del contenedor con «Read-only file system».
+  - /etc/prometheus-rules/goblinhub.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+      timeout: 10s
+
+scrape_configs:
+  # Un único job para la API. La etiqueta `deployment_environment` la publica
+  # la propia aplicación en cada serie (FR-006); aquí no se fuerza, para no
+  # poder contradecir a la API con una etiqueta falsa en el scrape.
+  - job_name: goblinhub-api
+    metrics_path: /metrics
+    # `up` la sintetiza Prometheus y solo lleva las etiquetas configuradas en
+    # el target, no las que devuelve la API. Sin esta etiqueta estática, la
+    # serie se llama `up{job="goblinhub-api", instance=...}` sin más, y el
+    # selector de A-09 `up{job="goblinhub-api",
+    # deployment_environment="production"}` no coincide con ninguna serie: la
+    # alerta queda inactiva para siempre con health=ok. Se comprobó en el stack
+    # en marcha, con la API realmente caída y la alerta sin dispararse.
+    #
+    # La etiqueta no puede faltar y a la vez puesta aquí sin más, porque
+    # `honor_labels` está en false por defecto y Prometheus renombraría la
+    # etiqueta de la API a `exported_deployment_environment`, dejando las reglas
+    # de A-01 a A-14 sin series que evaluar. Con `honor_labels: true` gana la
+    # API: sus métricas conservan su `deployment_environment` real y `up`, que
+    # no lo tiene, recibe el de la configuración.
+    honor_labels: true
+    static_configs:
+      - targets:
+          - {{API_TARGET}}
+        labels:
+          deployment_environment: {{DEPLOY_ENV}}
+
+  # NO hay jobs de scrape sobre `/healthz` ni `/health/ready`, aunque esas rutas
+  # parezcan la forma obvia de vigilarlas. Un job con `metrics_path` espera un
+  # cuerpo en formato de exposición de Prometheus; esas rutas devuelven JSON y
+  # el scrape falla con «received unsupported Content-Type application/json»,
+  # dejando el target permanentemente en DOWN. Se comprobó al levantar el
+  # stack: es un fallo silencioso que apunta al sitio equivocado.
+  #
+  # La salud se vigila con las dos señales que sí/exporta la API:
+  #   - `up{job="goblinhub-api"}`        → la API responde (A-09).
+  #   - `goblinhub_health_ready`         → sus dependencias están arriba
+  #     (A-10), publicada por `MetricsProbeScheduler` a partir del mismo
+  #     `HealthService` que responde en `/health/ready`.
+
+  # Métricas del host. Solo las usa A-14 (disco lleno): sin este target, esa
+  # alerta no puede dispararse y el silencio de Prometheus seguiría siendo
+  # silencioso, que es justo lo que A-14 existe para evitar.
+  - job_name: node
+    static_configs:
+      - targets:
+          - node-exporter:9100
+        labels:
+          deployment_environment: {{DEPLOY_ENV}}
+
+  # El stack se auto-mide: sin esto, un Prometheus que deja de escribir
+  # produciría un sistema aparentemente tranquilo.
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090

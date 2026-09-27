@@ -1,0 +1,20 @@
+# Proveedor de dashboards (spec 005, §6).
+#
+# `allowUiUpdates: false`: el tablero se versiona en el repositorio y llega a
+# Grafana por este montaje. Permitir ediciones desde la UI haría que el
+# diagnóstico de un incidente dependiera de un estado que nadie ha
+# committeado, y el siguiente despliegue lo perdería en silencio.
+
+apiVersion: 1
+
+providers:
+  - name: goblinhub
+    orgId: 1
+    folder: GoblinHub
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

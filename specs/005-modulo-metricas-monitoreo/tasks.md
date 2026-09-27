@@ -74,8 +74,8 @@
 - [ ] T036 [P] Añadir la regla de inhibición: una alerta `critical` inhibe a su `warning` equivalente por `alertname` y entorno (FR-016)
 - [ ] T037 [P] Configurar los tres receptores con valores por variable de entorno: `email_configs`, `slack_configs` y `discord_configs` (FR-017)
 - [ ] T038 Validar las reglas con `promtool check rules` y la configuración con `promtool check config` (FR-023)
-- [ ] T039 [P] Crear `docs/RUNBOOK_MONITOREO.md` con una sección por familia de alerta: severidad, causa probable, pasos de respuesta y escalado dentro del equipo (Sadrach34, Alfion72, Ddarielz, AdrianS-127) (FR-015, FR-024)
-- [ ] T040 Documentar en el runbook cómo configurar cada canal y qué hacer si ninguno está configurado (FR-017, `plan.md` §5)
+- [x] T039 [P] Crear `docs/RUNBOOK_MONITOREO.md` con una sección por familia de alerta: severidad, causa probable, pasos de respuesta y escalado dentro del equipo (Sadrach34, Alfion72, Ddarielz, AdrianS-127) (FR-015, FR-024)
+- [x] T040 Documentar en el runbook cómo configurar cada canal y qué hacer si ninguno está configurado (FR-017, `plan.md` §5)
 
 **Checkpoint**: Las tres familias de alerta del AC de #214 están definidas, validadas y con respuesta documentada. *Cubre los AC «alertas accionables» y «severidad, causa probable y procedimiento de respuesta» de #214.*
 
@@ -83,13 +83,13 @@
 
 ## Phase 4: Verificación y evidencia (P1) — US5, US7, FR-021–FR-025
 
-- [ ] T041 [P] Crear `.github/workflows/monitoring.yml` que ejecute `promtool check rules`, `promtool check config` y el generador de configuración, y falle ante un error (FR-023)
-- [ ] T042 [P] Verificar con `git grep` que no hay secretos versionados y adjuntar el resultado al PR (FR-021)
-- [ ] T043 Levantar el stack en local y provocar la condición de A-12 (respuestas 5xx sostenidas) para dispararla de verdad (FR-025)
-- [ ] T044 [P] Capturar la evidencia de la alerta disparada: regla, severidad, causa probable y recepción en el canal configurado (FR-025, US7)
-- [ ] T045 Levantar el stack y verificar que el tablero distingue los tres entornos (FR-010)
-- [ ] T046 Verificar que `/healthz` y `/health/ready` cierran la inconsistencia de `infra/terraform/main.tf:44` y de `scripts/deploy/healthcheck.sh` (FR-007)
-- [ ] T047 Ejecutar el gate completo `npm run api` y adjuntar el resultado al PR (Principios I y V)
+- [x] T041 [P] Crear `.github/workflows/monitoring.yml` que ejecute `promtool check rules`, `promtool check config` y el generador de configuración, y falle ante un error (FR-023)
+- [x] T042 [P] Verificar con `git grep` que no hay secretos versionados y adjuntar el resultado al PR (FR-021)
+- [x] T043 Levantar el stack en local y provocar la condición de A-12 (respuestas 5xx sostenidas) para dispararla de verdad (FR-025)
+- [x] T044 [P] Capturar la evidencia de la alerta disparada: regla, severidad, causa probable y recepción en el canal configurado (FR-025, US7)
+- [x] T045 Levantar el stack y verificar que el tablero distingue los tres entornos (FR-010)
+- [x] T046 Verificar que `/healthz` y `/health/ready` cierran la inconsistencia de `infra/terraform/main.tf:44` y de `scripts/deploy/healthcheck.sh` (FR-007)
+- [x] T047 Ejecutar el gate completo `npm run api` y adjuntar el resultado al PR (Principios I y V)
 - [ ] T048 Abrir el PR de #214 a `develop` con la plantilla, `Closes #214` y la evidencia adjunta (FR-025)
 
 **Checkpoint**: Feature completa y con evidencia. *Cierra #214.*
@@ -133,3 +133,36 @@
 | FR-024 | T039 |
 | FR-025 | T043, T044 |
 | Out of scope | T049–T055 |
+
+
+---
+
+## Notas de cierre (2026-09-27)
+
+Cuatro defectos aparecieron al provocar las alertas de verdad, no al
+revisar el código. Los cuatro eran silenciosos: `health=ok` en todos los casos.
+
+1. **A-09 no podía dispararse nunca.** `up` la sintetiza Prometheus y solo
+   lleva las etiquetas configuradas en el target, nunca las que devuelve la API.
+   El selector `up{job="goblinhub-api", deployment_environment="production"}`
+   no coincidía con ninguna serie. Se comprobó con la API realmente caída y la
+   alerta quieta. Arreglo: etiqueta estática en el job más `honor_labels: true`
+   para que gane la API y `up` reciba la de la configuración.
+2. **Los tests de reglas validaban la ficción.** El test de A-09 usaba como
+   entrada `up{...deployment_environment="production"}`, una serie que el
+   Prometheus real nunca produce, así que daba verde sobre una alerta muerta.
+3. **La ruta del receptor de evidencia era inalcanzable.** Iba después de las
+   de `critical` y `warning`, y en Alertmanager gana la primera ruta que
+   coincide. Con `severity="warning"`, que es lo que indicaba el runbook, la
+   alerta se la quedaba la ruta anterior.
+4. **El mock no recibía nada por DNS.** Alertmanager no resolvía
+   `host.docker.internal`; le faltaba `extra_hosts`. Además `group_wait` son
+   30 s, y la entrega se reintenta en `group_interval`.
+
+Se añadieron gates para que 1, 3 y 4 no vuelvan: `check-contract-metricas.mjs`
+comprueba que el job de scrape puede producir las etiquetas que filtran las
+reglas, y el runbook documenta el orden de rutas y el tiempo de espera.
+
+Fuera de alcance por decisión explícita: A-08 sigue sin regla activa porque
+requiere `postgres_exporter` (T050), y el despliegue real en Render queda
+pendiente de credenciales (T036); la imagen se validó en local.
