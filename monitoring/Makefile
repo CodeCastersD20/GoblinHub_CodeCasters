@@ -6,7 +6,7 @@
 
 .DEFAULT_GOAL := help
 
-.PHONY: help config check up up-evidencia reload down logs ps lint test-receivers
+.PHONY: help config check up up-evidencia reload down logs ps lint test-receivers test-rules verify
 
 help:
 	@echo "Stack de monitoreo — GoblinHub"
@@ -20,6 +20,8 @@ help:
 	@echo "  make logs          Sigue logs de Prometheus + Alertmanager"
 	@echo "  make ps            Estado de los servicios"
 	@echo "  make lint          Ejecuta check rules + check config + amtool check-config"
+	@echo "  make test-rules    Ejecuta los tests de las reglas con promtool test rules"
+	@echo "  make verify        Todo lo que ejecuta CI (lint, test-rules y contratos)"
 	@echo "  make test-receivers Muestra los receptores renderizados (sin secretos)"
 
 config:
@@ -66,8 +68,22 @@ ps:
 
 lint: check
 
+# Un fichero de reglas válido no es necesariamente correcto: un `for`
+# equivocado o un umbral que nunca se cruza pasan `promtool check rules` sin
+# quejarse. Estos tests simulan series y comprueban qué dispara y qué no.
+test-rules:
+	@docker run --rm --entrypoint promtool \
+		-v "$(CURDIR)/prometheus/rules:/etc/prometheus-rules:ro" \
+		prom/prometheus:v3.5.0 test rules /etc/prometheus-rules/goblinhub_test.yml
+
 # Útil para comprobar qué receptores quedaron en el YAML sin exponer el
 # contenido completo (especialmente el webhook).
 test-receivers: config
 	@echo "Receivers en alertmanager.yml:"
 	@sed -n '/^receivers:/,/^$/p' alertmanager/alertmanager.yml
+
+# Todo lo que ejecuta `.github/workflows/monitoring.yml`. Un único comando para
+# no tener que saber qué pasos existen.
+verify: lint test-rules
+	@node scripts/check-contract-metricas.mjs
+	@node scripts/check-dashboard.mjs

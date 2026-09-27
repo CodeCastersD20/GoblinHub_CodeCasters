@@ -1,0 +1,271 @@
+# Tests de las reglas de alerta de GoblinHub (spec 005, T039).
+#
+# Un fichero de reglas YAML válido no es necesariamente correcto: un `for`
+# equivocado, un `by` que se come una etiqueta o un umbral que nunca se cruza
+# pasan `promtool check rules` sin quejarse. Estos tests simulan series y
+# comprueban qué se dispara y, sobre todo, qué NO se dispara.
+#
+# Ejecutar: make test-rules
+
+rule_files:
+  - /etc/prometheus-rules/goblinhub.yml
+
+evaluation_interval: 15s
+
+tests:
+  # ───────────────────────────── A-09: servicio caído ───────────────────────
+  - interval: 15s
+    input_series:
+      - series: 'up{job="goblinhub-api", deployment_environment="production", instance="api:3000"}'
+        values: '1x10 0x20'
+    alert_rule_test:
+      # `for: 2m` son 8 intervalos de 15 s: la alerta entra pending en el
+      # primer 0 y solo dispara cuando la condición se sostiene 2 min.
+      - eval_time: 2m30s
+        alertname: ServicioCaido
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: ServicioCaido
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              alerta_id: A-09
+              job: goblinhub-api
+              deployment_environment: production
+              instance: api:3000
+            exp_annotations:
+              summary: Prometheus no logra sondeoar la API de producción.
+              cause: >-
+                Proceso caído, despliegue fallido o sin memoria para arrancar.
+              runbook: a09-servicio-caido
+
+  # Un target en staging no debe disparar la regla de producción.
+  - interval: 15s
+    input_series:
+      - series: 'up{job="goblinhub-api", deployment_environment="staging", instance="api:3000"}'
+        values: '0x20'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ServicioCaido
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: StagingServicioCaido
+        exp_alerts:
+          - exp_labels:
+              severity: info
+              alerta_id: A-09
+              job: goblinhub-api
+              deployment_environment: staging
+              instance: api:3000
+            exp_annotations:
+              summary: Staging no responde (informativo, no notificado).
+              cause: Staging no está desplegado; la alerta no debe escalarse.
+              runbook: a09-servicio-caido
+
+  # ───────────────────── A-10: dependencia crítica caída ────────────────────
+  - interval: 15s
+    input_series:
+      - series: 'goblinhub_health_ready{deployment_environment="production", instance="api:3000"}'
+        values: '1x10 0x20'
+    alert_rule_test:
+      - eval_time: 2m30s
+        alertname: DependenciaCriticaCaida
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: DependenciaCriticaCaida
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              alerta_id: A-10
+              deployment_environment: production
+              instance: api:3000
+            exp_annotations:
+              summary: >-
+                La sonda de dependencias reporta PostgreSQL o Redis inalcanzable.
+              cause: >-
+                Límite de conexiones de Supabase agotado o caché caída. NO
+                reiniciar en cascada: un reinicio no arregla un límite de
+                conexiones y solo añade otra caída al ciclo.
+              runbook: a10-dependencia-critica
+
+  # ─────────────── A-01 / A-11: latencia P95 y su umbral crítico ────────────
+  - interval: 30s
+    input_series:
+      # Un histograma CRECIENTE: `rate()` de una serie constante da 0, y con
+      # todos los buckets a 0 `histogram_quantile` devuelve NaN. Seatentó
+      # primero con valores fijos y la alerta no disparaba.
+      #
+      # Con le=1 vacío y le=2 llenándose, el P95 cae dentro del bucket le=2 y
+      # se interpola: 1 + 0.95 * (2 - 1) = 1.95 s. Por encima del umbral de
+      # A-01 (1 s) y por debajo del de A-11 (2,5 s), que es exactamente el
+      # caso que faltaba cubrir.
+      - series: 'goblinhub_http_request_duration_seconds_bucket{route="/productos", method="GET", status="200", le="1", deployment_environment="production", instance="api:3000"}'
+        values: '0x60'
+      - series: 'goblinhub_http_request_duration_seconds_bucket{route="/productos", method="GET", status="200", le="2", deployment_environment="production", instance="api:3000"}'
+        values: '0+1000x60'
+      # El bucket +Inf es obligatorio: sin él `histogram_quantile` devuelve NaN
+      # aunque haya observaciones.
+      - series: 'goblinhub_http_request_duration_seconds_bucket{route="/productos", method="GET", status="200", le="+Inf", deployment_environment="production", instance="api:3000"}'
+        values: '0+1000x60'
+    promql_expr_test:
+      - expr: 'goblinhub:http_p95_seconds{deployment_environment="production", route="/productos"}'
+        eval_time: 15m
+        exp_samples:
+          - labels: 'goblinhub:http_p95_seconds{route="/productos", deployment_environment="production"}'
+            value: 1.95
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: LatenciaP95Degradada
+        exp_alerts: []
+      - eval_time: 11m
+        alertname: LatenciaP95Degradada
+        exp_alerts:
+          - exp_labels:
+              # La recording rule agrupa `by (le, route, deployment_environment)`,
+              # así que `instance` no sobrevive al agrupamiento.
+              severity: warning
+              alerta_id: A-01
+              route: /productos
+              deployment_environment: production
+            exp_annotations:
+              summary: >-
+                La latencia P95 de la API es 1.95s (umbral: 1 s).
+              cause: >-
+                Consultas lentas a PostgreSQL o caché de dashboard ausente. La ruta
+                más lenta aparece en el panel «Latencia por ruta» del tablero.
+              runbook: a01-latencia-p95
+      - eval_time: 11m
+        alertname: LatenciaP95Critica
+        exp_alerts: []
+
+  # ──────────────── A-02 / A-12 / A-13: los tres umbrales de error ──────────
+  - interval: 15s
+    input_series:
+      # 100 peticiones por 15 s, de las cuales 6 son 5xx: un 6 %, por encima
+      # del 5 % de A-12 pero muy lejos del 20 % de A-13. Se prueba con 6 y no
+      # con 5 porque las reglas usan `>` y no `>=`: en el 5 % exacto no
+      # disparan, y ese límite es justo el que hay que fijar en un test.
+      - series: 'goblinhub_http_requests_total{route="/auth", method="POST", status="200", deployment_environment="production", instance="api:3000"}'
+        values: '0+94x40'
+      - series: 'goblinhub_http_requests_total{route="/auth", method="POST", status="500", deployment_environment="production", instance="api:3000"}'
+        values: '0+6x40'
+    promql_expr_test:
+      - expr: 'goblinhub:http_error_ratio_5m{deployment_environment="production"}'
+        eval_time: 10m
+        exp_samples:
+          - labels: 'goblinhub:http_error_ratio_5m{deployment_environment="production"}'
+            value: 0.06
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: TasaError5xxCritica
+        exp_alerts: []
+      - eval_time: 10m30s
+        alertname: TasaError5xxCritica
+        exp_alerts:
+          - exp_labels:
+              # `goblinhub:http_error_ratio_5m` agrupa `by (deployment_environment)`,
+              # así que la ruta se pierde a propósito: la tasa de error se
+              # evalúa a nivel de servicio y el desglose por ruta se hace en el
+              # panel «Top rutas con 5xx».
+              severity: critical
+              alerta_id: A-12
+              deployment_environment: production
+            exp_annotations:
+              summary: >-
+                El 6% de las peticiones devolvió 5xx (umbral crítico: 5 %).
+              cause: >-
+                Fallo generalizado, no puntual. Si se concentra en `/auth`,
+                revisar Supabase Auth antes que la API.
+              runbook: a12-tasa-error-critica
+      - eval_time: 10m30s
+        alertname: ErrorRateExtremo
+        exp_alerts: []
+
+  # Sin errores, la tasa debe ser 0 y no "sin datos": es lo que permite que el
+  # panel principal del incidente muestre 0 % en lugar de un hueco.
+  - interval: 15s
+    input_series:
+      - series: 'goblinhub_http_requests_total{route="/productos", method="GET", status="200", deployment_environment="production", instance="api:3000"}'
+        values: '0+100x40'
+    promql_expr_test:
+      - expr: 'goblinhub:http_error_ratio_5m{deployment_environment="production"}'
+        eval_time: 10m
+        exp_samples:
+          - labels: 'goblinhub:http_error_ratio_5m{deployment_environment="production"}'
+            value: 0
+
+  # ─────────────────────── A-06: saturación del pool de Prisma ──────────────
+  - interval: 15s
+    input_series:
+      - series: 'goblinhub_prisma_pool_connections_in_use{deployment_environment="production", instance="api:3000"}'
+        values: '8x40'
+      - series: 'goblinhub_prisma_pool_connections_max{deployment_environment="production", instance="api:3000"}'
+        values: '10x40'
+    promql_expr_test:
+      - expr: 'goblinhub:prisma_pool_saturation{deployment_environment="production"}'
+        eval_time: 10m
+        exp_samples:
+          - labels: 'goblinhub:prisma_pool_saturation{deployment_environment="production", instance="api:3000"}'
+            value: 0.8
+    alert_rule_test:
+      # Justo en el umbral: la regla es `> 0.8`, así que no debe disparar.
+      - eval_time: 20m
+        alertname: PoolPrismaSaturado
+        exp_alerts: []
+
+  # ────────────────────── A-07: respaldo atrasado (y el 0 inicial) ──────────
+  - interval: 1m
+    input_series:
+      - series: 'goblinhub_backup_last_success_timestamp_seconds{deployment_environment="production", instance="api:3000"}'
+        # Valor 0: la API nunca ha respaldado, así que la antigüedad es igual
+        # al propio tiempo transcurrido. La condición se cumple a los 25 h
+        # (90000 s) y, con `for: 1h`, la alerta entra en firing a las 26 h.
+        values: '0x2000'
+    alert_rule_test:
+      # A las 24 h todavía no hay RPO incumplido: no debe alertar antes de tiempo.
+      - eval_time: 24h
+        alertname: BackupAtrasado
+        exp_alerts: []
+      - eval_time: 26h2m
+        alertname: BackupAtrasado
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              alerta_id: A-07
+              deployment_environment: production
+              instance: api:3000
+            exp_annotations:
+              summary: >-
+                El último respaldo correcto fue hace 1d 2h 2m 0s (umbral: 25 h,
+                con el RPO de 24 h como margen).
+              cause: >-
+                `pg_dump` ausente en la imagen, o el cron no llegó a ejecutarse.
+              runbook: a07-backup
+
+  # ───────────────── A-14: disco lleno (predict_linear sobre node_exporter) ──
+  - interval: 1h
+    input_series:
+      # ~1 GB/hora de consumo: la extrapolación a 4 días es negativa.
+      - series: 'node_filesystem_avail_bytes{job="node", fstype="ext4", mountpoint="/", deployment_environment="production", instance="host:9100"}'
+        values: '100000000000 99000000000 98000000000 97000000000 96000000000 95000000000 94000000000 93000000000'
+    alert_rule_test:
+      - eval_time: 5h
+        alertname: MetricasSinEscribirPorDisco
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              alerta_id: A-14
+              job: node
+              fstype: ext4
+              mountpoint: /
+              deployment_environment: production
+              instance: host:9100
+            exp_annotations:
+              summary: >-
+                El disco del nodo de Prometheus se llenará en menos de 4 días y
+                quedan -953.7MiB.
+              cause: >-
+                Prometheus dejará de escribir y TODAS las alertas quedarán mudas.
+                Esta alerta existe para que el silencio sea visible: sin ella, el
+                sistema entero parece tranquilo justo cuando está ciego.
+              runbook: a14-disco

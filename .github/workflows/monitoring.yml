@@ -1,0 +1,139 @@
+name: Monitoreo CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "monitoring/**"
+      - "docs/RUNBOOK_MONITOREO.md"
+      - ".github/workflows/monitoring.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "monitoring/**"
+      - "docs/RUNBOOK_MONITOREO.md"
+      - ".github/workflows/monitoring.yml"
+
+concurrency:
+  group: monitoring-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: monitoring
+
+# La configuración de alertas es el único componente de #214 que no lo cubren
+# los tests de la API. Un `for` mal puesto, un receptor con webhook vacío o una
+# métrica mal escrita pasan todos los gates de `goblinhub-api` y dejan el
+# sistema mudo durante el incidente en el que más hacía falta.
+env:
+  PROMETHEUS_VERSION: v3.5.0
+  ALERTMANAGER_VERSION: v0.28.1
+
+jobs:
+  reglas-y-receptores:
+    name: Reglas, receptores y plantillas
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Renderiza la configuración con valores de prueba. No despliega nada:
+      # el objetivo es que el CI detecte una plantilla que referencia una
+      # variable inexistente.
+      - name: Generar configuración de prueba
+        run: |
+          cp .env.example .env
+          {
+            echo "GRAFANA_ADMIN_PASSWORD=ci-solo-validacion"
+            echo "SLACK_WEBHOOK_URL=https://hooks.slack.invalid/CI"
+            echo "DISCORD_WEBHOOK_URL=https://discord.invalid/CI"
+            echo "ALERTMANAGER_SMTP_HOST=smtp.invalid"
+            echo "ALERTMANAGER_MOCK_WEBHOOK_URL=http://localhost:9095/alerta"
+          } >> .env
+          node scripts/generate-config.mjs
+
+      - name: promtool check config
+        run: |
+          docker run --rm --entrypoint promtool \
+            -v "$PWD/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            -v "$PWD/prometheus/rules:/etc/prometheus-rules:ro" \
+            "prom/prometheus:$PROMETHEUS_VERSION" \
+            check config /etc/prometheus/prometheus.yml
+
+      - name: promtool check rules
+        run: |
+          docker run --rm --entrypoint promtool \
+            -v "$PWD/prometheus/rules:/etc/prometheus-rules:ro" \
+            "prom/prometheus:$PROMETHEUS_VERSION" \
+            check rules /etc/prometheus-rules/goblinhub.yml
+
+      # Un YAML de reglas válido no es necesariamente correcto: un `for`
+      # equivocado o un umbral que nunca se cruza pasan `check rules` sin
+      # quejarse. Estos tests simulan series y comprueban qué dispara y qué no.
+      - name: Tests de las reglas
+        run: |
+          docker run --rm --entrypoint promtool \
+            -v "$PWD/prometheus/rules:/etc/prometheus-rules:ro" \
+            "prom/prometheus:$PROMETHEUS_VERSION" \
+            test rules /etc/prometheus-rules/goblinhub_test.yml
+
+      - name: amtool check-config
+        run: |
+          docker run --rm --entrypoint amtool \
+            -v "$PWD/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
+            "prom/alertmanager:$ALERTMANAGER_VERSION" \
+            check-config /etc/alertmanager/alertmanager.yml
+
+      - name: El generador falla si falta una variable obligatoria
+        run: |
+          # Una configuración incompleta que no detiene el arranque es un
+          # incidente que se descubre cuando la alerta no llega.
+          cp .env.example .env.incompleto
+          {
+            echo "DEPLOY_ENV=production"
+            echo "API_TARGET=localhost:3000"
+          } > .env
+          if node scripts/generate-config.mjs; then
+            echo "::error::el generador aceptó una configuración incompleta"
+            exit 1
+          fi
+          mv .env.incompleto .env
+
+      - name: La configuración generada no conserva marcadores
+        run: |
+          # Se revisa el fichero GENERADO, no la plantilla: en la plantilla los
+          # marcadores están por diseño. Uno sin definir llega a Prometheus como
+          # un target vacío, que es un fallo silencioso.
+          if grep -rn '{{[A-Z]' prometheus/prometheus.yml alertmanager/alertmanager.yml; then
+            echo "::error::quedan marcadores sin resolver en la configuración generada"
+            exit 1
+          fi
+          echo "OK: sin marcadores sin resolver"
+
+  contrato:
+    name: Contrato entre backend, reglas y tablero
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Una regla que referencia una métrica inexistente no falla: se queda
+      # inactiva para siempre, con health=ok y sin que nadie se entere.
+      - name: Las reglas y el tablero solo usan métricas que la API publica
+        run: node scripts/check-contract-metricas.mjs
+
+      - name: El dashboard es válido y no tiene paneles sin consulta
+        run: node scripts/check-dashboard.mjs
