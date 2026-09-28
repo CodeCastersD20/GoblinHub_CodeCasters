@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { PrismaModule } from '../../connect/prisma.module';
 import { RedactionService } from './domain/services/redaction.service';
 import { TracingContextService } from './domain/services/tracing-context.service';
@@ -16,12 +16,18 @@ import { TracesRetentionScheduler } from './infrastructure/scheduler/traces-rete
  * contexto de correlación. No declara ningún controlador, y esa es la razón de
  * que exista un módulo aparte para la consulta.
  *
- * `SupabaseAuthGuard` necesita `TracingContextService`, así que este módulo ya no
- * puede importar `SupabaseAuthModule` sin cerrar un ciclo. Declarar aquí el
- * controlador obligaría a hacerlo, porque Nest construye los guards de
- * `@UseGuards` en el módulo donde vive el controlador y no los encuentra sin
- * importarlos.
+ * `SupabaseAuthGuard` necesita `TracingContextService`, así que este módulo es
+ * `@Global`: Nest construye los guards de `@UseGuards` en el módulo donde vive
+ * el controlador, y sin el módulo global cada controlador protegido tendría que
+ * importar `TracingModule` a mano para resolver la tercera dependencia del
+ * guard. Como proveedor global, en cambio, el contexto se resuelve en cualquier
+ * módulo, igual que el soporte de Prisma o Redis.
+ *
+ * Declarar aquí el controlador de consulta seguiría obligando a `TracingModule`
+ * a importar `SupabaseAuthModule` para obtener los guards —un ciclo—, de modo
+ * que la lectura vive en `TrazasModule`.
  */
+@Global()
 @Module({
   imports: [PrismaModule],
   providers: [

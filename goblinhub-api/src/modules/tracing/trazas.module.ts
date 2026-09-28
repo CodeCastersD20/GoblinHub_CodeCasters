@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SupabaseAuthModule } from '../supabase/supabase-auth.module';
 import { TracingModule } from './tracing.module';
+import { PrismaModule } from '../../connect/prisma.module';
 import { TrazaController } from './interfaces/controllers/trace.controller';
 import { GetTracesUseCase } from './application/use-case/get-traces.use-case';
 import { GetTraceUseCase } from './application/use-case/get-trace.use-case';
@@ -16,12 +17,16 @@ import { GetTraceUseCase } from './application/use-case/get-trace.use-case';
  * escritura mantiene `TracingModule` importable desde cualquier módulo, que es lo
  * que necesita `EventModule`, sin arrastrar a la autenticación.
  *
+ * `PrismaModule` se importa porque Nest construye los guards de `@UseGuards` en
+ * el módulo donde vive el controlador, y `SupabaseAuthGuard` recibe `PrismaService`
+ * por inyección.
+ *
  * Los casos de uso se proveen aquí y no en `TracingModule` porque hablar con la
  * base de datos para responder a un administrador es responsabilidad de esta capa,
  * no de la que se encarga de instrumentar las peticiones.
  */
 @Module({
-  imports: [TracingModule, SupabaseAuthModule],
+  imports: [TracingModule, SupabaseAuthModule, PrismaModule],
   controllers: [TrazaController],
   providers: [GetTracesUseCase, GetTraceUseCase],
 })
