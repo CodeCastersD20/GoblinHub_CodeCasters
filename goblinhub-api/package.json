@@ -116,6 +116,7 @@
       "modules/supabase/infrastructure/prisma/**/*.ts",
       "modules/supabase/guard/**/*.ts",
       "modules/metrics/**/*.ts",
+      "modules/tracing/**/*.ts",
       "!**/*.spec.ts",
       "!**/*.module.ts"
     ],
