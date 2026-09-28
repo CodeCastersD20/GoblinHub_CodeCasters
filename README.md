@@ -72,6 +72,7 @@ GoblinHub_CodeCasters/
 >
 > - [Backend — docs/DOCUMENTATION_BAKCEND.md](docs/DOCUMENTATION_BAKCEND.md)
 > - [Frontend — docs/DOCUMENTATION_FRONTEND.md](docs/DOCUMENTATION_FRONTEND.md)
+> - [Trazabilidad de peticiones — docs/TRAZABILIDAD.md](docs/TRAZABILIDAD.md)
 
 ---
 
