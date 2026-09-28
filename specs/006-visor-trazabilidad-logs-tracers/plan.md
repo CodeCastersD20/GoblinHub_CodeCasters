@@ -28,8 +28,8 @@ escritura**; (3) expone la consulta de trazas con filtros por servicio, método,
 ruta, estado, entorno y periodo, protegida con el guard de rol `admin` que ya usa
 el módulo `logs`; (4) define el nivel de log y el periodo de retención, y purga lo
 que supere ese periodo; y (5) añade una vista propia de trazabilidad al panel de
-administración, con un recorrido de pasos dibujado con los estilos que ya están en
-el repositorio.
+administración, con los pasos anidados presentados con los estilos que ya están
+en el repositorio.
 
 **No se instalan dependencias nuevas ni contenedores.** Es una decisión
 deliberada, argumentada en `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md`, y es
@@ -82,8 +82,8 @@ agoten la base.
 
 **Scale/Scope**: un backend de un solo proceso; un panel administrativo con cinco
 vistas (`/admin`, `/admin/logs`, `/admin/trazas`, `/admin/eventos`,
-`/admin/usuarios`); dos modelos de datos nuevos; dos endpoints; cinco historias P1
-y tres P2.
+`/admin/usuarios`); dos modelos de datos nuevos; dos endpoints; cuatro historias
+P1 y tres P2.
 
 ## Constitution Check
 
@@ -97,7 +97,7 @@ y tres P2.
 | **IV. Modular Single-Responsibility** | Módulo `tracing` con la estructura de `events` y `logs` (`application/`, `domain/`, `infrastructure/`, `interfaces/`). No se crean módulos comodín. El visor es una vista propia del panel de administración, y no altera la vista de logs que ya existe. | **PASS** |
 | **V. End-to-End Integration** | Verificación de que la correlación fluye de la respuesta al log y a la traza, con Supertest (`FR-035`). Los permisos del visor quedan cubiertos por los casos de Supertest del propio endpoint, con el mismo guard que el resto de la API. | **PASS** |
 | **Stack aprobado** | No se añade ningún framework. Los módulos de `specs/005-…` y de este plan comparten `DEPLOY_ENV`; el catálogo de entornos se documenta en vez de duplicar el validador, con una prueba que verifica la sincronía. | **PASS** |
-| **Reglas de datos** | Sin borrado físico como norma: `Trazas` tiene `deleted_at`. La purga es la excepción documentada que exige el Principio III, con su justificación en `docs/TRAZABILIDAD.md`. | **PASS con justificación** |
+| **Reglas de datos** | El borrado físico es la excepción que el Principio III exige justificar, y aquí está justificado: una traza retenida por soft-delete seguiría ocupando el espacio que la retención existe para liberar y bloquearía su clave de correlación. La justificación vive en `docs/TRAZABILIDAD.md` y sobrevive a este plan. | **PASS con justificación** |
 | **Quality Gates** | `tasks.md` incluye ampliar la cobertura de Jest para que el módulo entre en la medición, y ejecutar `npm run api` y `npm run web` antes de abrir el PR. | **PASS** |
 
 **Complejidad tracking**: hay una desviación que justificar, y está en
@@ -120,11 +120,14 @@ tres:
 
 ```text
 docs/
-├── TRAZABILIDAD.md                       # NUEVO: contrato, retención, permisos, redacción
-├── COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md  # NUEVO: decisión de stack
-├── BACKEND_REVIEW.md                     # EDITADO: cierra los puntos Logs y Tracing de §7.4
-└── INGENIERIA_INVERNA.md                 # EDITADO: añade las dos tablas al diagrama ER
+└── TRAZABILIDAD.md                       # NUEVO: contrato, retención, permisos, redacción
 ```
+
+La comparativa `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md` nació dentro de la
+fase de selección de este plan y ya está en `develop`. No se tocan
+`BACKEND_REVIEW.md` ni `INGENIERIA_INVERSA.md`: el cierre de sus puntos *Logs* y
+*Tracing* quedó declarado en la fase de planeación, y la verificación de esta
+issue se limita a lo que pide su alcance.
 
 ### Source Code (repository root)
 
@@ -171,7 +174,9 @@ goblinhub-api/src/modules/tracing/
 ```text
 goblinhub-api/prisma/
 ├── schema.prisma                          # EDITADO: modelos Trazas y Spans
-└── migrations/2026XXXXXXXXXX_add_trazas_y_spans/   # NUEVO: migración revisada
+└── migrations/
+    ├── 20260927195414_add_trazas_and_spans/              # NUEVO: modelos, índices y FK en cascada
+    └── 20260928041500_add_servicio_y_nivel_to_trazas/    # NUEVO: servicio y nivel con índice
 ```
 
 ```text
@@ -185,11 +190,8 @@ goblinhub_web/src/
 │   └── LogsAdmin.css                      # LEÍDO: origen de los estilos a reutilizar
 └── pages/admin/trazas/
     ├── TrazasAdmin.css                    # NUEVO: reutiliza las clases de LogsAdmin.css
-    ├── TrazasAdmin.tsx                    # NUEVO: la vista de trazabilidad
-    ├── TraceFilters.tsx                   # NUEVO
-    ├── TracesTable.tsx                    # NUEVO
-    ├── TraceDetail.tsx                    # NUEVO
-    └── TraceTimeline.tsx                  # NUEVO: recorrido de pasos con CSS puro
+    ├── TrazasAdmin.tsx                    # NUEVO: la vista de trazabilidad completa
+    └── TrazasAdmin.test.tsx               # NUEVO: Vitest + Testing Library
 ```
 
 **Structure Decision**: se sigue la estructura de directorios existente, sin
@@ -209,10 +211,15 @@ issue no pide reestructurarla. El visor es una vista propia en
 bajo el mismo `ProtectedRoute` de rol `admin`, y alcanzable desde la navegación
 del panel. `LogsAdmin.tsx` y `useLogs.ts` no se tocan.
 
-El waterfall de los pasos se dibuja con CSS puro, con `left` y `width` en
-porcentaje, sin librería de grafos ni de cronogramas: el repositorio mantiene sus
-dependencias deliberadamente mínimas y `chart.js` no aporta nada para una barra
-posicionada en el tiempo.
+El visor es una única vista, `pages/admin/trazas/TrazasAdmin.tsx`, y no se
+descompone en subcomponentes: la superficie es la justa —listado, filtros,
+pagina y detalle— y separarla habría sido componentes con una sola referencia
+cada uno. Los pasos se presentan como una lista anidada, sin calcular su
+posición respecto al inicio: los pasos se ejecutan en orden, la anidación ya
+comunica la secuencia, y «en qué paso se fue el tiempo» lo responde su duración
+sin una barra posicionada. Se mantienen las dependencias deliberadamente
+mínimas del repositorio y no se añade una biblioteca de grafos ni de
+cronogramas.
 
 ## Complexity Tracking
 

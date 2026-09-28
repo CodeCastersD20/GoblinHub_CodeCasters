@@ -33,7 +33,7 @@ erDiagram
         text     error          "mensaje, solo si fallo"
         datetime fecha_inicio   "indice de orden"
         datetime fecha_fin      "fin medido"
-        datetime deleted_at     "borrado logico"
+        datetime deleted_at     "no se usa: la purga borra fisicamente"
     }
 
     Span {
@@ -68,8 +68,8 @@ que el visor abre.
 | `id_usuario` | `UUID` | sí | Usuario autenticado. Es `nulo` en las rutas públicas y en las tareas programadas. Se guarda a propósito: es un dato de auditoría, no un secreto (`FR-018` no lo incluye en la lista de enmascarado). |
 | `error` | `Text` | sí | Mensaje del fallo, solo si lo hubo. |
 | `fecha_inicio` | `DateTime` | no | Momento de entrada de la petición. Es la columna por la que se ordena y se filtra por rango. |
-| `fecha_fin` | `DateTime` | no | Momento de finalización. Permite verificar `fecha_fin - fecha_inicio == duracion_ms` en un test. |
-| `deleted_at` | `DateTime` | sí | Borrado lógico, conforme a la norma del proyecto. La purga física es la excepción documentada en `FR-027`. |
+| `fecha_fin` | `DateTime` | no | Momento de finalización. La duración se mide con reloj monotónico, así que no es exactamente `fecha_fin - fecha_inicio`; el test no verifica esa igualdad. |
+| `deleted_at` | `DateTime` | sí | Se conserva por la convención del resto de tablas, pero **no se usa**: la purga por retención borra físicamente las trazas vencidas, de modo que el volumen de borradas es residual y los índices no necesitan el predicado `where: { deleted_at: null }` que llevan las demás tablas. |
 
 ### Índices
 
@@ -118,7 +118,7 @@ Un paso interno de la traza. Su árbol se reconstruye con `parent_id`.
 | `duracion_ms` | `Int` | no | Duración propia del paso, siempre menor o igual que la de la traza. |
 | `estado` | `VarChar(20)` | no | `ok` o `error`. Determina si el visor lo distingue visualmente. |
 | `atributos` | `Json` | sí | Detalles adicionales, **ya redactados** por `RedactionService` antes de llegar aquí. Nunca se persiste sin pasar por el servicio de redacción. |
-| `fecha_inicio` | `DateTime` | no | Offset respecto a la traza, para que el visor pueda colocar la barra. |
+| `fecha_inicio` | `DateTime` | no | Momento en que acabó el paso. Guarda el orden real de ejecución, que es el que presenta el visor con la anidación. |
 
 ### Índices
 
@@ -140,13 +140,15 @@ modo que un parámetro desconocido es un `400` y no se ignora en silencio.
 | `servicio` | texto | — | hasta 50 | Coincidencia exacta sobre el valor de `TRAZAS_SERVICIO`. |
 | `metodo` | texto | — | Verbo HTTP | Se normaliza a mayúsculas. |
 | `ruta` | texto | — | hasta 200 | Coincidencia por prefijo, sobre la ruta ya normalizada. |
-| `estado` | entero | — | `100` a `599` | Permite filtrar por una clase completa si se pasa un valor con la misma semántica que el código. |
+| `estado` | entero | — | `100` a `599` | Código exacto. |
 | `ambiente` | texto | — | catálogo de entornos | Se compara con `DEPLOY_ENV`; un valor fuera del catálogo devuelve la lista vacía, no un error. |
-| `correlationId` | texto | — | hasta 64 | Coincidencia exacta. |
-| `usuarioId` | texto | — | UUID | Coincidencia exacta. |
 | `desde`, `hasta` | fecha | — | ISO 8601 | Si `desde` es posterior a `hasta`, el resultado es una lista vacía con `200`, no un `400`. |
-| `minDuracion` | entero | — | `>= 0` | Milisegundos. |
 | `includeTotal` | booleano | `false` | — | Permite omitir el `COUNT`, que en una tabla grande es la parte cara de la consulta. |
+
+El listado **no** acepta filtros por `correlationId`, `usuarioId` ni `minDuracion`.
+El alcance de #204 nombra servicio, operación, estado y periodo; los dos primeros
+se descartan porque un parámetro que nadie pidió es superficie de API que hay que
+mantener, y el detalle por correlación tiene su propio endpoint.
 
 ## Estados y transiciones
 
@@ -163,10 +165,14 @@ de primer orden. Los mecanismos que lo acotan, todos configurables por entorno:
 
 | Variable | Por defecto | Efecto |
 |---|---|---|
-| `TRAZAS_ENABLED` | `true` | Si es `false`, no se instrumenta nada y el servicio sigue respondiendo con normalidad. |
 | `TRAZAS_SERVICIO` | `goblinhub-api` | Nombre del proceso que emite la traza. Un valor vacío usa el valor por defecto. |
-| `TRAZAS_NIVEL_MINIMO` | `info` | Nivel a partir del cual se persiste una traza. Con `warn` o `error` las peticiones correctas de nivel inferior no se guardan; los errores se persisten **siempre**, con independencia del nivel configurado. Un valor fuera del catálogo usa `info` y deja un aviso en el log. |
-| `TRAZAS_RETENCION_DIAS` | `7` | Días que se conservan antes de la purga. Un valor no numérico o fuera de rango usa el valor por defecto y deja un aviso en el log, en vez de impedir el arranque. |
+| `TRAZAS_NIVEL_MINIMO` | `info` | Nivel a partir del cual se persiste una traza: `info`, `warn` o `error`. Con `warn` o `error` las peticiones correctas de nivel inferior no se guardan; `error` es el nivel más alto de la escala y deja solo los fallos. Un valor fuera del catálogo usa `info` y deja un aviso en el log. |
+| `TRAZAS_RETENCION_DIAS` | `7` | Días que se conservan antes de la purga. Un valor no numérico usa el valor por defecto y deja un aviso en el log, en vez de impedir el arranque. |
+
+No existe `TRAZAS_ENABLED`: no hay un interruptor que apague la trazabilidad.
+Bajarla a `TRAZAS_NIVEL_MINIMO=error` es el mecanismo de cierre, y evita el
+estado intermedio en el que la instrumentación parece apagada porque no guarda
+nada.
 
 `DEPLOY_ENV` **no se define aquí**: la introduce el módulo de métricas de
 `specs/005-modulo-metricas-monitoreo` con su catálogo de valores admitidos. Este
@@ -180,9 +186,9 @@ prueba del otro en lugar de producir una etiqueta de entorno inválida en silenc
   marcador el valor de las claves que pueden contener secretos y trunca los textos
   largos. Se aplica a los `atributos` del span y a cualquier campo libre antes de
   la llamada a Prisma, nunca al leer.
-- **Lo que sí se guarda a propósito**: `id_usuario` y `ip_address` no se enmascaran.
-  Son datos de auditoría, y sin ellos una traza no permite atribuir una acción,
-  que es justo lo que se necesita para diagnosticar una incidencia.
+- **Lo que sí se guarda a propósito**: `id_usuario` no se enmascara. Es un dato de
+  auditoría, y sin él una traza no permite atribuir una acción, que es justo lo que
+  se necesita para diagnosticar una incidencia.
 - **Lo que nunca se guarda**: el cuerpo de la petición y el de la respuesta
   (`FR-021`), ni el valor de las cabeceras de autorización, ni las variables de
   entorno, ni las claves de Supabase.
