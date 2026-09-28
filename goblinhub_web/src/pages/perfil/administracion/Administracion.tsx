@@ -315,6 +315,22 @@ const Administracion: React.FC = () => {
             </div>
           </div>
 
+          <div {...getNavigableCardProps("/admin/trazas")}>
+            <div className="module-header">
+              <h3 className="module-title">Visor de Trazas</h3>
+              <p className="module-subtitle">
+                Correlación de una petición con sus registros
+              </p>
+            </div>
+            <div className="module-body">
+              <p className="module-description">
+                Localiza una petición por servicio, endpoint, estado y periodo a
+                partir del identificador de correlación, y revisa los pasos
+                internos en los que se fue el tiempo.
+              </p>
+            </div>
+          </div>
+
           <div {...getNavigableCardProps("/admin/reportes")}>
             <div className="module-header">
               <div className="module-icon">📊</div>

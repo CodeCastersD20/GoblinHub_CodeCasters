@@ -1,0 +1,59 @@
+@import "../logs/LogsAdmin.css";
+
+/*
+ * El visor reutiliza las clases que `LogsAdmin.css` ya define —contenedor,
+ * filtros, tabla, insignia y estado vacío— y solo añade lo que la vista de
+ * trazas necesita y la de logs no tiene: la marca del error en la fila y el
+ * bloque del identificador de correlación, que en una traza es el dato que hay
+ * que poder copiar para seguir diagnosticando.
+ *
+ * No se añade ninguna dependencia de grafos ni de cronogramas: el recorrido de
+ * los pasos se presenta como una tabla anidada, que es lo que permite leer la
+ * duración de cada paso sin una barra posicionada en el tiempo.
+ */
+
+.trazas-estado {
+  font-weight: 600;
+}
+
+.trazas-estado--error {
+  color: #b91c1c;
+}
+
+.trazas-estado--warn {
+  color: #b45309;
+}
+
+.trazas-estado--ok {
+  color: #15803d;
+}
+
+.trazas-correlacion {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  color: #6b7280;
+  word-break: break-all;
+}
+
+.trazas-pasos {
+  margin: 0;
+  padding-left: 1.25rem;
+  list-style: none;
+  border-left: 2px solid #e5e7eb;
+}
+
+.trazas-paso {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.trazos-atributos {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
