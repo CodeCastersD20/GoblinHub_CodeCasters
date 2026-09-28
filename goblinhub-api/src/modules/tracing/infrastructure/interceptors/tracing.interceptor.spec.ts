@@ -4,13 +4,43 @@ import type { Request } from 'express';
 import { TracingInterceptor } from './tracing.interceptor';
 import { TracingContextService } from '../../domain/services/tracing-context.service';
 import { PathNormalizerService } from '../../domain/services/path-normalizer.service';
+import { RedactionService } from '../../domain/services/redaction.service';
+import { TracingConfigService } from '../../domain/services/tracing-config.service';
 import type { Reloj } from '../../domain/services/reloj';
 import { EstadoSpan, TipoSpan } from '../../domain/enums/tipo-span.enum';
+import {
+  LONGITUD_MAXIMA_VALOR,
+  MARCADOR_REDACTADO,
+  SUFIJO_TRUNCADO,
+} from '../../domain/constants/redaction-keys';
+import type { NivelTraza } from '../../domain/enums/nivel-traza.enum';
 import type { Traza } from '../../domain/entities/traza.entity';
 import type { Span as SpanEntity } from '../../domain/entities/span.entity';
 
 const UUID = '3f8c1e2a-9b4d-4c7e-8a1f-2d6b5e0c9a73';
 const OTRO_UUID = '660f8400-e29b-41d4-a716-446655440001';
+
+/**
+ * El servicio real resuelve `process.env` en su constructor, y una prueba que
+ * dependiera de las variables del entorno de quien la ejecuta no sería
+ * reproducible. Se construye un doble con la misma forma, que es justo lo que
+ * el interceptor consume.
+ */
+const configuracionDoble = (
+  nivelMinimo: NivelTraza = 'info',
+  ambiente = 'development',
+): TracingConfigService =>
+  ({
+    servicio: 'goblinhub-api',
+    ambiente,
+    retencionDias: 7,
+    guarda: (nivel: NivelTraza) => {
+      const escala: NivelTraza[] = ['info', 'warn', 'error'];
+      return escala.indexOf(nivel) >= escala.indexOf(nivelMinimo);
+    },
+    instanteDeVencimiento: (ahora: Date) =>
+      new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000),
+  }) as TracingConfigService;
 
 describe('TracingInterceptor', () => {
   let guardar: jest.Mock<Promise<void>, [Traza, SpanEntity[]]>;
@@ -19,12 +49,15 @@ describe('TracingInterceptor', () => {
   /** Reloj de pruebas: 50 ms por llamada de `ahora` y fechas crecientes. */
   let reloj: Reloj;
 
-  const construirContexto = (peticion: Partial<Request> & { path: string }) =>
+  const construirContexto = (
+    peticion: Partial<Request> & { path: string },
+    respuesta: { statusCode: number } = { statusCode: 200 },
+  ) =>
     ({
       getType: () => 'http',
       switchToHttp: () => ({
         getRequest: () => peticion,
-        getResponse: () => ({ statusCode: 200 }),
+        getResponse: () => respuesta,
       }),
     }) as unknown as ExecutionContext;
 
@@ -65,13 +98,41 @@ describe('TracingInterceptor', () => {
       .fn<Promise<void>, [Traza, SpanEntity[]]>()
       .mockResolvedValue();
     contexto = new TracingContextService();
+    construirInterceptor();
+  });
+
+  /**
+   * Se reconstruye con otro nivel mínimo o ambiente sin repetir el cableado de
+   * la suite, que es la mitad de lo que hay que cambiar para probar el corte por
+   * nivel.
+   */
+  function construirInterceptor(
+    nivelMinimo: NivelTraza = 'info',
+    ambiente = 'development',
+  ): void {
     interceptor = new TracingInterceptor(
-      { guardar },
+      {
+        guardar,
+        // El interceptor solo escribe. Los métodos de consulta se declaran para
+        // que el doble cumpla el port completo, y fallan si alguien llega a
+        // llamarlos: sería un fallo de dependencia, no un resultado válido.
+        listar: () => {
+          throw new Error('el interceptor no consulta trazas');
+        },
+        obtenerPorCorrelationId: () => {
+          throw new Error('el interceptor no consulta trazas');
+        },
+        purgarVencidas: () => {
+          throw new Error('el interceptor no purga trazas');
+        },
+      },
       contexto,
       new PathNormalizerService(),
+      new RedactionService(),
+      configuracionDoble(nivelMinimo, ambiente),
       reloj,
     );
-  });
+  }
 
   describe('crea la traza al finalizar la petición', () => {
     it('persiste una traza con los datos de la petición', async () => {
@@ -90,9 +151,46 @@ describe('TracingInterceptor', () => {
       expect(traza.metodo).toBe('GET');
       expect(traza.ruta).toBe('/events');
       expect(traza.estado_http).toBe(200);
-      expect(traza.ambiente).toBe(process.env.NODE_ENV ?? 'development');
+      expect(traza.ambiente).toBe('development');
+      expect(traza.servicio).toBe('goblinhub-api');
+      expect(traza.nivel).toBe('info');
       expect(traza.id_usuario).toBe(OTRO_UUID);
       expect(spans).toEqual([]);
+    });
+
+    it('deriva el nivel del código de respuesta', async () => {
+      const manejador = { handle: () => of({}) };
+      const respuesta: { statusCode: number } = { statusCode: 503 };
+
+      contexto.run(
+        UUID,
+        () => {
+          interceptor
+            .intercept(
+              construirContexto(peticionValida(), respuesta),
+              manejador,
+            )
+            .subscribe();
+        },
+        reloj,
+      );
+      await esperarEscritura();
+
+      expect(guardarSpy().traza.nivel).toBe('error');
+    });
+
+    it('usa el ambiente que resuelve la configuración', async () => {
+      construirInterceptor('info', 'production');
+      const manejador = { handle: () => of({}) };
+
+      enContexto(UUID, () => {
+        interceptor
+          .intercept(construirContexto(peticionValida()), manejador)
+          .subscribe();
+      });
+      await esperarEscritura();
+
+      expect(guardarSpy().traza.ambiente).toBe('production');
     });
 
     it('calcula la duración con el reloj monotónico inyectado', async () => {
@@ -306,25 +404,228 @@ describe('TracingInterceptor', () => {
     });
   });
 
-  describe('spans hijos', () => {
+  describe('protección de datos sensibles', () => {
     /**
-     * Petición que se resuelve a mano. Hace falta porque los spans se registran
-     * mientras la petición está en curso: con un `of({})`, que emite de
-     * inmediato, la traza se cerraría antes de que la prueba tuviera ocasión de
-     * registrar ningún span.
+     * Es el criterio de aceptación «no se registran secretos ni datos sensibles
+     * innecesarios» de #204, comprobado donde importa: en lo que llega al
+     * repositorio, que es lo que acabará en la tabla. Un enmascarado en la
+     * lectura dejaría el secreto escrito y estas pruebas pasarían igual.
      */
-    const peticionEnCurso = () => {
-      const respuesta = new Subject<unknown>();
+    const guardarConAtributos = async (
+      atributos: Record<string, unknown>,
+    ): Promise<SpanEntity[]> => {
+      const { manejador, responder } = peticionEnCurso();
 
-      return {
-        manejador: { handle: () => respuesta },
-        responder: () => {
-          respuesta.next({});
-          respuesta.complete();
-        },
-      };
+      enContexto(UUID, () => {
+        interceptor
+          .intercept(construirContexto(peticionValida()), manejador)
+          .subscribe();
+        const colector = contexto.getColector();
+        const span = colector.iniciar('operacion', TipoSpan.prisma);
+        // La prueba pasa deliberadamente un objeto que `redactar` acepta como
+        // `unknown`; el colector exige `Json`, de ahí el paso por `JSON`.
+        colector.cerrar(
+          span,
+          EstadoSpan.ok,
+          JSON.parse(JSON.stringify(atributos)),
+        );
+        responder();
+      });
+      await esperarEscritura();
+
+      return guardarSpy().spans;
     };
 
+    it('no deja una contraseña en claro en los atributos del paso', async () => {
+      const spans = await guardarConAtributos({
+        password: 'clave-super-secreta',
+        usuario: 'ana',
+      });
+
+      expect(spans[0].atributos).toEqual({
+        password: MARCADOR_REDACTADO,
+        usuario: 'ana',
+      });
+      expect(JSON.stringify(spans[0].atributos)).not.toContain(
+        'clave-super-secreta',
+      );
+    });
+
+    it('no deja un token de acceso en claro', async () => {
+      const spans = await guardarConAtributos({
+        access_token: 'eyJhbGciOiJIUzI1NiJ9.firma',
+      });
+
+      expect(spans[0].atributos).toEqual({ access_token: MARCADOR_REDACTADO });
+      expect(JSON.stringify(spans[0].atributos)).not.toContain('eyJhbGci');
+    });
+
+    it('no deja una cabecera Authorization en claro', async () => {
+      const spans = await guardarConAtributos({
+        Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.firma',
+      });
+
+      expect(JSON.stringify(spans[0].atributos)).not.toContain('eyJhbGci');
+      expect(spans[0].atributos).toEqual({ Authorization: MARCADOR_REDACTADO });
+    });
+
+    it('enmascara también dentro de objetos y arreglos anidados', async () => {
+      const spans = await guardarConAtributos({
+        sesion: { token: 'secreto-anidado', id: 7 },
+        lista: [{ api_key: 'secreto-en-arreglo' }],
+      });
+
+      const serializado = JSON.stringify(spans[0].atributos);
+      expect(serializado).not.toContain('secreto-anidado');
+      expect(serializado).not.toContain('secreto-en-arreglo');
+      expect(spans[0].atributos).toEqual({
+        sesion: { token: MARCADOR_REDACTADO, id: 7 },
+        lista: [{ api_key: MARCADOR_REDACTADO }],
+      });
+    });
+
+    it('pasa el mensaje de error por la redacción, que lo trunca', async () => {
+      const manejador = {
+        handle: () => throwError(() => new Error('x'.repeat(600))),
+      };
+
+      enContexto(UUID, () => {
+        interceptor
+          .intercept(construirContexto(peticionValida()), manejador)
+          .subscribe({ error: () => undefined });
+      });
+      await esperarEscritura();
+
+      const { traza } = guardarSpy();
+      // La política de redacción es por nombre de clave, y un mensaje de error es
+      // texto libre: lo que la redacción le garantiza es el truncado, no el
+      // enmascarado de un `api_key=...` incrustado. El límite se documenta en
+      // `docs/TRAZABILIDAD.md` en lugar de fingir aquí una garantía que el
+      // servicio no da.
+      expect(traza.error).toHaveLength(
+        LONGITUD_MAXIMA_VALOR + 1 + SUFIJO_TRUNCADO.length,
+      );
+    });
+
+    it('no persiste el cuerpo de la petición ni el de la respuesta', async () => {
+      const { manejador, responder } = peticionEnCurso();
+
+      enContexto(UUID, () => {
+        interceptor
+          .intercept(construirContexto(peticionValida()), manejador)
+          .subscribe();
+        const colector = contexto.getColector();
+        const span = colector.iniciar('operacion', TipoSpan.prisma);
+        // La instrumentación no recoge ni el cuerpo de la petición ni el de la
+        // respuesta, así que ni siquiera hay una clave por la que filtrarlos.
+        colector.cerrar(span, EstadoSpan.ok, { total: 1 });
+        responder();
+      });
+      await esperarEscritura();
+
+      const { traza, spans } = guardarSpy();
+      const persistido = JSON.stringify({ traza, spans });
+      expect(persistido).not.toContain('authorization');
+      expect(persistido).not.toContain('SUPABASE');
+    });
+  });
+
+  describe('nivel mínimo de log', () => {
+    it('con el mínimo en error no persiste una traza correcta', async () => {
+      construirInterceptor('error');
+      const manejador = { handle: () => of({}) };
+
+      enContexto(UUID, () => {
+        interceptor
+          .intercept(construirContexto(peticionValida()), manejador)
+          .subscribe();
+      });
+      await esperarEscritura();
+
+      expect(guardar).not.toHaveBeenCalled();
+    });
+
+    it('con el mínimo en error sí persiste la traza que falló', async () => {
+      construirInterceptor('error');
+      const manejador = {
+        handle: () => throwError(() => new Error('fallo controlado')),
+      };
+
+      enContexto(UUID, () => {
+        interceptor
+          .intercept(construirContexto(peticionValida()), manejador)
+          .subscribe({ error: () => undefined });
+      });
+      await esperarEscritura();
+
+      expect(guardar).toHaveBeenCalledTimes(1);
+      expect(guardarSpy().traza.nivel).toBe('error');
+    });
+
+    it('con el mínimo en warn persiste el 4xx y descarta el 2xx', async () => {
+      construirInterceptor('warn');
+
+      enContexto(UUID, () => {
+        interceptor
+          .intercept(
+            construirContexto(peticionValida(), { statusCode: 404 }),
+            { handle: () => of({}) },
+          )
+          .subscribe();
+      });
+      await esperarEscritura();
+      expect(guardar).toHaveBeenCalledTimes(1);
+      expect(guardarSpy().traza.nivel).toBe('warn');
+
+      guardar.mockClear();
+
+      enContexto(UUID, () => {
+        interceptor
+          .intercept(construirContexto(peticionValida()), {
+            handle: () => of({}),
+          })
+          .subscribe();
+      });
+      await esperarEscritura();
+      expect(guardar).not.toHaveBeenCalled();
+    });
+
+    it('la respuesta es idéntica se guarde o no la traza', async () => {
+      construirInterceptor('error');
+      const manejador = { handle: () => of({ resultado: 'ok' }) };
+      const recibidos: unknown[] = [];
+
+      enContexto(UUID, () => {
+        interceptor
+          .intercept(construirContexto(peticionValida()), manejador)
+          .subscribe({ next: (v) => recibidos.push(v) });
+      });
+      await esperarEscritura();
+
+      expect(recibidos).toEqual([{ resultado: 'ok' }]);
+      expect(guardar).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * Petición que se resuelve a mano. Hace falta porque los spans se registran
+   * mientras la petición está en curso: con un `of({})`, que emite de
+   * inmediato, la traza se cerraría antes de que la prueba tuviera ocasión de
+   * registrar ningún span.
+   */
+  const peticionEnCurso = () => {
+    const respuesta = new Subject<unknown>();
+
+    return {
+      manejador: { handle: () => respuesta },
+      responder: () => {
+        respuesta.next({});
+        respuesta.complete();
+      },
+    };
+  };
+
+  describe('spans hijos', () => {
     it('guarda el span con su nombre, su tipo y su estado', async () => {
       const { manejador, responder } = peticionEnCurso();
 

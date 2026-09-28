@@ -191,19 +191,20 @@ describe('GetTracesQueryDto', () => {
     });
   });
 
-  describe('usuarioId', () => {
-    it('rechaza algo que no es un UUID', async () => {
-      const { errores } = await consultar({ usuarioId: 'no-soy-un-uuid' });
-
-      expect(mensajesDe(errores)).toContain('usuarioId debe ser un UUID');
-    });
-
-    it('acepta un UUID válido', async () => {
-      const { errores } = await consultar({
-        usuarioId: '3f8c1e2a-9b4d-4c7e-8a1f-2d6b5e0c9a73',
-      });
+  describe('servicio', () => {
+    it('acepta el nombre del servicio que atendió la petición', async () => {
+      const { errores, dto } = await consultar({ servicio: 'goblinhub-api' });
 
       expect(errores).toEqual([]);
+      expect(dto.servicio).toBe('goblinhub-api');
+    });
+
+    it('rechaza un nombre más largo que la columna', async () => {
+      const { errores } = await consultar({ servicio: 'a'.repeat(61) });
+
+      expect(mensajesDe(errores)).toContain(
+        'servicio no debe ser más largo que 60 caracteres',
+      );
     });
   });
 
@@ -232,22 +233,6 @@ describe('GetTracesQueryDto', () => {
         desde: '2026-01-01T00:00:00.000Z',
         hasta: '2026-01-31T23:59:59.000Z',
       });
-
-      expect(errores).toEqual([]);
-    });
-  });
-
-  describe('minDuracion', () => {
-    it('rechaza un valor negativo porque un filtro de duración negativa no filtraría nada', async () => {
-      const { errores } = await consultar({ minDuracion: '-1' });
-
-      expect(mensajesDe(errores)).toContain(
-        'minDuracion debe ser mayor o igual a 0',
-      );
-    });
-
-    it('acepta el cero, que es el valor por defecto de quien no filtra', async () => {
-      const { errores } = await consultar({ minDuracion: '0' });
 
       expect(errores).toEqual([]);
     });

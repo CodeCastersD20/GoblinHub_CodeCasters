@@ -5,7 +5,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -27,10 +26,9 @@ export const LIMITES_TRACES = {
   RUTA_MAX: 200,
   METODO_MAX: 10,
   AMBIENTE_MAX: 20,
-  CORRELATION_MAX: 64,
+  SERVICIO_MAX: 60,
   ESTADO_MIN: 100,
   ESTADO_MAX: 599,
-  DURACION_MIN: 0,
 } as const;
 
 /**
@@ -165,6 +163,18 @@ export class GetTracesQueryDto {
 
   @ApiPropertyOptional({
     description:
+      'Servicio que atendió la petición. Es el filtro que el alcance de #204 nombra primero; el valor de la columna se escribe desde la variable `TRAZAS_SERVICIO`.',
+    maxLength: LIMITES_TRACES.SERVICIO_MAX,
+  })
+  @IsOptional()
+  @IsString({ message: 'servicio debe ser texto' })
+  @MaxLength(LIMITES_TRACES.SERVICIO_MAX, {
+    message: `servicio no debe ser más largo que ${LIMITES_TRACES.SERVICIO_MAX} caracteres`,
+  })
+  servicio?: string;
+
+  @ApiPropertyOptional({
+    description:
       'Entorno de despliegue. Un valor fuera del catálogo devuelve la lista vacía, no un error.',
     maxLength: LIMITES_TRACES.AMBIENTE_MAX,
   })
@@ -174,22 +184,6 @@ export class GetTracesQueryDto {
     message: `ambiente no debe ser más largo que ${LIMITES_TRACES.AMBIENTE_MAX} caracteres`,
   })
   ambiente?: string;
-
-  @ApiPropertyOptional({
-    description: 'Correlación exacta de la traza.',
-    maxLength: LIMITES_TRACES.CORRELATION_MAX,
-  })
-  @IsOptional()
-  @IsString({ message: 'correlationId debe ser texto' })
-  @MaxLength(LIMITES_TRACES.CORRELATION_MAX, {
-    message: `correlationId no debe ser más largo que ${LIMITES_TRACES.CORRELATION_MAX} caracteres`,
-  })
-  correlationId?: string;
-
-  @ApiPropertyOptional({ description: 'Usuario exacto, como UUID.' })
-  @IsOptional()
-  @IsUUID('4', { message: 'usuarioId debe ser un UUID' })
-  usuarioId?: string;
 
   @ApiPropertyOptional({
     description:
@@ -205,18 +199,6 @@ export class GetTracesQueryDto {
   @IsOptional()
   @IsDateString({}, { message: 'hasta debe ser una fecha ISO 8601' })
   hasta?: string;
-
-  @ApiPropertyOptional({
-    description: 'Duración mínima en milisegundos.',
-    minimum: LIMITES_TRACES.DURACION_MIN,
-  })
-  @IsOptional()
-  @Transform(aEntero)
-  @IsInt({ message: 'minDuracion debe ser un número entero' })
-  @Min(LIMITES_TRACES.DURACION_MIN, {
-    message: 'minDuracion debe ser mayor o igual a 0',
-  })
-  minDuracion?: number;
 
   @ApiPropertyOptional({
     description:

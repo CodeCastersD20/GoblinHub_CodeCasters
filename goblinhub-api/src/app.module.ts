@@ -19,6 +19,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
 import { MetricsInterceptor } from './modules/metrics/infrastructure/interceptors/metrics.interceptor';
 import { CorrelationIdMiddleware } from './modules/tracing/infrastructure/middleware/correlation-id.middleware';
 import { TracingModule } from './modules/tracing/tracing.module';
+import { TrazasModule } from './modules/tracing/trazas.module';
 import { TracingInterceptor } from './modules/tracing/infrastructure/interceptors/tracing.interceptor';
 
 @Module({
@@ -45,6 +46,7 @@ import { TracingInterceptor } from './modules/tracing/infrastructure/interceptor
     HealthModule,
     MetricsModule,
     TracingModule,
+    TrazasModule,
   ],
   controllers: [],
   providers: [

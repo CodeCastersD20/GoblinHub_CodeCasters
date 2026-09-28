@@ -130,7 +130,8 @@ docs/
 
 ```text
 goblinhub-api/src/modules/tracing/
-├── tracing.module.ts
+├── tracing.module.ts                       # instrumentación: escribe y publica el contexto
+├── trazas.module.ts                        # superficie HTTP de lectura del visor
 ├── domain/
 │   ├── constants/
 │   │   ├── redaction-keys.ts              # política de claves sensibles

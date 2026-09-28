@@ -350,11 +350,18 @@ model Traza {
   fecha_fin      DateTime
   deleted_at     DateTime?
 
+  // `servicio` y `nivel` los exige el alcance de #204: el primero es el filtro
+  // por servicio, el segundo es el nivel a partir del cual se decide persistir.
+  // Llevan valor por defecto para que la migracion no tenga que reescribir las
+  // filas ya escritas ni la instrumentacion tenga que pasarlos siempre.
+  servicio   String @default("goblinhub-api") @db.VarChar(60)
+  nivel      String @default("info") @db.VarChar(10)
+
   usuario Usuario? @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
   spans   Span[]
 
   // Sin `where: { deleted_at: null }` a diferencia del resto de tablas: la
-  // purga de FR-027 borra fisicamente las trazas vencidas, de modo que el
+  // purga por retencion borra fisicamente las trazas vencidas, de modo que el
   // volumen de borradas es residual. Un indice parcial obligaria a que todas
   // las consultas del visor incluyeran el predicado para no dejarlo sin usar.
   // La unicidad y el indice van declarados juntos a proposito. Con `@unique` en
@@ -365,6 +372,9 @@ model Traza {
   @@index([fecha_inicio], map: "idx_trazas_fecha")
   @@index([estado_http, fecha_inicio], map: "idx_trazas_error")
   @@index([ambiente, fecha_inicio], map: "idx_trazas_ambiente")
+  // El filtro por servicio de #204 acotaria la tabla entera sin este indice,
+  // porque `servicio` es la columna de menor cardinalidad.
+  @@index([servicio, fecha_inicio], map: "idx_trazas_servicio")
   @@map("trazas")
 }
 

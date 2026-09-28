@@ -13,8 +13,12 @@ import type { Request, Response } from 'express';
 import { TrazaRepository } from '../../domain/repositories/traza.repository';
 import { TracingContextService } from '../../domain/services/tracing-context.service';
 import { PathNormalizerService } from '../../domain/services/path-normalizer.service';
+import { RedactionService } from '../../domain/services/redaction.service';
+import { TracingConfigService } from '../../domain/services/tracing-config.service';
+import { nivelDeEstado, type NivelTraza } from '../../domain/enums/nivel-traza.enum';
 import { RelojSistema, type Reloj } from '../../domain/services/reloj';
 import { Traza } from '../../domain/entities/traza.entity';
+import { Span } from '../../domain/entities/span.entity';
 
 type PeticionConUsuario = Request & { user?: { id?: string } };
 
@@ -35,6 +39,8 @@ export class TracingInterceptor implements NestInterceptor {
     private readonly repositorio: TrazaRepository,
     private readonly contexto: TracingContextService,
     private readonly normalizador: PathNormalizerService,
+    private readonly redaccion: RedactionService,
+    private readonly configuracion: TracingConfigService,
     // El reloj entra por token y no como pará suelto porque Nest intentaría
     // resolverlo como una dependencia más; así una prueba puede sustituirlo
     // entera sin tocar el resto del cableado.
@@ -44,12 +50,13 @@ export class TracingInterceptor implements NestInterceptor {
   ) {}
 
   /**
-   * El entorno va en la traza para poder distinguir un fallo de desarrollo de
-   * uno de producción sin mirar la tabla. Se lee aquí y no en el constructor
-   * para que no cuente como una dependencia que Nest tenga que resolver.
+   * El entorno y el servicio van en la traza para poder distinguir un fallo de
+   * desarrollo de uno de producción y consultar por servicio sin mirar el
+   * código. Los dos los decide `TracingConfigService`, que los resolvió al
+   * arrancar: leer `process.env` aquí lo convertiría en trabajo por petición.
    */
   private get ambiente(): string {
-    return process.env.NODE_ENV ?? 'development';
+    return this.configuracion.ambiente;
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -75,6 +82,15 @@ export class TracingInterceptor implements NestInterceptor {
      * dos caminos se quedara sin actualizar al tocar el otro.
      */
     const finalizar = (estadoHttp: number, error: string | null) => {
+      const nivel = nivelDeEstado(estadoHttp);
+
+      // El corte por nivel ocurre aquí y no en el repositorio: es una decisión de
+      // la instrumentación, y saltarse la escritura entera es lo que evita gastar
+      // una transacción por una traza que nadie va a mirar.
+      if (!this.configuracion.guarda(nivel)) {
+        return;
+      }
+
       void this.persistir({
         idTraza: this.contexto.getIdTraza() ?? randomUUID(),
         correlationId: this.contexto.get() ?? randomUUID(),
@@ -85,6 +101,7 @@ export class TracingInterceptor implements NestInterceptor {
         fechaInicio,
         idUsuario: peticion.user?.id,
         error,
+        nivel,
       });
     };
 
@@ -117,6 +134,7 @@ export class TracingInterceptor implements NestInterceptor {
     fechaInicio: Date;
     idUsuario?: string;
     error: string | null;
+    nivel: NivelTraza;
   }): Promise<void> {
     const fin = this.reloj.ahora();
 
@@ -131,13 +149,21 @@ export class TracingInterceptor implements NestInterceptor {
       datos.fechaInicio,
       this.reloj.fecha(),
       datos.idUsuario ?? null,
-      datos.error,
+      // El mensaje de error pasa por la misma redacción que los atributos: un
+      // `throw` puede llevar en el mensaje justo el valor que se negaba a
+      // guardar como secreto. Se serializa porque la columna es de texto y la
+      // redacción devuelve JSON.
+      datos.error === null
+        ? null
+        : String(this.redaccion.redactar(datos.error)),
+      datos.nivel,
+      this.configuracion.servicio,
     );
 
     try {
       await this.repositorio.guardar(
         traza,
-        this.contexto.getColector().cerrados(),
+        this.redactarSpans(this.contexto.getColector().cerrados()),
       );
     } catch (error) {
       this.logger.warn(
@@ -146,6 +172,35 @@ export class TracingInterceptor implements NestInterceptor {
         }`,
       );
     }
+  }
+
+  /**
+   * La redacción se aplica **antes** de la llamada a Prisma y nunca al leer
+   * (FR-017). Enmascarar en la consulta no serviría de nada: si el secreto ya
+   * está escrito, quien tenga acceso a la tabla lo tiene igual.
+   *
+   * Devuelve spans nuevos en lugar de mutar los recibidos porque el colector
+   * puede seguir vivo: mutarlos dejaría el mismo objeto en dos estados
+   * distintos según quién lo lea después.
+   */
+  private redactarSpans(spans: Span[]): Span[] {
+    return spans.map((span) => {
+      if (span.atributos === null || span.atributos === undefined) {
+        return span;
+      }
+
+      return new Span(
+        span.id_span,
+        span.id_traza,
+        span.nombre,
+        span.tipo,
+        span.duracion_ms,
+        span.estado,
+        span.fecha_inicio,
+        span.parent_id,
+        this.redaccion.redactar(span.atributos),
+      );
+    });
   }
 
   /**
