@@ -43,6 +43,7 @@ Alternativa automatizada (workflow oficial de Spec Kit en este repo):
 | **c)** Infraestructura como código (Codespaces + Terraform) | `specs/003-infraestructura-codigo-codespaces-terraform/` | `spec.md` | `plan.md` | `tasks.md` |
 | **3)** Casos de prueba E2E (sección 3) | `specs/004-casos-de-prueba-e2e/` | `spec.md` | `plan.md` | `tasks.md` |
 | **Módulo de métricas de monitoreo** (Prometheus + Grafana + Alertmanager) | `specs/005-modulo-metricas-monitoreo/` | `spec.md` | `plan.md` | `tasks.md` |
+| **Visor de trazabilidad con logs y tracers** | `specs/006-visor-trazabilidad-logs-tracers/` | `spec.md` | `plan.md` | `tasks.md` |
 
 ## Flujo por módulo ejecutado
 
@@ -57,6 +58,12 @@ Alternativa automatizada (workflow oficial de Spec Kit en este repo):
    módulo de métricas, con comparación y selección de la herramienta de
    monitoreo. La implementación es `feat/214-tablero-y-alertas-de-metricas`
    (issue #214).
+7. `feat/204-feature-implementar-visor-de-trazabilidad-con-logs-y-tracers` (issue
+   #204): planeación del visor de trazabilidad, con comparación y selección de la
+   herramienta de trazado en `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md`. La
+   implementación son las phases 1 a 7 de `specs/006-visor-trazabilidad-logs-tracers/tasks.md`
+   y comparte `app.module.ts`, `main.ts`, `.env.example` y `package.json` con #214,
+   por lo que ambas issues deben integrarse conservando los dos cambios.
 
 ## Verificación
 

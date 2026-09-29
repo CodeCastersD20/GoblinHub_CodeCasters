@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { EventModule } from './modules/events/event.module';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -17,6 +17,10 @@ import { ActivityLogInterceptor } from './modules/logs/infrastructure/intercepto
 import { HealthModule } from './modules/health/health.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { MetricsInterceptor } from './modules/metrics/infrastructure/interceptors/metrics.interceptor';
+import { CorrelationIdMiddleware } from './modules/tracing/infrastructure/middleware/correlation-id.middleware';
+import { TracingModule } from './modules/tracing/tracing.module';
+import { TrazasModule } from './modules/tracing/trazas.module';
+import { TracingInterceptor } from './modules/tracing/infrastructure/interceptors/tracing.interceptor';
 
 @Module({
   imports: [
@@ -41,6 +45,8 @@ import { MetricsInterceptor } from './modules/metrics/infrastructure/interceptor
     PrismaModule,
     HealthModule,
     MetricsModule,
+    TracingModule,
+    TrazasModule,
   ],
   controllers: [],
   providers: [
@@ -58,6 +64,24 @@ import { MetricsInterceptor } from './modules/metrics/infrastructure/interceptor
       provide: APP_INTERCEPTOR,
       useClass: MetricsInterceptor,
     },
+    {
+      // El más interno de los tres: la escritura de la traza es lo último que
+      // ocurre dentro de la petición, y para que la latencia que publica
+      // `MetricsInterceptor` la incluya tiene que medirla por fuera. Por eso va
+      // el último (spec 006, T026).
+      provide: APP_INTERCEPTOR,
+      useExisting: TracingInterceptor,
+    },
   ], // Aplica el guard de throttling globalmente
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  /**
+   * El middleware va con `'*'` y no con una lista de rutas porque debe excluir
+   * el identificador también de las peticiones que no llegan a ningún
+   * controlador, y porque así el orden respecto a los interceptores es siempre el
+   * mismo: el middleware corre antes que el guard y que el interceptor.
+   */
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}

@@ -12,6 +12,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../connect/prisma.service';
 import type { TipoLog } from '../../domain/entities/log.entity';
 import { TipoLog as TipoLogEnum } from '../../domain/entities/log.entity';
+import { TracingContextService } from '../../../tracing/domain/services/tracing-context.service';
 
 type RequestWithUser = Request & {
   user?: {
@@ -23,7 +24,10 @@ type RequestWithUser = Request & {
 export class ActivityLogInterceptor implements NestInterceptor {
   private readonly logger = new Logger(ActivityLogInterceptor.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tracingContext: TracingContextService,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     if (context.getType() !== 'http') {
@@ -44,6 +48,7 @@ export class ActivityLogInterceptor implements NestInterceptor {
     const userId = request.user?.id;
     const ipAddress = this.getIp(request);
     const userAgent = request.headers['user-agent'];
+    const correlationId = this.tracingContext.get();
 
     return next.handle().pipe(
       tap(() => {
@@ -56,6 +61,9 @@ export class ActivityLogInterceptor implements NestInterceptor {
           datos_extra: {
             statusCode: response.statusCode,
             userAgent,
+            // El identificador se reparte con el spread porque `undefined` no
+            // es un valor válido para una columna JSON de Prisma.
+            ...(correlationId ? { correlationId } : {}),
           },
         });
       }),
@@ -72,6 +80,7 @@ export class ActivityLogInterceptor implements NestInterceptor {
           datos_extra: {
             statusCode: this.getStatusCode(error),
             userAgent,
+            ...(correlationId ? { correlationId } : {}),
           },
         });
 

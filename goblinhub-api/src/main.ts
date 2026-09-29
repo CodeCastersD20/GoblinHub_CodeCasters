@@ -59,6 +59,9 @@ async function bootstrap() {
       'Authorization',
       'Accept',
       'X-Requested-With',
+      // El visor lee el identificador de la petición para poder correlacionar
+      // una traza con su log, así que el navegador tiene que poder enviarlo.
+      'X-Request-Id',
     ],
     credentials: true,
   });
@@ -117,6 +120,10 @@ async function bootstrap() {
     }
 
     // 2. EXCEPCIÓN DE API: Dejar pasar estas rutas siempre al router de Nest
+    // `/traces`, `/metrics` y `/health` también están en la lista porque se
+    // pueden abrir directamente en el navegador y, sin esta excepción, el filtro
+    // de seguridad de más abajo las redirigiría al frontend en lugar de
+    // devolver el recurso.
     const apiPaths = [
       '/productos',
       '/auth',
@@ -125,6 +132,7 @@ async function bootstrap() {
       '/logs',
       '/backup',
       '/upload',
+      '/traces',
       // Sondeadas por Prometheus y por las sondas de Render: no llegan con
       // Origin ni Authorization, y sin esta excepción se recibirían un 302 al
       // frontend en lugar de las métricas (spec 005, FR-008).

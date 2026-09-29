@@ -18,9 +18,10 @@ import { RolesGuard } from './guard/roles.guard';
 import { RefreshTokenThrottlerGuard } from './guard/refresh-token-throttler.guard';
 import { UsuarioRepository } from './domain/repositories/usuario.repository';
 import { UsuarioRepositoryPrisma } from './infrastructure/prisma/usuario.repository';
+import { TracingModule } from '../tracing/tracing.module';
 
 @Module({
-  imports: [SupabaseModule, PrismaModule],
+  imports: [SupabaseModule, PrismaModule, TracingModule],
   controllers: [SupabaseAuthController],
   providers: [
     SupabaseValidationTokenService,
