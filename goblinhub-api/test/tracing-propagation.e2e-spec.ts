@@ -7,10 +7,10 @@ import {
   Post,
   UseInterceptors,
 } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types';
+import type { NextFunction, Request, Response } from 'express';
 import { CorrelationIdMiddleware } from '../src/modules/tracing/infrastructure/middleware/correlation-id.middleware';
 import { TracingInterceptor } from '../src/modules/tracing/infrastructure/interceptors/tracing.interceptor';
 import { ActivityLogInterceptor } from '../src/modules/logs/infrastructure/interceptors/activity-log.interceptor';
@@ -24,7 +24,6 @@ import {
   type TrazaConSpans,
 } from '../src/modules/tracing/domain/repositories/traza.repository';
 import type { Traza } from '../src/modules/tracing/domain/entities/traza.entity';
-import type { Span } from '../src/modules/tracing/domain/entities/span.entity';
 import type { LogEntity } from '../src/modules/logs/domain/entities/log.entity';
 import { PrismaService } from '../src/connect/prisma.service';
 
@@ -46,29 +45,33 @@ const logsGuardados: LogEntity[] = [];
 /** Doble de PostgreSQL: conserva lo escrito para poder compararlo entre sí. */
 @Injectable()
 class TrazaRepositoryDoble extends TrazaRepository {
-  async guardar(traza: Traza, pasos: Span[]): Promise<void> {
+  guardar(traza: Traza): Promise<void> {
     trazasGuardadas.push(traza);
+    return Promise.resolve();
   }
 
-  async listar(): Promise<ListadoTrazas> {
-    return { trazas: trazasGuardadas, total: trazasGuardadas.length };
+  listar(): Promise<ListadoTrazas> {
+    return Promise.resolve({
+      trazas: trazasGuardadas,
+      total: trazasGuardadas.length,
+    });
   }
 
-  async obtenerPorCorrelationId(): Promise<TrazaConSpans | null> {
-    return null;
+  obtenerPorCorrelationId(): Promise<TrazaConSpans | null> {
+    return Promise.resolve(null);
   }
 
-  async purgarVencidas(): Promise<{ count: number }> {
-    return { count: 0 };
+  purgarVencidas(): Promise<{ count: number }> {
+    return Promise.resolve({ count: 0 });
   }
 }
 
 @Injectable()
 class PrismaDoble {
   logs_Actividad = {
-    create: async ({ data }: { data: LogEntity }) => {
+    create: ({ data }: { data: LogEntity }): Promise<LogEntity> => {
       logsGuardados.push(data);
-      return data;
+      return Promise.resolve(data);
     },
   };
 }
@@ -148,7 +151,9 @@ describe('Propagación del identificador de correlación (E2E)', () => {
     const correlationId = new CorrelationIdMiddleware(
       app.get(TracingContextService),
     );
-    app.use((req, res, next) => correlationId.use(req, res, next));
+    app.use((req: Request, res: Response, next: NextFunction) =>
+      correlationId.use(req, res, next),
+    );
     await app.init();
   });
 
@@ -214,7 +219,8 @@ describe('Propagación del identificador de correlación (E2E)', () => {
     expect(logsGuardados).toHaveLength(1);
     expect(logsGuardados[0].tipo).toBe('error');
     expect(
-      (logsGuardados[0].datos_extra as { correlationId?: string }).correlationId,
+      (logsGuardados[0].datos_extra as { correlationId?: string })
+        .correlationId,
     ).toBe(correlationId);
   });
 
@@ -236,7 +242,7 @@ describe('Propagación del identificador de correlación (E2E)', () => {
       .set('X-Request-Id', 'inyectado por el cliente')
       .expect(201);
 
-    const emitido = respuesta.headers['x-request-id'] as string;
+    const emitido = respuesta.headers['x-request-id'];
 
     expect(emitido).toMatch(UUID_V4);
     // Lo que el cliente envió no debe aparecer en ninguna de las tres piezas: si
@@ -247,7 +253,9 @@ describe('Propagación del identificador de correlación (E2E)', () => {
   });
 
   it('registra también las lecturas, con la ruta normalizada', async () => {
-    await request(app.getHttpServer() as App).get('/consultas/7').expect(200);
+    await request(app.getHttpServer() as App)
+      .get('/consultas/7')
+      .expect(200);
 
     expect(trazasGuardadas).toHaveLength(1);
     expect(trazasGuardadas[0].ruta).toBe('/consultas/:id');
@@ -259,7 +267,9 @@ describe('Propagación del identificador de correlación (E2E)', () => {
     // 200 —excluir la instrumentación no puede cambiar el contrato—, pero no
     // deja traza. Es la razón de existir de la lista: una comprobación de
     // vida cada pocos segundos llenaría la tabla de trazas.
-    await request(app.getHttpServer() as App).get('/health').expect(200);
+    await request(app.getHttpServer() as App)
+      .get('/health')
+      .expect(200);
 
     expect(trazasGuardadas).toHaveLength(0);
   });

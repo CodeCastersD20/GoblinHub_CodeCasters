@@ -4,7 +4,10 @@ import type { Request } from 'express';
 import { TracingInterceptor } from './tracing.interceptor';
 import { TracingContextService } from '../../domain/services/tracing-context.service';
 import { PathNormalizerService } from '../../domain/services/path-normalizer.service';
-import { RedactionService } from '../../domain/services/redaction.service';
+import {
+  RedactionService,
+  type Json,
+} from '../../domain/services/redaction.service';
 import { TracingConfigService } from '../../domain/services/tracing-config.service';
 import type { Reloj } from '../../domain/services/reloj';
 import { EstadoSpan, TipoSpan } from '../../domain/enums/tipo-span.enum';
@@ -427,7 +430,7 @@ describe('TracingInterceptor', () => {
         colector.cerrar(
           span,
           EstadoSpan.ok,
-          JSON.parse(JSON.stringify(atributos)),
+          JSON.parse(JSON.stringify(atributos)) as Json,
         );
         responder();
       });
@@ -567,10 +570,9 @@ describe('TracingInterceptor', () => {
 
       enContexto(UUID, () => {
         interceptor
-          .intercept(
-            construirContexto(peticionValida(), { statusCode: 404 }),
-            { handle: () => of({}) },
-          )
+          .intercept(construirContexto(peticionValida(), { statusCode: 404 }), {
+            handle: () => of({}),
+          })
           .subscribe();
       });
       await esperarEscritura();

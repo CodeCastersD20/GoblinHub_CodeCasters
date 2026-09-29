@@ -15,7 +15,10 @@ import { TracingContextService } from '../../domain/services/tracing-context.ser
 import { PathNormalizerService } from '../../domain/services/path-normalizer.service';
 import { RedactionService } from '../../domain/services/redaction.service';
 import { TracingConfigService } from '../../domain/services/tracing-config.service';
-import { nivelDeEstado, type NivelTraza } from '../../domain/enums/nivel-traza.enum';
+import {
+  nivelDeEstado,
+  type NivelTraza,
+} from '../../domain/enums/nivel-traza.enum';
 import { RelojSistema, type Reloj } from '../../domain/services/reloj';
 import { Traza } from '../../domain/entities/traza.entity';
 import { Span } from '../../domain/entities/span.entity';
@@ -153,9 +156,7 @@ export class TracingInterceptor implements NestInterceptor {
       // `throw` puede llevar en el mensaje justo el valor que se negaba a
       // guardar como secreto. Se serializa porque la columna es de texto y la
       // redacción devuelve JSON.
-      datos.error === null
-        ? null
-        : String(this.redaccion.redactar(datos.error)),
+      datos.error === null ? null : this.redactarMensaje(datos.error),
       datos.nivel,
       this.configuracion.servicio,
     );
@@ -172,6 +173,20 @@ export class TracingInterceptor implements NestInterceptor {
         }`,
       );
     }
+  }
+
+  /**
+   * `redactar` devuelve `Json`, y pasarlo por `String()` daría
+   * `[object Object]` si alguna vez el mensaje llegara como objeto. Un mensaje
+   * de error es texto, así que se devuelve tal cual cuando lo es, y solo se
+   * serializa con `JSON.stringify` en cualquier otro caso.
+   */
+  private redactarMensaje(mensaje: string): string {
+    const redactado = this.redaccion.redactar(mensaje);
+
+    return typeof redactado === 'string'
+      ? redactado
+      : JSON.stringify(redactado);
   }
 
   /**
