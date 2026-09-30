@@ -1,6 +1,6 @@
 # Implementation Plan: Visor de trazabilidad con logs y tracers
 
-**Branch**: `feat/204-feature-implementar-visor-de-trazabilidad-con-logs-y-tracers` | **Date**: 2026-09-27 | **Spec**: `specs/006-visor-trazabilidad-logs-tracers/spec.md`
+**Branch**: `doc/207-docs-planeación-sdd-del-visor-de-trazabilidad` (planeación) → `feat/204-feature-implementar-visor-de-trazabilidad-con-logs-y-tracers` (implementación) | **Date**: 2026-09-29 | **Spec**: `specs/006-visor-trazabilidad-logs-tracers/spec.md`
 
 **Input**: Feature specification from
 `/specs/006-visor-trazabilidad-logs-tracers/spec.md`
@@ -220,6 +220,73 @@ comunica la secuencia, y «en qué paso se fue el tiempo» lo responde su duraci
 sin una barra posicionada. Se mantienen las dependencias deliberadamente
 mínimas del repositorio y no se añade una biblioteca de grafos ni de
 cronogramas.
+
+## Integración con el pipeline y con el monitoreo
+
+El módulo no es un artefacto aislado: entra por los mismos canales que el resto
+del proyecto (alcance de #207).
+
+### Pipeline CI/CD
+
+| Workflow | Qué ejecuta | Relación con este módulo |
+|---|---|---|
+| `api.yml` | Job `lint`: `npm run lint` + `npx tsc --noEmit`; job `build-and-test`: `npm run build` + `npm run test:cov` | Aquí corren los unitarios de `modules/tracing`. Las e2e de Supertest (`test/*.e2e-spec.ts`) no tienen workflow propio y se ejecutan en local (T036, T073). T074 añade `modules/tracing` al `collectCoverageFrom` para que el gate de cobertura (SLA S10, ≥ 80 %) lo mida |
+| `web.yml` | `npm run lint`, `npm run build` y el job *E2E Tests (Playwright)* con `npm run test:e2e` | La vista `TrazasAdmin` queda bajo el lint y el build del panel; no abre una ruta nueva fuera del `ProtectedRoute` de rol `admin` |
+| `snyk.yml` | Dependencias, código e IaC (SLA S11: 0 vulnerabilidades `critical`) | El módulo **no añade dependencias**, así que no introduce riesgo nuevo para ese gate |
+| `monitoring.yml` | `promtool check config`, `promtool check rules` y `amtool check-config` sobre `monitoring/` | La trazabilidad no toca la configuración de Prometheus: este workflow solo cambia si se modifica el stack de la spec 005 |
+| `playwright.yml`, `k6.yml`, `continuous-release.yml`, `release-cd.yml` | E2E, carga y liberación | Sin cambios: el módulo no altera rutas de negocio ni el proceso de despliegue |
+
+Los gates locales equivalentes, ejecutados en T076 antes de cualquier PR, son
+`npm run api` (lint + `tsc --noEmit` + build + cobertura) y `npm run web`. El
+caso de estudio los recoge como **S9** (pipeline verde en `develop`), **S10**
+(cobertura ≥ 80 %) y **S11** (sin vulnerabilidades `critical`) en
+`docs/SLA_METRICAS_Y_PARAMETROS.md` §4.
+
+### Monitoreo (convivencia con `specs/005-modulo-metricas-monitoreo`, #214)
+
+- `/metrics`, `/healthz`, `/health` y `/traces` quedan **fuera** de la
+  instrumentación de trazas: Prometheus sondea `/metrics` cada 15 s, y
+  medirlo generaría unas 5 760 filas diarias de ruido y un camino de escritura
+  que podría realimentarse (spec 006, § Edge Cases).
+- **Orden de interceptores** en `app.module.ts`: `MetricsInterceptor` (#214)
+  **antes** que `TracingInterceptor` (T025), de modo que las dos
+  instrumentaciones convivan sin pisarse.
+- **Catálogo de entornos compartido**: `DEPLOY_ENV` lo introduce la spec 005;
+  este módulo lo lee y T058 mantiene una prueba que verifica que las dos listas
+  siguen sincronizadas, para que un cambio rompa la prueba del otro módulo en
+  lugar de producir una etiqueta inválida en silencio.
+- **Reparto de responsabilidades**: el tablero de Prometheus
+  (`monitoring/grafana/dashboards/goblinhub-overview.json`) responde **qué**
+  está fallando (SLA S1 y S4); el visor responde **por qué** (endpoint,
+  entorno, pasos internos y su duración). La remediación del SLA **S4** del
+  caso de estudio menciona literalmente el «log de error con `correlationId`»,
+  que es exactamente el dato que `FR-005` escribe en `datos_extra`.
+- **Sin duplicar documentación**: el contrato y la operación ya están en
+  `docs/TRAZABILIDAD.md` y `docs/RUNBOOK_MONITOREO.md`; esta sección solo
+  declara dónde encaja el módulo respecto de esas piezas.
+
+## Matriz de trazabilidad requisito-tarea-prueba
+
+Patrón de `specs/005-modulo-metricas-monitoreo/plan.md` §9, extendida con la
+columna de prueba que pide el criterio de aceptación de #207. Cubre los CA de
+#207 y, por herencia, los de #204 que esta spec ya implementa, para que ningún
+requisito quede sin tarea ni ninguna tarea sin prueba.
+
+| Criterio de aceptación | Origen | Requisito | Sección | Tarea | Prueba |
+|---|---|---|---|---|---|
+| La spec define casos de uso, restricciones y criterios verificables | #207 | FR-001–FR-037 | `spec.md`: § User Scenarios (US1–US7), § Edge Cases, § Requirements, § Success Criteria (SC-001–SC-009) | T003, T080 | Revisión del PR de planeación |
+| Las tasks enlazan con los requisitos y tienen orden de ejecución | #207 | — | `tasks.md`: cada tarea declara su `FR` y su fase 0–7, con *checkpoint* al cierre de cada fase | T006, T080–T086 | Revisión del PR de planeación |
+| Se incluye una matriz de trazabilidad requisito-tarea-prueba | #207 | — | `plan.md`, esta sección | T081 | Revisión: cada fila cita un requisito, una tarea y una prueba existentes |
+| Se contempla control de acceso y anonimización | #207 | FR-017–FR-021, FR-022, FR-025 | `spec.md` § Protección de datos sensibles; `data-model.md` § Seguridad de los datos; `plan.md` § Constitution Check (Principio II) | T013, T033, T040, T082 | `redaction.service.spec.ts`; `traces.e2e-spec.ts` (401 sin token, 403 con rol distinto de `admin`); T041 (ningún secreto en claro en `Spans.atributos`) |
+| Se abre PR general de planeación SDD con revisión | #207 | — | — | T086 | PR hacia `develop` con `Closes #207` y solicitud de revisión al equipo |
+| Se definen eventos, campos obligatorios, correlation ID, niveles, retención y consulta | #207 | FR-001–FR-016, FR-027–FR-029 | `data-model.md`: campos obligatorios en la columna «Nulo», eventos como Traza y Spans con `tipo` (`http`, `auth`, `prisma`, `cron`, `redis`), retención en § Retención y volumen; `spec.md` § Correlation ID | T005, T012, T061, T063 | `correlation-id.middleware.spec.ts`, `tracing-config.spec.ts`, `purge-traces.use-case.spec.ts`, `get-traces-query.dto.spec.ts` |
+| Se justifica la solución de logs estructurados y tracers frente al caso de estudio | #207 | — | `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md` §7 | T083 | Revisión del PR de planeación |
+| Se documenta la integración con el pipeline y con el monitoreo | #207 | — | `plan.md`, § Integración con el pipeline y con el monitoreo (esta sección) | T084 | Gates de CI en verde: `api.yml`, `web.yml` y `monitoring.yml` |
+| Cada solicitud tiene identificador correlacionable en logs y trazas | #204 | FR-001–FR-006 | `spec.md` US1; `plan.md` § Project Structure | T008–T016 | `correlation-id.middleware.spec.ts`, `tracing-propagation.e2e-spec.ts` |
+| Se localizan errores por endpoint y despliegue | #204 | FR-011–FR-016 | `spec.md` US3; `data-model.md` § Reglas de validación de los filtros | T027–T036 | `get-traces-query.dto.spec.ts`, `traces.e2e-spec.ts` |
+| No se registran secretos ni datos sensibles innecesarios | #204 | FR-017–FR-021 | `spec.md` US4 | T013, T037–T043 | `redaction.service.spec.ts`, `path-normalizer.service.spec.ts` |
+| Se define la retención y los niveles de log | #204 | FR-027–FR-031 | `spec.md` US6; `data-model.md` § Retención y volumen | T058–T069 | `purge-traces.use-case.spec.ts`, `tracing-config.spec.ts` |
+| Se documentan formato, retención, permisos y parámetros | #204 | FR-032–FR-034 | `spec.md` US7 | T070, T071 | Revisión de `docs/TRAZABILIDAD.md` |
 
 ## Complexity Tracking
 

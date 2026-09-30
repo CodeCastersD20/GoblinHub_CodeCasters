@@ -290,7 +290,48 @@ esto sea una migración y no un rediseño.
   freno. Mitigación: retención con valor por defecto, prueba del caso de purga y
   el umbral documentado en `docs/TRAZABILIDAD.md`.
 
-## 7. Referencias
+## 7. Solución frente al caso de estudio
+
+> **Alcance**: criterio de aceptación de la issue #207 — justificar la solución
+> de logs estructurados y tracers frente al caso de estudio. La fuente de las
+> restricciones es `docs/SLA_METRICAS_Y_PARAMETROS.md` §2 (contexto y capacidad
+> del equipo) y su catálogo de SLA (§4). Las alternativas ya están evaluadas en
+> §3 y §4; aquí solo se cruza la decisión con ese caso.
+
+| Restricción del caso de estudio (SLA §2) | Exigencia | Cómo lo cumple la solución seleccionada |
+|---|---|---|
+| Equipo de 4 integrantes sin guardia nocturna | Ninguna pieza nueva puede exigir operación continuada | Cero componentes nuevos: no hay *collector*, contenedor ni servicio que vigilar; la purga es un cron del propio proceso (§4.2) |
+| Render plan `starter` con **un solo servicio web activo** | No hay dónde desplegar un backend de trazas (Tempo/Jaeger) ni un agregador (Loki) sin un servicio más que pagar y respaldar | Todo corre dentro de la API existente; es la razón operativa detrás del descarte de §4.1 y §4.3 |
+| PostgreSQL único, respaldo diario, **RPO 24 h** | Los datos con los que se diagnostica un incidente tienen que estar respaldados y ser restaurables | Las trazas viven en la base que ya se respalda; un almacén paralelo habría añadido datos **fuera** del respaldo (restricción R6) |
+| Sin APM ni monitor externo; la observabilidad se mide a partir de #214 | La solución no puede depender de un proveedor externo ni sacar datos de la organización (restricción R2) | Implementación propia versionada en el repositorio; nada sale de la infraestructura del proyecto |
+| **S4** (tasa de error 5xx < 0,5 %) se remedia con «log de error con `correlationId`» (SLA §4) | El identificador de correlación tiene que existir en el log **y** en la traza | `FR-001`–`FR-006`: el mismo `X-Request-Id` aparece en la respuesta, en `datos_extra` del log de actividad y en `correlation_id` de la traza |
+| **S9–S11**: pipeline verde, cobertura ≥ 80 %, 0 vulnerabilidades `critical` | Todo cambio pasa por los gates sin excepción | El módulo entra en `api.yml`/`web.yml` y en la cobertura de Jest (T074), y **no añade dependencias**, así que S11 no cambia; el encaje está en `specs/006-visor-trazabilidad-logs-tracers/plan.md` § *Integración con el pipeline y con el monitoreo* |
+| Gobierno SDD: toda desviación se documenta (SLA §2) | La elección frente a la recomendación de la auditoría debe justificarse | Este documento (§3–§6) y el *Complexity Tracking* de `specs/006-…/plan.md` |
+
+**Logs estructurados y tracers, en términos del caso de estudio**
+
+- **Logs estructurados**: la correlación se inyecta en el log de actividad que
+  ya escribe el backend (`FR-005`), sin cambiar el formato de toda la
+  superficie de `Logger`. Es lo que el caso de estudio exige para remediar
+  S4; la migración completa a `nestjs-pino` queda como deuda declarada
+  (T049, §4.3).
+- **Tracers**: los spans aportan el desglose de pasos que un log plano no
+  puede dar —§4.3 descarta Loki porque no produce *waterfall*— y el visor los
+  presenta dentro del panel, con el RBAC y el login que el caso de estudio ya
+  tiene (R3).
+- **Por qué ninguna otra opción**: Loki exige un contenedor más frente a un
+  Render que solo admite un servicio activo; OpenTelemetry, un SDK más un
+  *collector* (§4.1); un SaaS de APM, sacar trazas e identificadores de
+  usuario fuera de la organización (R2). Las tres chocan con una restricción
+  del caso de estudio, no solo con una preferencia técnica.
+
+**Conclusión**: la implementación propia es la única opción que cumple el par
+«logs estructurados + tracers» sin añadir infraestructura ni coste, y su deuda
+—logging estructurado global (T049) y ruta hacia OpenTelemetry (§6.3)— queda
+escrita para reabrir el tema cuando cambie el caso, por ejemplo con un segundo
+servicio.
+
+## 8. Referencias
 
 - `specs/006-visor-trazabilidad-logs-tracers/spec.md` — requisitos y criterios
   verificables.

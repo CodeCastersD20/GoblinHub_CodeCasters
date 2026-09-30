@@ -1,6 +1,6 @@
 # Feature Specification: Visor de trazabilidad con logs y tracers
 
-**Feature Branch**: `feat/204-feature-implementar-visor-de-trazabilidad-con-logs-y-tracers`
+**Feature Branch**: `doc/207-docs-planeación-sdd-del-visor-de-trazabilidad` (planeación) → `feat/204-feature-implementar-visor-de-trazabilidad-con-logs-y-tracers` (implementación)
 
 **Created**: 2026-09-27
 
@@ -345,6 +345,12 @@ parámetros» de #204.
   contrato no cambie cuando exista un segundo proceso.
 
 ### Protección de datos sensibles
+
+> **Anonimización y control de acceso (CA de #207)**: la anonimización se
+> resuelve en el punto de escritura con la redacción de `FR-017` a `FR-021`;
+> `id_usuario` es la única identificación persistida y se conserva como dato
+> de auditoría (`FR-018`, `data-model.md` § Seguridad de los datos). El control
+> de acceso es `FR-022` y `FR-025`.
 
 - **FR-017**: La redacción DEBE ejecutarse en el punto de escritura, antes de
   persistir, y NO DEBE ser un filtro aplicado en la lectura.
