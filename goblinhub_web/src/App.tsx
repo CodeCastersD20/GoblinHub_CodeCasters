@@ -40,6 +40,9 @@ const UsuariosAdmin = lazy(
 );
 const LogsAdmin = lazy(() => import("./pages/admin/logs/LogsAdmin"));
 const TrazasAdmin = lazy(() => import("./pages/admin/trazas/TrazasAdmin"));
+const AuditoriaAdmin = lazy(
+  () => import("./pages/admin/auditoria/AuditoriaAdmin"),
+);
 const Administracion = lazy(
   () => import("./pages/perfil/administracion/Administracion"),
 );
@@ -89,6 +92,7 @@ function App() {
             <Route path="/admin" element={<Administracion />} />
             <Route path="/admin/logs" element={<LogsAdmin />} />
             <Route path="/admin/trazas" element={<TrazasAdmin />} />
+            <Route path="/admin/auditoria" element={<AuditoriaAdmin />} />
             <Route path="/admin/eventos" element={<EventosAdmin />} />
             <Route path="/admin/eventos/:id" element={<VerEventoPage />} />
             <Route path="/admin/usuarios" element={<UsuariosAdmin />} />

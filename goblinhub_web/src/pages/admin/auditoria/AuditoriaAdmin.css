@@ -1,0 +1,42 @@
+@import "../logs/LogsAdmin.css";
+
+/*
+ * AuditoriaAdmin.css - Lo que este visor necesita y los de logs no tienen: la
+ * marca del resultado en la fila y el bloqueo visual del identificador de
+ * correlación. La retícula y la tabla vienen de `LogsAdmin.css`, importado
+ * arriba, del mismo modo que hace `TrazasAdmin.css`.
+ */
+
+.auditoria-resultado {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.auditoria-resultado--exitoso {
+    color: #047857;
+}
+
+.auditoria-resultado--rechazado {
+    color: #b45309;
+}
+
+.auditoria-resultado--fallido {
+    color: #b91c1c;
+}
+
+.auditoria-anonimo,
+.auditoria-sistema {
+    color: #6b7280;
+    font-style: italic;
+}
+
+/*
+ * El identificador de correlación encaja en una sola línea: parteado en dos
+ * filas deja de ser comparable de un vistazo con el que devuelve la API.
+ */
+.auditoria-correlacion {
+    font-size: 0.8rem;
+    color: #6b7280;
+    white-space: nowrap;
+}

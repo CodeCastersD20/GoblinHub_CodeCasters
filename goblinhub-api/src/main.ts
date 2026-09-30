@@ -133,6 +133,7 @@ async function bootstrap() {
       '/backup',
       '/upload',
       '/traces',
+      '/audit-logs',
       // Sondeadas por Prometheus y por las sondas de Render: no llegan con
       // Origin ni Authorization, y sin esta excepción se recibirían un 302 al
       // frontend en lugar de las métricas (spec 005, FR-008).

@@ -11,6 +11,7 @@ import { EventExpirationScheduler } from './infrastructure/scheduler/event-expir
 import { PrismaModule } from '../../connect/prisma.module';
 import { SupabaseAuthModule } from '../supabase/supabase-auth.module';
 import { TracingModule } from '../tracing/tracing.module';
+import { AuditoriaModule } from '../auditoria/auditoria.module';
 
 @Module({
   controllers: [EventController],
@@ -26,6 +27,13 @@ import { TracingModule } from '../tracing/tracing.module';
       useClass: EventRepositoryPrisma,
     },
   ],
-  imports: [PrismaModule, SupabaseAuthModule, TracingModule],
+  imports: [
+    PrismaModule,
+    SupabaseAuthModule,
+    TracingModule,
+    // Publica `AuditoriaService`: el scheduler de expiración deja constancia
+    // de sus ejecuciones en `logs_auditoria` (#212).
+    AuditoriaModule,
+  ],
 })
 export class EventModule {}
