@@ -117,6 +117,7 @@
       "modules/supabase/guard/**/*.ts",
       "modules/metrics/**/*.ts",
       "modules/tracing/**/*.ts",
+      "modules/auditoria/**/*.ts",
       "!**/*.spec.ts",
       "!**/*.module.ts"
     ],
