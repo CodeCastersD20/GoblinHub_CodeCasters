@@ -21,6 +21,9 @@ import { CorrelationIdMiddleware } from './modules/tracing/infrastructure/middle
 import { TracingModule } from './modules/tracing/tracing.module';
 import { TrazasModule } from './modules/tracing/trazas.module';
 import { TracingInterceptor } from './modules/tracing/infrastructure/interceptors/tracing.interceptor';
+import { AuditoriaModule } from './modules/auditoria/auditoria.module';
+import { AuditoriaConsultaModule } from './modules/auditoria/auditoria-consulta.module';
+import { AuditoriaMiddleware } from './modules/auditoria/infrastructure/middleware/auditoria.middleware';
 
 @Module({
   imports: [
@@ -47,6 +50,8 @@ import { TracingInterceptor } from './modules/tracing/infrastructure/interceptor
     MetricsModule,
     TracingModule,
     TrazasModule,
+    AuditoriaModule,
+    AuditoriaConsultaModule,
   ],
   controllers: [],
   providers: [
@@ -83,5 +88,17 @@ export class AppModule implements NestModule {
    */
   configure(consumer: MiddlewareConsumer): void {
     consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+
+    /**
+     * Va después de `CorrelationIdMiddleware` a propósito: este middleware lee
+     * el identificador de la cabecera `X-Request-Id` que aquel valida y
+     * sobrescribe, y con este orden siempre encuentra uno ya resuelto.
+     *
+     * Se aplica con `'*'` y no con una lista de rutas porque debe cubrir
+     * también las peticiones que no llegan a ningún controlador: un `POST`
+     * contra una ruta inexistente sigue siendo un intento de operación y la
+     * auditoría tiene que dejar constancia de él (#212).
+     */
+    consumer.apply(AuditoriaMiddleware).forRoutes('*');
   }
 }

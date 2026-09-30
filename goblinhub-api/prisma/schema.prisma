@@ -82,6 +82,24 @@ enum TipoLog {
   error
 }
 
+// Quién ejecutó la operación auditada. `anonimo` es una peticion HTTP que no
+// llego autenticada (por ejemplo, un intento de acceso sin token) y `sistema`
+// un proceso automatico, que no tiene usuario detras.
+enum TipoActor {
+  usuario
+  anonimo
+  sistema
+}
+
+// El desenlace de la operacion, separado del codigo HTTP para que el filtro del
+// visor no tenga que interpretar rangos: `rechazado` son los 401 y 403, es
+// decir, el caso que la issue distingue de un fallo.
+enum ResultadoAuditoria {
+  exitoso
+  rechazado
+  fallido
+}
+
 enum TipoRecompensa {
   descuento
   producto_gratis
@@ -116,6 +134,7 @@ model Usuario {
   inscripciones      Inscripcion[]
   captacion_novato   Captacion_Novato?
   logs_actividad     Logs_Actividad[]
+  logs_auditoria     Logs_Auditoria[]
   canjes             Canje[]
   trazas             Traza[]
 
@@ -399,4 +418,44 @@ model Span {
   @@index([id_traza], map: "idx_spans_traza")
   @@index([id_traza, parent_id], map: "idx_spans_traza_padre")
   @@map("spans")
+}
+
+// ==================== AUDITORIA (#212) ====================
+// Quien hizo que, sobre que recurso, cuando y con que resultado. Tabla propia
+// y separada de `logs_actividad`: esa es la fuente de metricas operativas de la
+// API y esta es la evidencia de las operaciones relevantes. El visor de
+// auditoria no consulta aquella ni esta consulta el visor de logs.
+//
+// Sin `updated_at` ni `deleted_at` a proposito: el registro se inserta una sola
+// vez y no se modifica ni se elimina. En la API no existe ningun endpoint de
+// escritura, edicion ni borrado, y el repositorio solo expone `create`; esa es
+// la garantia de inmutabilidad del criterio 2 de la issue.
+//
+// `onDelete: Restrict` y no `SetNull` como en `logs_actividad`: si algo borrara
+// un usuario, un `Set_NULL` reescribiria el actor de registros que ya existen,
+// que es justamente lo que una tabla de auditoria no puede permitirse. El
+// borrado fisico de usuarios no existe en la API (el desactivar es un
+// `deleted_at`), de modo que la restriccion no bloquea ningun flujo real.
+model Logs_Auditoria {
+  id_auditoria   BigInt             @id @default(autoincrement())
+  actor_tipo     TipoActor
+  actor_id       String?            @db.Uuid
+  accion         String             @db.VarChar(20)
+  recurso        String             @db.VarChar(200)
+  resultado      ResultadoAuditoria
+  correlation_id String             @db.VarChar(64)
+  fecha_hora     DateTime           @default(now())
+
+  usuario Usuario? @relation(fields: [actor_id], references: [id_usuario], onDelete: Restrict)
+
+  // Todos los filtros del visor (actor, accion, recurso, resultado y rango de
+  // fechas) se resuelven por `fecha_hora` descendente, de ahi que el indice de
+  // fecha sea el primero de la tabla.
+  @@index([fecha_hora], map: "idx_auditoria_fecha")
+  @@index([actor_id, fecha_hora], map: "idx_auditoria_actor")
+  @@index([accion, fecha_hora], map: "idx_auditoria_accion")
+  @@index([recurso, fecha_hora], map: "idx_auditoria_recurso")
+  @@index([resultado, fecha_hora], map: "idx_auditoria_resultado")
+  @@index([correlation_id], map: "idx_auditoria_correlation")
+  @@map("logs_auditoria")
 }
