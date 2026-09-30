@@ -11,7 +11,8 @@ implementación** (Principio I, Test-First).
 > **Alcance de este fichero**: la **Phase 0** y las **Phases 1 y 2** están
 > cerradas. Las **Phases 3 a 7** están implementadas y verificadas; lo único que
 > queda abierto es la **evidencia del visor** (T075), que depende del entorno y la
-> captura. Cada fase se cerró con un bloque de commits.
+> captura. Cada fase se cerró con un bloque de commits. La sección
+> **Planeación SDD (issue #207)** se cierra con el PR de planeación (T086).
 
 ---
 
@@ -145,6 +146,25 @@ se fija `TRAZAS_NIVEL_MINIMO=error`, que es el mecanismo que define `FR-031`.
 - [ ] T078 Escribir el PR con la plantilla del repositorio, `Closes #204`, etiquetas `Feature` y `enhancement`, y solicitar revisión del equipo (AGENTS.md). **BLOQUEADA** por la ausencia de `gh`
 
 **Checkpoint**: los gates de CI están en verde y el PR queda listo para revisión. La única pieza pendiente es la evidencia visual (T075) y el propio PR (T078), ambas bloqueadas por el entorno.
+
+---
+
+## Planeación SDD del módulo (issue #207)
+
+Tareas de la issue #207 en orden de ejecución; cada una declara su criterio de
+aceptación. Se ejecutan sobre la spec ya mergeada de #204, sin tocar código.
+
+- [x] T080 Actualizar las cabeceras de `spec.md` y `plan.md` para enlazar la rama de planeación `doc/207-docs-planeación-sdd-del-visor-de-trazabilidad` con la de implementación `feat/204-feature-implementar-visor-de-trazabilidad-con-logs-y-tracers` (CA «La spec define casos de uso…»)
+- [x] T081 Añadir en `plan.md` la matriz de trazabilidad requisito-tarea-prueba, con la columna de prueba, siguiendo el patrón del §9 de la spec 005 (CA «Se incluye una matriz…»)
+- [x] T082 Aclarar en `spec.md` § Protección de datos sensibles que la anonimización se resuelve con la redacción en punto de escritura (`FR-017`–`FR-021`) y que `id_usuario` es la única identificación persistida, sin duplicar el contenido de `data-model.md` (CA «Se contempla control de acceso y anonimización»)
+- [x] T083 Documentar en `docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md` §7 la justificación de logs estructurados y tracers frente al caso de estudio de `docs/SLA_METRICAS_Y_PARAMETROS.md` (alcance: justificar la solución)
+- [x] T084 Documentar en `plan.md` la integración del módulo con el pipeline CI/CD y con el stack de monitoreo de la spec 005 (alcance: integración con pipeline y monitoreo)
+- [x] T085 Añadir la entrada de #207 al «Flujo por módulo ejecutado» de `specs/README.md` (CA «Las tasks enlazan con los requisitos…»)
+- [ ] T086 Preparar y abrir el PR general de planeación hacia `develop` con la plantilla del repositorio, `Closes #207`, etiquetas `documentation` y `docs`, y solicitud de revisión del equipo (CA «Se abre PR general de planeación SDD con revisión»). El cuerpo del PR queda preparado en el entorno de trabajo; la apertura y el *request review* los realiza el equipo, porque este entorno no dispone de `gh` (mismo motivo que T078)
+
+**Checkpoint**: los cinco criterios de aceptación de #207 quedan cubiertos por
+la matriz de `plan.md` (fila a fila) y el PR de planeación está listo para
+revisión.
 
 ---
 

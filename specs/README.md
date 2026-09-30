@@ -64,6 +64,13 @@ Alternativa automatizada (workflow oficial de Spec Kit en este repo):
    implementación son las phases 1 a 7 de `specs/006-visor-trazabilidad-logs-tracers/tasks.md`
    y comparte `app.module.ts`, `main.ts`, `.env.example` y `package.json` con #214,
    por lo que ambas issues deben integrarse conservando los dos cambios.
+8. `doc/207-docs-planeación-sdd-del-visor-de-trazabilidad` (issue #207): PR
+   general de planeación SDD del visor de trazabilidad como módulo independiente
+   sobre `specs/006-visor-trazabilidad-logs-tracers/`: matriz
+   requisito-tarea-prueba (`plan.md`), integración con el pipeline y con el
+   monitoreo (`plan.md`), justificación frente al caso de estudio
+   (`docs/COMPARATIVA_HERRAMIENTAS_TRAZABILIDAD.md` §7) y control de acceso y
+   anonimización (`spec.md`). La implementación es la de #204.
 
 ## Verificación
 
